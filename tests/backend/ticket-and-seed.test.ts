@@ -28,6 +28,22 @@ describe("기본 상태 자동 시드 (project AFTER INSERT 트리거)", () => {
     const categories = (data ?? []).map((s) => s.category).sort()
     expect(categories).toEqual(["진행중", "완료", "취소됨", "할일"].sort())
   })
+
+  it("프로젝트 생성 시 name/key_prefix 가 저장되고 ticket_seq 는 1 로 시작한다", async () => {
+    const pid = await createProject(admin, "프리픽스 보존", "TD")
+    created.push(pid)
+
+    const { data, error } = await admin
+      .from("project")
+      .select("name, key_prefix, ticket_seq")
+      .eq("id", pid)
+      .single()
+
+    expect(error).toBeNull()
+    expect(data!.name).toBe("프리픽스 보존")
+    expect(data!.key_prefix).toBe("TD")
+    expect(data!.ticket_seq).toBe(1)
+  })
 })
 
 describe("티켓 번호 발급 (node BEFORE INSERT 트리거)", () => {

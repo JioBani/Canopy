@@ -91,3 +91,12 @@ export async function cleanupProjects(admin: SupabaseClient, ids: string[]) {
   if (ids.length === 0) return
   await admin.from("project").delete().in("id", ids)
 }
+
+/** 모든 프로젝트 삭제 (E2E 클린 슬레이트용). */
+export async function wipeAllProjects(admin: SupabaseClient) {
+  const { data } = await admin.from("project").select("id")
+  await cleanupProjects(
+    admin,
+    (data ?? []).map((r) => r.id as string)
+  )
+}
