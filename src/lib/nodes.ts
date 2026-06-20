@@ -44,6 +44,7 @@ export async function insertNode(input: {
   type: NodeType
   title: string
   sort_order?: number
+  status_id?: string | null
 }): Promise<AppNode> {
   const { data, error } = await supabase
     .from("node")
@@ -53,6 +54,7 @@ export async function insertNode(input: {
       type: input.type,
       title: input.title.trim(),
       sort_order: input.sort_order ?? 0,
+      status_id: input.status_id ?? null,
     })
     .select("*")
     .single()

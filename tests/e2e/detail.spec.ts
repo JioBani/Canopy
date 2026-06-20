@@ -90,15 +90,20 @@ test.describe.serial("노드 상세 패널", () => {
     expect(tasks[0].status_id).not.toBeNull()
   })
 
-  test("비-작업 노드는 상태/도메인/작업자 필드가 없다", async ({ page }) => {
+  test("비-작업 노드도 상태는 있고(전 타입) 기본=할일, 도메인/담당은 없다", async ({
+    page,
+  }) => {
     await signupAndEnter(page)
-    await createProject(page, `상세테스트2 ${Date.now()}`, "DU")
+    await createProject(page, `상세테스트2 ${Date.now()}`)
     await addContentRoot(page, "전장")
 
     await rowByTitle(page, "전장").click()
     await expect(page.getByTestId("node-detail")).toBeVisible()
     await expect(page.getByTestId("detail-type")).toHaveText("컨텐츠")
-    await expect(page.getByTestId("detail-status")).toHaveCount(0)
+    // 상태 셀렉트는 전 타입 노출 + 신규 기본 '할일'
+    await expect(page.getByTestId("detail-status")).toHaveCount(1)
+    await expect(page.getByTestId("detail-status")).toContainText("할일")
+    // 도메인/담당은 작업 전용
     await expect(page.getByTestId("detail-domain")).toHaveCount(0)
     await expect(page.getByTestId("detail-assignee")).toHaveCount(0)
   })

@@ -159,9 +159,8 @@ export function NodeDetail() {
           />
         </div>
 
-      {/* 작업 전용 — property 행 (shadcn Select) */}
-      {isTask && (
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+      {/* property 행 — 상태는 전 타입, 도메인/담당은 작업만 */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <PropField label="상태">
             <Select
               value={node.status_id ?? NONE}
@@ -203,6 +202,8 @@ export function NodeDetail() {
             </Select>
           </PropField>
 
+          {isTask && (
+            <>
           <PropField label="도메인">
             <Select
               value={node.domain ?? NONE}
@@ -262,8 +263,9 @@ export function NodeDetail() {
               </SelectContent>
             </Select>
           </PropField>
-        </div>
-      )}
+            </>
+          )}
+      </div>
 
       {/* 설명(body) — 기본 마크다운 렌더, '수정' 클릭 시 편집 */}
       <div className="flex flex-col gap-2">

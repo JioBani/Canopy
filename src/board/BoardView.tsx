@@ -1,14 +1,19 @@
 import { useMemo, useState, type DragEvent } from "react"
 import { useNodes } from "@/nodes/NodesProvider"
 import { memberLabel } from "@/lib/members"
-import { ticketKey } from "@/nodes/nodeGrammar"
+import { ticketKey, TYPE_META, type NodeType } from "@/nodes/nodeGrammar"
+import { LAYER_COLOR } from "@/nodes/layerColors"
+import { PIXEL_ICONS } from "@/nodes/pixelIcons"
 import type { StatusCategory } from "@/lib/statuses"
 import type { AppNode, NodeDomain } from "@/lib/nodes"
 import { BLOOM_GLYPH, CATEGORY_TEXT_COLOR } from "@/nodes/bloomGlyph"
 import { CATEGORY_COLOR } from "@/lib/statuses"
 import { FilterSelect } from "@/components/ui/filter-select"
+import { cn } from "@/lib/utils"
 
 const CATEGORIES: StatusCategory[] = ["할일", "진행중", "완료", "취소됨"]
+/** 보드 레이어 선택지 (작업 기본). */
+const LAYERS: NodeType[] = ["작업", "세부기능", "기능", "컨텐츠", "마스터데이터"]
 const DOMAINS: NodeDomain[] = [
   "기획",
   "디자인",
@@ -109,6 +114,7 @@ function BoardCard({ node }: { node: AppNode }) {
 
 export function BoardView() {
   const { nodes, statuses, members, updateFields } = useNodes()
+  const [layer, setLayer] = useState<NodeType>("작업")
   const [fDomain, setFDomain] = useState("")
   const [fAssignee, setFAssignee] = useState("")
   const [fContent, setFContent] = useState("")
@@ -122,26 +128,46 @@ export function BoardView() {
   const contents = nodes.filter((n) => n.type === "컨텐츠")
   const features = nodes.filter((n) => n.type === "기능")
 
-  const tasks = useMemo(() => {
+  // 도메인/담당 필터는 작업 레이어에만 의미. 컨텐츠/기능 조상 필터는 그 조상이 있는 레이어만.
+  const isTaskLayer = layer === "작업"
+  const showContentFilter = layer !== "컨텐츠"
+  const showFeatureFilter =
+    layer === "작업" || layer === "세부기능" || layer === "마스터데이터"
+
+  const cards = useMemo(() => {
     return nodes
-      .filter((n) => n.type === "작업")
+      .filter((n) => n.type === layer)
       .map((n) => ({ node: n, anc: ancestorsOf(n, byId) }))
       .filter(({ node, anc }) => {
-        if (fDomain && node.domain !== fDomain) return false
-        if (fAssignee && node.assignee_id !== fAssignee) return false
-        if (fContent && anc.contentId !== fContent) return false
-        if (fFeature && anc.featureId !== fFeature) return false
+        if (showContentFilter && fContent && anc.contentId !== fContent)
+          return false
+        if (showFeatureFilter && fFeature && anc.featureId !== fFeature)
+          return false
+        if (isTaskLayer && fDomain && node.domain !== fDomain) return false
+        if (isTaskLayer && fAssignee && node.assignee_id !== fAssignee)
+          return false
         return true
       })
       .map(({ node }) => node)
-  }, [nodes, byId, fDomain, fAssignee, fContent, fFeature])
+  }, [
+    nodes,
+    byId,
+    layer,
+    isTaskLayer,
+    showContentFilter,
+    showFeatureFilter,
+    fDomain,
+    fAssignee,
+    fContent,
+    fFeature,
+  ])
 
   function categoryOf(node: AppNode): StatusCategory | "미지정" {
     const s = node.status_id ? statusById.get(node.status_id) : undefined
     return s?.category ?? "미지정"
   }
 
-  const hasUnassigned = tasks.some((t) => categoryOf(t) === "미지정")
+  const hasUnassigned = cards.some((t) => categoryOf(t) === "미지정")
   const columns: (StatusCategory | "미지정")[] = hasUnassigned
     ? ["미지정", ...CATEGORIES]
     : CATEGORIES
@@ -169,43 +195,84 @@ export function BoardView() {
 
   return (
     <div className="flex h-full flex-col" data-testid="board-view">
-      {/* 필터 */}
+      {/* 레이어 선택 + 필터 */}
       <div className="border-border flex flex-wrap items-center gap-2 border-b px-4 py-2.5">
+        <span className="text-muted-foreground mr-1 text-xs">레이어</span>
+        <div
+          className="flex items-center gap-0.5 rounded-lg bg-[var(--c-bg-sunken)] p-0.5"
+          role="tablist"
+        >
+          {LAYERS.map((l) => {
+            const Icon = PIXEL_ICONS[l]
+            const active = layer === l
+            return (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLayer(l)}
+                aria-pressed={active}
+                data-testid={`board-layer-${l}`}
+                className={cn(
+                  "flex items-center gap-1 rounded-md px-2 py-1 text-[12.5px] font-semibold transition-colors",
+                  active
+                    ? "bg-card shadow-[0_1px_2px_rgba(90,40,60,.10),0_0_0_1px_var(--c-line)]"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Icon
+                  className="size-3.5"
+                  style={{ color: LAYER_COLOR[l].base }}
+                />
+                {TYPE_META[l].label}
+              </button>
+            )
+          })}
+        </div>
+
+        <span className="bg-[var(--c-line-2)] mx-1 h-5 w-px" />
         <span className="text-muted-foreground mr-1 text-xs">필터</span>
-        <FilterSelect
-          value={fContent}
-          onChange={setFContent}
-          allLabel="컨텐츠"
-          items={contents.map((c) => ({ value: c.id, label: c.title }))}
-          testid="board-filter-content"
-        />
-        <FilterSelect
-          value={fFeature}
-          onChange={setFFeature}
-          allLabel="기능"
-          items={features.map((f) => ({ value: f.id, label: f.title }))}
-          testid="board-filter-feature"
-        />
-        <FilterSelect
-          value={fDomain}
-          onChange={setFDomain}
-          allLabel="도메인"
-          items={DOMAINS.map((d) => ({ value: d, label: d }))}
-          testid="board-filter-domain"
-        />
-        <FilterSelect
-          value={fAssignee}
-          onChange={setFAssignee}
-          allLabel="담당자"
-          items={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
-          testid="board-filter-assignee"
-        />
+        {showContentFilter && (
+          <FilterSelect
+            value={fContent}
+            onChange={setFContent}
+            allLabel="컨텐츠"
+            items={contents.map((c) => ({ value: c.id, label: c.title }))}
+            testid="board-filter-content"
+          />
+        )}
+        {showFeatureFilter && (
+          <FilterSelect
+            value={fFeature}
+            onChange={setFFeature}
+            allLabel="기능"
+            items={features.map((f) => ({ value: f.id, label: f.title }))}
+            testid="board-filter-feature"
+          />
+        )}
+        {isTaskLayer && (
+          <>
+            <FilterSelect
+              value={fDomain}
+              onChange={setFDomain}
+              allLabel="도메인"
+              items={DOMAINS.map((d) => ({ value: d, label: d }))}
+              testid="board-filter-domain"
+            />
+            <FilterSelect
+              value={fAssignee}
+              onChange={setFAssignee}
+              allLabel="담당자"
+              items={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
+              testid="board-filter-assignee"
+            />
+          </>
+        )}
       </div>
 
       {/* 컬럼 */}
       <div className="flex flex-1 gap-3 overflow-x-auto p-4">
         {columns.map((col) => {
-          const colTasks = tasks.filter((t) => categoryOf(t) === col)
+          const colTasks = cards.filter((t) => categoryOf(t) === col)
           const accent =
             col === "미지정"
               ? "var(--c-ink-3)"

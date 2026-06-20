@@ -152,10 +152,10 @@ test.describe.serial("노드 트리", () => {
     await addChildTyped(page, "소환수기능", "세부기능", "합성세부")
     await addWork(page, "합성세부", "로직작업")
 
-    // 작업(임베드): 미지정 뱃지 — 작업 상태는 진행도(UR)와 별개 축
+    // 작업(임베드): 기본 상태 할일 뱃지 — 작업 상태는 진행도(UR)와 별개 축
     await expect(await embedWorkBadge(page, "로직작업")).toHaveAttribute(
       "data-status",
-      "미지정"
+      "할일"
     )
 
     // UR 없음 → 진행바 중립 "—"(작업만 있어도 진행도는 UR 기준)

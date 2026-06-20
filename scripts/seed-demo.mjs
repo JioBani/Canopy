@@ -107,7 +107,13 @@ async function main() {
 
   const content = await insOne(
     "node",
-    { project_id: project.id, type: "컨텐츠", title: "전장", sort_order: 0 },
+    {
+      project_id: project.id,
+      type: "컨텐츠",
+      title: "전장",
+      sort_order: 0,
+      status_id: statusByCat["할일"],
+    },
     "id"
   )
 
@@ -127,6 +133,7 @@ async function main() {
         title: parsed.feature,
         parent_id: content.id,
         sort_order: fi,
+        status_id: statusByCat["할일"],
       },
       "id"
     )
@@ -134,6 +141,16 @@ async function main() {
 
     for (let ti = 0; ti < parsed.tasks.length; ti++) {
       const task = parsed.tasks[ti]
+      // 세부기능 상태 = UR 완료도 파생(전부완료→완료/일부→진행중/없음·미완→할일).
+      const urStatuses = task.reqs.map((r) => urStatusFor(r))
+      const allDone =
+        urStatuses.length > 0 && urStatuses.every((s) => s === "완료")
+      const anyDone = urStatuses.some((s) => s === "완료")
+      const subStatus = allDone
+        ? statusByCat["완료"]
+        : anyDone
+          ? statusByCat["진행중"]
+          : statusByCat["할일"]
       const sub = await insOne(
         "node",
         {
@@ -142,6 +159,7 @@ async function main() {
           title: task.name,
           parent_id: feature.id,
           sort_order: ti,
+          status_id: subStatus,
         },
         "id"
       )

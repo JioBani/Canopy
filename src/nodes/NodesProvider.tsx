@@ -164,12 +164,17 @@ export function NodesProvider({
       const siblings = nodes.filter((n) => n.parent_id === parentId)
       const sortOrder =
         siblings.reduce((m, s) => Math.max(m, s.sort_order), -1) + 1
+      // 기본 상태 = 할일 카테고리 기본(가장 앞) 상태 (Jira식 To Do 시작, 전 타입).
+      const defaultStatus = statuses
+        .filter((s) => s.category === "할일")
+        .sort((a, b) => a.sort_order - b.sort_order)[0]
       const created = await insertNode({
         project_id: projectId,
         parent_id: parentId,
         type,
         title,
         sort_order: sortOrder,
+        status_id: defaultStatus?.id ?? null,
       })
       const nextNodes = [...nodes, created]
       setNodes(nextNodes)
@@ -186,7 +191,7 @@ export function NodesProvider({
       await refreshProgress(nextNodes.map((n) => n.id))
       return created
     },
-    [nodes, projectId, refreshProgress]
+    [nodes, projectId, refreshProgress, statuses]
   )
 
   const renameNode = useCallback(async (id: string, title: string) => {
