@@ -1,18 +1,17 @@
 import { test, expect } from "@playwright/test"
-import { restGet, wipeAllProjects } from "../helpers/rest"
+import { restGet } from "../helpers/rest"
 import {
   addChildSingle,
   addChildTyped,
   addContentRoot,
+  cleanupCreatedProjects,
   createProject,
   rowByTitle,
   signupAndEnter,
 } from "./_helpers"
 
 test.describe.serial("노드 상세 패널", () => {
-  test.beforeEach(async () => {
-    await wipeAllProjects()
-  })
+  test.afterAll(cleanupCreatedProjects)
 
   test("선택→상세, 제목·body 편집, 상태→진행바 실시간, 도메인·작업자 저장", async ({
     page,

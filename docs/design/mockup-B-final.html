@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Canopy — B안 운영급 목업 (흰 배경)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/quiple/galmuri/dist/galmuri.css" />
+<style>
+  :root{
+    --page:#F1EFF1; --app:#FFFFFF; --side:#FCFBFC;       /* 흰색 계열 — 딸기우유 배경 폐기 */
+    --ink:#272129; --ink2:#6E646C; --ink3:#A89FA4;
+    --line:rgba(40,28,40,.075); --line2:rgba(40,28,40,.12);
+    --sakura:#E88AAB; --plum:#C24E78; --plum-d:#A53E66; --pink-bg:#FBEAF1; --pink-bg2:#F6DCE7;
+    --peach:#EC9A78; --peach-d:#BE6A3F;
+    --mist:#ABA2A8;
+    --ember:#D85F6E;
+    --exp-empty:#EFE6EA;
+    --hover:rgba(40,28,40,.045);
+    --shadow:0 1px 2px rgba(90,40,60,.05), 0 10px 26px -10px rgba(120,50,80,.16), 0 30px 60px -24px rgba(120,50,80,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif;
+    background:radial-gradient(1200px 500px at 80% -10%, #F8F2F5 0%, transparent 60%), var(--page);
+    color:var(--ink); padding:40px 24px; min-height:100vh;
+    font-feature-settings:"tnum" 1; letter-spacing:-0.003em; -webkit-font-smoothing:antialiased;
+  }
+  .frame{max-width:1080px;margin:0 auto}
+  .hd{font-size:13px;color:var(--ink3);text-align:center;margin-bottom:18px}
+  .hd b{color:var(--ink2);font-weight:600}
+  .gm{font-family:"Galmuri11";-webkit-font-smoothing:none;font-smoothing:none;image-rendering:pixelated;letter-spacing:0}
+
+  .ic{width:16px;height:16px;flex:none;display:inline-block;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+  .ic.s14{width:14px;height:14px}
+  .ic16{width:16px;height:16px;flex:none;display:inline-block;vertical-align:middle}
+  .px{width:16px;height:16px;flex:none;display:inline-block;vertical-align:middle;fill:currentColor;stroke:none;image-rendering:pixelated;shape-rendering:crispEdges}
+
+  /* shell */
+  .app{background:var(--app);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+  .top{display:flex;align-items:center;gap:12px;height:52px;padding:0 14px 0 16px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)}
+  .brand .nm{position:relative;top:1px}
+  .sep{width:1px;height:20px;background:var(--line2);margin:0 2px}
+  .proj{display:flex;align-items:center;gap:8px;height:32px;padding:0 9px 0 7px;border-radius:9px;cursor:pointer;transition:background .12s}
+  .proj:hover{background:var(--hover)}
+  .proj .key{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:7px;background:var(--pink-bg);color:var(--plum);font-size:10px;letter-spacing:0}
+  .proj .nm{font-size:13.5px;font-weight:600}
+  .proj .ic{color:var(--ink3)}
+  .grow{flex:1}
+  .search{display:flex;align-items:center;gap:8px;width:260px;height:34px;padding:0 10px;border-radius:10px;background:#F5F2F4;color:var(--ink3);font-size:13px;cursor:text;transition:.12s}
+  .search:hover{background:#F1ECEF}
+  .search .kbd{margin-left:auto;display:flex;gap:3px}
+  .search .kbd span{font-size:10px;color:var(--ink3);background:#fff;border:1px solid var(--line2);border-radius:5px;padding:2px 5px}
+  .tabs{display:flex;gap:2px;background:#F2EEF1;border-radius:10px;padding:3px}
+  .tabs button{border:0;background:none;font:600 12.5px Pretendard;color:var(--ink3);padding:5px 12px;border-radius:8px;cursor:pointer;transition:.12s}
+  .tabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(90,40,60,.10),0 0 0 1px var(--line)}
+  .newbtn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px 0 10px;border-radius:9px;background:var(--sakura);color:#fff;font:600 12.5px Pretendard;cursor:pointer;box-shadow:0 1px 1px rgba(150,60,90,.25),inset 0 1px 0 rgba(255,255,255,.25);transition:.12s}
+  .newbtn:hover{background:var(--plum)}
+  .ava{width:28px;height:28px;border-radius:50%;background:linear-gradient(150deg,#F6CFDD,#EC9EBA);color:#9b3a5e;display:flex;align-items:center;justify-content:center;font:650 12px Pretendard;box-shadow:0 0 0 1px var(--line2),0 1px 2px rgba(150,60,90,.16)}
+
+  .body{display:flex;min-height:440px}
+  .side{width:286px;flex:none;background:var(--side);border-right:1px solid var(--line);padding:10px 8px;display:flex;flex-direction:column}
+  .side .sech{display:flex;align-items:center;gap:6px;padding:7px 8px 8px;font-size:10.5px;color:var(--ink3)}
+  .branch{position:relative;margin-left:15px;padding-left:11px}
+  .branch::before{content:"";position:absolute;left:0;top:2px;bottom:6px;width:1.5px;background:var(--line2);border-radius:2px}
+  .branch.lit::before{background:linear-gradient(var(--sakura),rgba(232,138,171,.25))} /* 꽃이 핀 가지 */
+  .row{position:relative;display:flex;align-items:center;gap:7px;height:30px;padding:0 8px 0 6px;border-radius:8px;cursor:pointer;transition:background .1s}
+  .row:hover{background:var(--hover)}
+  .row.sel{background:var(--pink-bg)}
+  .row.sel::before{content:"";position:absolute;left:-11px;top:5px;bottom:5px;width:2px;background:var(--sakura);border-radius:2px}
+  .tog{width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:var(--ink3);flex:none}
+  .tog.empty{opacity:0}
+  .tname{flex:1;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:450}
+  .row.sel .tname{font-weight:600}
+  .tico{color:var(--ink3)} .tico.tree{color:var(--sakura)}
+  /* EXP pixel progress */
+  .exp{display:flex;align-items:center;gap:7px;flex:none}
+  .exp .cells{display:flex;gap:2.5px}
+  .exp .cells i{width:9px;height:9px;border-radius:1.5px;background:var(--exp-empty)}
+  .exp .cells i.on{background:var(--sakura)}
+  .exp .pc{width:26px;text-align:right;font-size:10px;color:var(--plum)}
+  /* status = blossom glyph */
+  .st{display:flex;align-items:center;gap:6px;flex:none;font-size:11.5px;font-weight:550}
+  .st.todo{color:var(--mist)} .st.prog{color:var(--peach-d)} .st.done{color:var(--plum)}
+
+  .detail{flex:1;padding:24px 28px;overflow:hidden}
+  .crumb{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink3);margin-bottom:14px}
+  .crumb b{color:var(--ink2);font-weight:550}.crumb .d{opacity:.5}
+  .tkrow{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .tk{font-size:11.5px;color:var(--plum)}
+  .tkcopy{color:var(--ink3);width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .tkcopy:hover{background:var(--hover);color:var(--ink2)}
+  .typetag{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink2)}
+  .title{font-size:21px;font-weight:730;letter-spacing:-.014em;color:var(--ink);line-height:1.25;margin-bottom:18px}
+  .props{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:22px}
+  .pchip{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 10px 0 9px;border-radius:9px;background:#F5F2F4;font:550 12.5px Pretendard;color:var(--ink);cursor:pointer;transition:.12s}
+  .pchip:hover{background:#EFE7EC}
+  .pchip .k{color:var(--ink3);font-weight:500}
+  .pchip .cv{color:var(--ink3)}
+  .hr{height:1px;background:var(--line);margin:4px 0 18px}
+  .desc{font-size:13.5px;color:var(--ink2);line-height:1.7;margin-bottom:8px;max-width:52ch}
+  .desc .muted{color:var(--ink3)}
+  .urhd{display:flex;align-items:center;gap:8px;margin:22px 0 6px}
+  .urhd .t{font-size:10.5px;color:var(--ink3)}
+  .urhd .cnt{font-size:10px;color:var(--plum);background:var(--pink-bg);border-radius:99px;padding:2px 7px}
+  .urhd .add{margin-left:auto;color:var(--ink3);display:flex;align-items:center;gap:4px;font-size:12px;font-weight:550;cursor:pointer;padding:3px 7px;border-radius:7px}
+  .urhd .add:hover{background:var(--hover);color:var(--ink2)}
+  .ur{display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:8px}
+  .ur:hover{background:var(--hover)}
+  .ur+.ur{box-shadow:0 -1px 0 var(--line)}
+  .ur .ut{flex:1;font-size:13.5px;color:var(--ink);font-weight:450}
+  .ur .cov{display:flex;align-items:center;gap:8px;flex:none}
+  .ur .cov .fr{font-size:10px;color:var(--ink3)}
+  .ur .cov .cells{display:flex;gap:2.5px}
+  .ur .cov .cells i{width:8px;height:8px;border-radius:1.5px;background:var(--exp-empty)}
+  .ur .cov .cells i.on{background:var(--sakura)}
+  .ur.miss .ut{color:var(--ember)}
+  .ur .miss-tag{font-size:11.5px;font-weight:600;color:var(--ember);background:rgba(216,95,110,.12);border-radius:7px;padding:2px 8px}
+  .foot{max-width:1080px;margin:20px auto 0;font-size:12.5px;color:#6E646C;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;line-height:1.75}
+  .foot b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="hd">B안 — <b>Pixel Blossom</b> · 운영급 실행 / <b>흰 배경</b> (핑크는 악센트만) · 픽셀 스프라이트 아이콘 · Galmuri 픽셀 폰트 · EXP 칸 진행바 · 벚꽃 개화 상태</div>
+
+  <div class="app">
+    <div class="top">
+      <div class="brand">
+        <svg class="ic16" viewBox="0 0 16 16" style="color:var(--sakura)"><g fill="currentColor"><circle cx="8" cy="3.7" r="2.3"/><circle cx="12.3" cy="6.4" r="2.3"/><circle cx="10.6" cy="11.4" r="2.3"/><circle cx="5.4" cy="11.4" r="2.3"/><circle cx="3.7" cy="6.4" r="2.3"/></g><circle cx="8" cy="8" r="1.7" fill="#C24E78"/></svg>
+        <span class="nm gm">Canopy</span>
+      </div>
+      <div class="sep"></div>
+      <div class="proj"><span class="key gm">TD</span><span class="nm">타티카 디펜스</span><svg class="ic s14" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></div>
+      <div class="grow"></div>
+      <div class="search"><svg class="ic s14" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.3"/><path d="M11 11l3.2 3.2"/></svg>검색<span class="kbd gm"><span>⌘</span><span>K</span></span></div>
+      <div class="tabs"><button class="on">트리</button><button>보드</button><button>대시보드</button></div>
+      <div class="newbtn"><svg class="ic s14" viewBox="0 0 16 16"><path d="M8 3.2v9.6M3.2 8h9.6"/></svg>이슈</div>
+      <div class="ava">유</div>
+    </div>
+
+    <div class="body">
+      <div class="side">
+        <div class="sech gm">계층 트리</div>
+
+        <!-- 전장 -->
+        <div class="row">
+          <span class="tog"><svg class="ic s14" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></span>
+          <svg class="px tico tree" viewBox="0 0 16 16"><rect x="6" y="1" width="4" height="2"/><rect x="4" y="3" width="8" height="2"/><rect x="2" y="5" width="12" height="2"/><rect x="4" y="7" width="8" height="2"/><rect x="7" y="9" width="2" height="5" opacity=".4"/></svg>
+          <span class="tname">전장</span>
+          <span class="exp"><span class="cells"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span><span class="pc gm">75</span></span>
+        </div>
+        <div class="branch lit">
+          <!-- 소환수 -->
+          <div class="row">
+            <span class="tog"><svg class="ic s14" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></span>
+            <svg class="px tico" viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5"/><rect x="9" y="2" width="5" height="5" opacity=".5"/><rect x="2" y="9" width="5" height="5" opacity=".5"/><rect x="9" y="9" width="5" height="5"/></svg>
+            <span class="tname">소환수</span>
+            <span class="exp"><span class="cells"><i class="on"></i><i class="on"></i><i></i><i></i></span><span class="pc gm">60</span></span>
+          </div>
+          <div class="branch lit">
+            <!-- 소환수 합성 (선택) -->
+            <div class="row sel">
+              <span class="tog"><svg class="ic s14" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></span>
+              <svg class="px tico" viewBox="0 0 16 16"><rect x="2" y="2" width="3" height="3"/><rect x="11" y="6" width="3" height="3"/><rect x="2" y="11" width="3" height="3"/><rect x="5" y="3" width="6" height="1.6" opacity=".5"/><rect x="5" y="11.4" width="6" height="1.6" opacity=".5"/></svg>
+              <span class="tname">소환수 합성</span>
+              <span class="exp"><span class="cells"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span><span class="pc gm">70</span></span>
+            </div>
+            <div class="branch">
+              <div class="row">
+                <span class="tog empty"></span>
+                <svg class="px tico" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="2"/><rect x="2" y="12" width="12" height="2"/><rect x="2" y="2" width="2" height="12"/><rect x="12" y="2" width="2" height="12"/></svg>
+                <span class="tname">합성 로직</span>
+                <span class="st prog"><svg class="ic16" viewBox="0 0 16 16" style="color:var(--peach)"><g fill="currentColor"><circle cx="8" cy="4" r="2.1"/><circle cx="12" cy="6.6" r="2.1"/><circle cx="10.4" cy="11.2" r="2.1"/><circle cx="5.6" cy="11.2" r="2.1"/><circle cx="4" cy="6.6" r="2.1"/></g><circle cx="8" cy="8" r="1.5" fill="#BE6A3F"/></svg>진행중</span>
+              </div>
+              <div class="row">
+                <span class="tog empty"></span>
+                <svg class="px tico" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="2"/><rect x="2" y="12" width="12" height="2"/><rect x="2" y="2" width="2" height="12"/><rect x="12" y="2" width="2" height="12"/></svg>
+                <span class="tname">합성 UI</span>
+                <span class="st todo"><svg class="ic16" viewBox="0 0 16 16" style="color:var(--mist)"><g fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="4" r="2.1"/><circle cx="12" cy="6.6" r="2.1"/><circle cx="10.4" cy="11.2" r="2.1"/><circle cx="5.6" cy="11.2" r="2.1"/><circle cx="4" cy="6.6" r="2.1"/></g></svg>할일</span>
+              </div>
+            </div>
+            <!-- 소환수 소환 (접힘) -->
+            <div class="row">
+              <span class="tog"><svg class="ic s14" viewBox="0 0 16 16"><path d="M6.5 4 10.5 8 6.5 12"/></svg></span>
+              <svg class="px tico" viewBox="0 0 16 16"><rect x="2" y="2" width="3" height="3"/><rect x="11" y="6" width="3" height="3"/><rect x="2" y="11" width="3" height="3"/><rect x="5" y="3" width="6" height="1.6" opacity=".5"/><rect x="5" y="11.4" width="6" height="1.6" opacity=".5"/></svg>
+              <span class="tname">소환수 소환</span>
+              <span class="exp"><span class="cells"><i class="on"></i><i></i><i></i><i></i></span><span class="pc gm">25</span></span>
+            </div>
+          </div>
+          <!-- MD 제작 -->
+          <div class="row">
+            <span class="tog"><svg class="ic s14" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></span>
+            <svg class="px tico" viewBox="0 0 16 16"><rect x="3" y="2" width="8" height="10" opacity=".4"/><rect x="5" y="4" width="8" height="10"/></svg>
+            <span class="tname">소환수 MD 제작</span>
+            <span class="exp"><span class="cells"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="pc gm">100</span></span>
+          </div>
+          <div class="branch lit">
+            <div class="row">
+              <span class="tog empty"></span>
+              <svg class="px tico" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="2"/><rect x="2" y="12" width="12" height="2"/><rect x="2" y="2" width="2" height="12"/><rect x="12" y="2" width="2" height="12"/><rect x="6" y="7" width="2" height="2"/><rect x="8" y="5" width="2" height="2"/><rect x="10" y="3" width="2" height="2"/></svg>
+              <span class="tname">아리아</span>
+              <span class="st done"><svg class="ic16" viewBox="0 0 16 16" style="color:var(--sakura)"><g fill="currentColor"><circle cx="8" cy="3.7" r="2.3"/><circle cx="12.3" cy="6.4" r="2.3"/><circle cx="10.6" cy="11.4" r="2.3"/><circle cx="5.4" cy="11.4" r="2.3"/><circle cx="3.7" cy="6.4" r="2.3"/></g><circle cx="8" cy="8" r="1.7" fill="#C24E78"/></svg>완료</span>
+            </div>
+          </div>
+        </div>
+        <!-- 정비 -->
+        <div class="row">
+          <span class="tog"><svg class="ic s14" viewBox="0 0 16 16"><path d="M6.5 4 10.5 8 6.5 12"/></svg></span>
+          <svg class="px tico tree" viewBox="0 0 16 16"><rect x="6" y="1" width="4" height="2"/><rect x="4" y="3" width="8" height="2"/><rect x="2" y="5" width="12" height="2"/><rect x="4" y="7" width="8" height="2"/><rect x="7" y="9" width="2" height="5" opacity=".4"/></svg>
+          <span class="tname">정비</span>
+          <span class="exp"><span class="cells"><i class="on"></i><i class="on"></i><i></i><i></i></span><span class="pc gm">40</span></span>
+        </div>
+      </div>
+
+      <div class="detail">
+        <div class="crumb"><b>전장</b><span class="d">/</span><b>소환수</b><span class="d">/</span>소환수 합성</div>
+        <div class="tkrow">
+          <span class="tk gm">TD-43</span>
+          <span class="tkcopy"><svg class="ic s14" viewBox="0 0 16 16"><rect x="5.6" y="5.6" width="7.4" height="7.4" rx="1.7"/><path d="M10.4 5.6V4A1.6 1.6 0 0 0 8.8 2.4H4A1.6 1.6 0 0 0 2.4 4v4.8A1.6 1.6 0 0 0 4 10.4h1.6"/></svg></span>
+          <span class="typetag">
+            <svg class="px" viewBox="0 0 16 16" style="width:14px;height:14px;color:var(--ink3)"><rect x="2" y="2" width="12" height="2"/><rect x="2" y="12" width="12" height="2"/><rect x="2" y="2" width="2" height="12"/><rect x="12" y="2" width="2" height="12"/></svg>작업</span>
+        </div>
+        <div class="title">소환수 합성 UI</div>
+
+        <div class="props">
+          <div class="pchip"><span class="k">상태</span>
+            <svg class="ic16 s14" viewBox="0 0 16 16" style="width:15px;height:15px;color:var(--peach)"><g fill="currentColor"><circle cx="8" cy="4" r="2.1"/><circle cx="12" cy="6.6" r="2.1"/><circle cx="10.4" cy="11.2" r="2.1"/><circle cx="5.6" cy="11.2" r="2.1"/><circle cx="4" cy="6.6" r="2.1"/></g><circle cx="8" cy="8" r="1.5" fill="#BE6A3F"/></svg>
+            진행중<svg class="ic s14 cv" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></div>
+          <div class="pchip"><span class="k">도메인</span>디자인<svg class="ic s14 cv" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></div>
+          <div class="pchip"><span class="k">담당</span>
+            <span style="width:18px;height:18px;border-radius:50%;background:linear-gradient(150deg,#F6CFDD,#EC9EBA);display:inline-flex;align-items:center;justify-content:center;font:650 9.5px Pretendard;color:#9b3a5e">아</span>
+            아리아<svg class="ic s14 cv" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></div>
+        </div>
+        <div class="hr"></div>
+
+        <div class="desc">합성 결과를 실시간 미리보기로 보여주고, 합성 버튼의 활성/비활성 상태와 실패 연출을 포함한다.
+          <span class="muted">마크다운으로 자유롭게 작성…</span></div>
+
+        <div class="urhd"><span class="t gm">연결된 UR</span><span class="cnt gm">3</span>
+          <span class="add"><svg class="ic s14" viewBox="0 0 16 16"><path d="M8 3.2v9.6M3.2 8h9.6"/></svg>UR 연결</span></div>
+
+        <div class="ur">
+          <svg class="ic16 s14" viewBox="0 0 16 16" style="width:15px;height:15px;color:var(--sakura)"><g fill="currentColor"><circle cx="8" cy="4" r="2.1"/><circle cx="12" cy="6.6" r="2.1"/><circle cx="10.4" cy="11.2" r="2.1"/><circle cx="5.6" cy="11.2" r="2.1"/><circle cx="4" cy="6.6" r="2.1"/></g><circle cx="8" cy="8" r="1.5" fill="#C24E78"/></svg>
+          <span class="ut">2마리를 합쳐 상위 소환수를 얻는다</span>
+          <span class="cov"><span class="fr gm">2/2</span><span class="cells"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+        </div>
+        <div class="ur">
+          <svg class="ic16 s14" viewBox="0 0 16 16" style="width:15px;height:15px;color:var(--peach)"><g fill="currentColor"><circle cx="8" cy="4" r="2.1"/><circle cx="12" cy="6.6" r="2.1"/><circle cx="10.4" cy="11.2" r="2.1"/><circle cx="5.6" cy="11.2" r="2.1"/><circle cx="4" cy="6.6" r="2.1"/></g><circle cx="8" cy="8" r="1.5" fill="#BE6A3F"/></svg>
+          <span class="ut">합성 실패 시 재료를 보존한다</span>
+          <span class="cov"><span class="fr gm">1/3</span><span class="cells"><i class="on"></i><i></i><i></i></span></span>
+        </div>
+        <div class="ur miss">
+          <svg class="ic s14" viewBox="0 0 16 16" style="color:var(--ember)"><path d="M8 2.4 14.4 13.2H1.6z"/><path d="M8 6.6v3.2M8 11.6h.01"/></svg>
+          <span class="ut">합성 확률을 표시한다</span>
+          <span class="cov"><span class="miss-tag">미커버</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>B안 운영급 / 흰 배경</b> — 캔버스는 A처럼 흰색 계열(눈 편함), <b>핑크는 악센트만</b>(브랜드·선택·완료·EXP 채움).
+    카와이/도트 정체성은 배경이 아니라 ① <b>픽셀 스프라이트 아이콘</b>(벚꽃나무=컨텐츠, 픽셀 블록=기능, 픽셀 카드=마스터데이터, 픽셀 체크박스=작업)
+    ② <b>Galmuri 픽셀 폰트</b>(워드마크·티켓키·숫자·섹션 라벨) ③ <b>레트로 EXP 칸 진행바</b>(하드코너) ④ <b>벚꽃 개화 상태</b>(빈 꽃=할일 / 복숭아 꽃=진행중 / 만개=완료)로 살림.
+    나머지 폴리시(헤어라인·property 칩·브레드크럼·⌘K·세그먼트 탭·소프트 그림자)는 A-final 과 동일.
+    <br>※ Galmuri 폰트는 인터넷 연결 시 CDN 로드. A-final 과 나란히 열어 비교해줘.
+  </div>
+</div>
+</body>
+</html>

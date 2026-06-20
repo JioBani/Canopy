@@ -1,6 +1,19 @@
 import { expect, type Page, type Locator } from "@playwright/test"
+import { restDelete } from "../helpers/rest"
 
 export const PASSWORD = "password123"
+
+/**
+ * 이 워커(스펙 파일)가 만든 프로젝트 이름들. afterAll 에서 정확히 이 프로젝트들만
+ * 정리한다 → 시드(Tatica Defense)나 다른 스펙 프로젝트를 건드리지 않음(격리).
+ */
+export const createdProjects: string[] = []
+
+export async function cleanupCreatedProjects() {
+  for (const name of createdProjects.splice(0)) {
+    await restDelete(`project?name=eq.${encodeURIComponent(name)}`)
+  }
+}
 
 export function uniqueEmail(prefix = "e2e") {
   return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 1e6)}@example.com`
@@ -20,17 +33,30 @@ export async function signupAndEnter(page: Page) {
   await expect(page.getByTestId("app-shell")).toBeVisible()
 }
 
-/** 프로젝트 생성 → 현재 프로젝트로. 이름 반환. */
+/**
+ * 프로젝트 생성 → 현재 프로젝트로. 이름 반환.
+ * 빈 DB(NoProjects)면 첫 프로젝트 버튼, 이미 프로젝트가 있으면 스위처의 새 프로젝트.
+ * → 시드/다른 프로젝트가 있어도 동작(격리). 생성 이름은 cleanup 추적에 등록.
+ */
 export async function createProject(
   page: Page,
   name: string,
   prefix: string
 ): Promise<string> {
-  await page.getByTestId("create-first-project").click()
+  const firstBtn = page.getByTestId("create-first-project")
+  const switcher = page.getByTestId("project-switcher")
+  await expect(firstBtn.or(switcher)).toBeVisible()
+  if (await firstBtn.count()) {
+    await firstBtn.click()
+  } else {
+    await switcher.click()
+    await page.getByTestId("new-project-button").click()
+  }
   await page.getByTestId("project-name-input").fill(name)
   await page.getByTestId("project-prefix-input").fill(prefix)
   await page.getByTestId("create-project-submit").click()
   await expect(page.getByTestId("current-project-name")).toHaveText(name)
+  createdProjects.push(name)
   return name
 }
 

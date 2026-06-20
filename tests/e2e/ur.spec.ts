@@ -1,9 +1,9 @@
 import { test, expect, type Page } from "@playwright/test"
-import { wipeAllProjects } from "../helpers/rest"
 import {
   addChildSingle,
   addChildTyped,
   addContentRoot,
+  cleanupCreatedProjects,
   createProject,
   rowByTitle,
   signupAndEnter,
@@ -21,9 +21,7 @@ function urRow(page: Page, text: string) {
 }
 
 test.describe.serial("UR 서브시스템", () => {
-  test.beforeEach(async () => {
-    await wipeAllProjects()
-  })
+  test.afterAll(cleanupCreatedProjects)
 
   test("기능 UR: 그룹/UR 추가 → 미커버 → 작업 링크 → 커버리지 → 완료 집계", async ({
     page,

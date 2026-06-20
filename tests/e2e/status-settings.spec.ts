@@ -1,9 +1,9 @@
 import { test, expect, type Page } from "@playwright/test"
-import { wipeAllProjects } from "../helpers/rest"
 import {
   addChildSingle,
   addChildTyped,
   addContentRoot,
+  cleanupCreatedProjects,
   createProject,
   rowByTitle,
   signupAndEnter,
@@ -21,9 +21,7 @@ function cat(page: Page, name: string) {
 }
 
 test.describe.serial("커스텀 상태 설정", () => {
-  test.beforeEach(async () => {
-    await wipeAllProjects()
-  })
+  test.afterAll(cleanupCreatedProjects)
 
   test("상태 추가 → 작업에 지정 → 사용중 삭제는 재지정 요구", async ({ page }) => {
     await signupAndEnter(page)

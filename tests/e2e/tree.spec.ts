@@ -1,66 +1,25 @@
-import { test, expect, type Page, type Locator } from "@playwright/test"
-import { restGet, restPatch, wipeAllProjects } from "../helpers/rest"
+import { test, expect, type Page } from "@playwright/test"
+import { restGet, restPatch } from "../helpers/rest"
+import {
+  addContentRoot,
+  addChildSingle,
+  cleanupCreatedProjects,
+  createProject,
+  rowByTitle,
+  signupAndEnter,
+} from "./_helpers"
 
 /**
  * 노드 트리 CRUD — 단계 1(렌더) + 2(인라인 생성) 검증.
  * 문법상 허용된 자식 타입만 추가 가능, 접기/펼치기.
  */
-const PASSWORD = "password123"
-function uniqueEmail() {
-  return `e2e_tree_${Date.now()}_${Math.floor(Math.random() * 1e6)}@example.com`
-}
-
-function rowByTitle(page: Page, title: string): Locator {
-  return page.getByTestId("tree-node").filter({ hasText: title })
-}
-
 async function setup(page: Page): Promise<string> {
-  // 가입 → 프로젝트 생성 → 트리 빈 상태 진입
-  await page.goto("/")
-  await page.getByTestId("toggle-mode").click()
-  await page.getByTestId("email-input").fill(uniqueEmail())
-  await page.getByTestId("password-input").fill(PASSWORD)
-  await page.getByTestId("submit-button").click()
-  await expect(page.getByTestId("app-shell")).toBeVisible()
-
-  const projectName = `트리테스트 ${Date.now()}`
-  await page.getByTestId("create-first-project").click()
-  await page.getByTestId("project-name-input").fill(projectName)
-  await page.getByTestId("project-prefix-input").fill("TR")
-  await page.getByTestId("create-project-submit").click()
-  await expect(page.getByTestId("current-project-name")).toHaveText(projectName)
-  return projectName
-}
-
-async function addContentRoot(page: Page, title: string) {
-  // 빈 트리면 첫 컨텐츠 버튼, 아니면 하단 root-add 버튼. (로딩 완료까지 대기)
-  const firstBtn = page.getByTestId("add-first-content")
-  const rootBtn = page.getByTestId("root-add")
-  await expect(firstBtn.or(rootBtn)).toBeVisible()
-  if (await firstBtn.count()) await firstBtn.click()
-  else await rootBtn.click()
-  const input = page.getByTestId("inline-add-input")
-  await input.fill(title)
-  await input.press("Enter")
-  await expect(rowByTitle(page, title)).toBeVisible()
-  await input.press("Escape")
-  await expect(input).toHaveCount(0)
-}
-
-async function addChildSingle(page: Page, parentTitle: string, title: string) {
-  await rowByTitle(page, parentTitle).getByTestId("node-add").click()
-  const input = page.getByTestId("inline-add-input")
-  await input.fill(title)
-  await input.press("Enter")
-  await expect(rowByTitle(page, title)).toBeVisible()
-  await input.press("Escape")
-  await expect(input).toHaveCount(0)
+  await signupAndEnter(page)
+  return createProject(page, `트리테스트 ${Date.now()}`, "TR")
 }
 
 test.describe.serial("노드 트리", () => {
-  test.beforeEach(async () => {
-    await wipeAllProjects()
-  })
+  test.afterAll(cleanupCreatedProjects)
 
   test("문법대로 컨텐츠>기능>세부기능>작업을 인라인 생성한다", async ({
     page,

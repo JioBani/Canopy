@@ -11,10 +11,9 @@ const BASE_URL = `http://localhost:${PORT}`
  */
 export default defineConfig({
   testDir: "./tests/e2e",
-  // 공유 로컬 Supabase 를 대상으로 하고 일부 스펙이 전역 데이터를 wipe 하므로
-  // 단일 워커로 직렬 실행해 스펙 간 간섭을 막는다.
+  // 각 스펙이 고유 프로젝트로 격리되어(전역 wipe 없음) 파일 단위 병렬이 안전하다.
+  // describe.serial 이라 파일 내부는 순차, 파일끼리는 병렬.
   fullyParallel: false,
-  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: 0,
   reporter: [["list"]],
