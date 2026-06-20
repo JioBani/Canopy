@@ -46,12 +46,14 @@ export async function createProject(
   prefix: string
 ): Promise<string> {
   const firstBtn = page.getByTestId("create-first-project")
-  const switcher = page.getByTestId("project-switcher")
-  await expect(firstBtn.or(switcher)).toBeVisible()
+  // 안정 상태까지 대기: NoProjects(첫 프로젝트 버튼) 또는 로드된 현재 프로젝트.
+  // (로딩 중 EdgeShell 의 스위처를 누르면 ProjectWorkspace 로 교체되며 드롭다운이 닫혀 경합)
+  const current = page.getByTestId("current-project-name")
+  await expect(firstBtn.or(current)).toBeVisible()
   if (await firstBtn.count()) {
     await firstBtn.click()
   } else {
-    await switcher.click()
+    await page.getByTestId("project-switcher").click()
     await page.getByTestId("new-project-button").click()
   }
   await page.getByTestId("project-name-input").fill(name)

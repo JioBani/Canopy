@@ -27,8 +27,9 @@ test("회원가입 → 인증 셸 진입 → 로그아웃 → 재로그인", asy
   await page.getByTestId("password-input").fill(PASSWORD)
   await page.getByTestId("submit-button").click()
 
-  // 2. 가입 즉시(이메일 확인 off) 인증 셸 진입 + 이메일 표시
+  // 2. 가입 즉시(이메일 확인 off) 인증 셸 진입 + 유저메뉴에 이메일 표시
   await expect(page.getByTestId("app-shell")).toBeVisible()
+  await page.getByTestId("user-menu").click()
   await expect(page.getByTestId("user-email")).toHaveText(email)
 
   // 3. 로그아웃 → 로그인 폼 복귀
@@ -40,6 +41,7 @@ test("회원가입 → 인증 셸 진입 → 로그아웃 → 재로그인", asy
   await page.getByTestId("password-input").fill(PASSWORD)
   await page.getByTestId("submit-button").click()
   await expect(page.getByTestId("app-shell")).toBeVisible()
+  await page.getByTestId("user-menu").click()
   await expect(page.getByTestId("user-email")).toHaveText(email)
 })
 
@@ -53,6 +55,7 @@ test("잘못된 비밀번호로 로그인하면 에러를 보여준다", async (
   await page.getByTestId("password-input").fill(PASSWORD)
   await page.getByTestId("submit-button").click()
   await expect(page.getByTestId("app-shell")).toBeVisible()
+  await page.getByTestId("user-menu").click()
   await page.getByTestId("logout-button").click()
   await expect(page.getByTestId("auth-form")).toBeVisible()
 
