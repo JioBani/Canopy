@@ -94,20 +94,32 @@ export interface NodeProgress {
   progress: number | null
 }
 
-/** node_progress 뷰에서 주어진 노드들의 roll-up 진행률을 조회. */
+/**
+ * node_progress 뷰에서 주어진 노드들의 roll-up 진행률을 조회.
+ * id 목록을 청크로 나눠 요청한다 — 노드가 많으면 in.() 필터가 URL 길이 한도를
+ * 넘어 게이트웨이가 거부(414→브라우저엔 CORS 처럼 보임)하기 때문.
+ */
+const PROGRESS_CHUNK = 60
+
 export async function listNodeProgress(
   nodeIds: string[]
 ): Promise<NodeProgress[]> {
-  if (nodeIds.length === 0) return []
-  const { data, error } = await supabase
-    .from("node_progress")
-    .select("node_id, total_tasks, done_tasks, progress")
-    .in("node_id", nodeIds)
-  if (error) throw new Error(error.message)
-  return (data ?? []).map((r) => ({
-    node_id: r.node_id as string,
-    total_tasks: Number(r.total_tasks),
-    done_tasks: Number(r.done_tasks),
-    progress: r.progress === null ? null : Number(r.progress),
-  }))
+  const out: NodeProgress[] = []
+  for (let i = 0; i < nodeIds.length; i += PROGRESS_CHUNK) {
+    const chunk = nodeIds.slice(i, i + PROGRESS_CHUNK)
+    const { data, error } = await supabase
+      .from("node_progress")
+      .select("node_id, total_tasks, done_tasks, progress")
+      .in("node_id", chunk)
+    if (error) throw new Error(error.message)
+    for (const r of data ?? []) {
+      out.push({
+        node_id: r.node_id as string,
+        total_tasks: Number(r.total_tasks),
+        done_tasks: Number(r.done_tasks),
+        progress: r.progress === null ? null : Number(r.progress),
+      })
+    }
+  }
+  return out
 }

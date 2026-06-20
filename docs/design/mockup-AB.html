@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Canopy — A vs B 디자인 목업</title>
+<!-- 실제 폰트: Pretendard(본문) + Galmuri(픽셀 악센트) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/quiple/galmuri/dist/galmuri.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif;
+    background: #ECEEF1;
+    color: #1b1b1b;
+    padding: 28px;
+    line-height: 1.5;
+  }
+  .page-title { text-align:center; margin-bottom: 6px; font-size: 20px; font-weight: 800; }
+  .page-sub { text-align:center; margin-bottom: 24px; color:#6b7280; font-size: 13px; }
+  .stage { display:flex; gap: 28px; justify-content:center; flex-wrap: wrap; align-items: flex-start; }
+  .col { width: 640px; max-width: 100%; }
+  .col > .tag {
+    display:inline-flex; align-items:center; gap:8px;
+    font-size: 13px; font-weight: 700; margin-bottom: 10px; padding: 4px 10px; border-radius: 999px;
+  }
+  .tag.a { background:#E3F1E9; color:#1E8E5A; }
+  .tag.b { background:#FCE7EE; color:#C25E81; }
+  .tag small { font-weight: 500; opacity:.8; }
+
+  /* ── 공통 앱 셸 ── */
+  .app { border-radius: 14px; overflow:hidden; box-shadow: 0 12px 40px rgba(20,20,40,.10); }
+  .topbar { display:flex; align-items:center; gap:12px; padding: 12px 16px; }
+  .topbar .wm { font-weight: 800; font-size: 16px; display:flex; align-items:center; gap:6px; }
+  .switch { font-size: 12.5px; padding: 4px 10px; border-radius: 8px; display:flex; align-items:center; gap:6px; }
+  .search { flex: 1; font-size: 12.5px; padding: 6px 12px; border-radius: 8px; }
+  .tabs { display:flex; gap:2px; font-size: 12.5px; }
+  .tabs span { padding: 4px 10px; border-radius: 8px; }
+  .ava { width:26px; height:26px; border-radius:50%; }
+  .body { display:flex; min-height: 360px; }
+  .tree { width: 270px; flex-shrink:0; padding: 10px 8px; font-size: 13px; }
+  .detail { flex:1; padding: 18px 18px; }
+
+  .row { display:flex; align-items:center; gap:6px; padding: 4px 6px; border-radius: 8px; position:relative; }
+  .row .tw { width:14px; text-align:center; opacity:.55; font-size: 11px; flex-shrink:0; }
+  .row .ico { width:18px; text-align:center; flex-shrink:0; }
+  .row .ti { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nest { margin-left: 13px; padding-left: 9px; }
+
+  /* progress pill (A) */
+  .pbar { width:64px; height:6px; border-radius: 999px; overflow:hidden; flex-shrink:0; }
+  .pbar > i { display:block; height:100%; border-radius:999px; }
+  .pct { width:34px; text-align:right; font-size: 11px; font-variant-numeric: tabular-nums; flex-shrink:0; }
+  /* pixel blocks (B) */
+  .blocks { display:flex; gap:2px; flex-shrink:0; }
+  .blocks i { width:9px; height:9px; display:block; }
+  .badge { font-size: 10.5px; padding: 2px 8px; border-radius: 999px; display:inline-flex; align-items:center; gap:5px; flex-shrink:0; }
+  .badge .dot { width:7px; height:7px; border-radius:50%; }
+
+  /* detail */
+  .code { font-size: 12px; padding: 2px 7px; border-radius: 6px; }
+  .dtitle { font-size: 19px; font-weight: 800; margin: 10px 0 14px; }
+  .fields { display:flex; gap:10px; margin-bottom: 16px; flex-wrap:wrap; }
+  .field { font-size: 11px; }
+  .field label { display:block; opacity:.6; margin-bottom: 4px; }
+  .pill { font-size: 12px; padding: 5px 10px; border-radius: 8px; display:inline-flex; align-items:center; gap:6px; }
+  .sec { font-size: 11px; font-weight:700; letter-spacing:.04em; opacity:.55; margin: 16px 0 8px; }
+  .ur { display:flex; align-items:center; gap:8px; padding: 7px 0; font-size: 13px; border-top:1px solid; }
+  .ur .cov { margin-left:auto; font-size: 11px; font-variant-numeric: tabular-nums; display:flex; align-items:center; gap:6px; }
+
+  /* ════════ A — Canopy Light ════════ */
+  .concept-a .app { background:#FBFCFA; border:1px solid #E6EAE7; }
+  .concept-a .topbar { border-bottom:1px solid #EAEFEB; }
+  .concept-a .wm { color:#1B2420; }
+  .concept-a .wm .leaf { color:#1E8E5A; }
+  .concept-a .switch { background:#F1F5F2; color:#3a4a42; }
+  .concept-a .search { background:#F4F7F5; color:#8A938D; border:1px solid #E6EAE7; }
+  .concept-a .tabs span { color:#8A938D; }
+  .concept-a .tabs span.on { background:#E3F1E9; color:#1E8E5A; font-weight:700; }
+  .concept-a .ava { background:#CFE3D8; }
+  .concept-a .tree { border-right:1px solid #EAEFEB; }
+  .concept-a .row.sel { background:#E9F4EE; }
+  .concept-a .row:hover { background:#F1F5F2; }
+  .concept-a .ti { color:#1B2420; }
+  .concept-a .nest { border-left: 2px solid; }
+  .concept-a .pbar { background:#E8ECE9; }
+  .concept-a .pct { color:#8A938D; }
+  .concept-a .code { background:#EEF2EF; color:#3a4a42; font-family: "Galmuri11","Pretendard",monospace; }
+  .concept-a .dtitle { color:#1B2420; }
+  .concept-a .dtype { color:#7C5CCB; font-weight:700; font-size:12px; }
+  .concept-a .field .pill { background:#F4F7F5; border:1px solid #E6EAE7; color:#1B2420; }
+  .concept-a .sec { color:#8A938D; }
+  .concept-a .ur { border-color:#EAEFEB; color:#1B2420; }
+  .concept-a .ur .cov { color:#8A938D; }
+
+  /* ════════ B — Pixel Blossom ════════ */
+  .concept-b .app { background:#FFF5F7; border:1px solid #F6DCE4; }
+  .concept-b .topbar { border-bottom:1px solid #F8E1E8; background:#FFFBFC; }
+  .concept-b .wm { color:#5A4A52; font-family:"Galmuri11"; font-size: 15px; image-rendering: pixelated; }
+  .concept-b .wm .leaf { color:#EC9BB6; }
+  .concept-b .switch { background:#FCE7EE; color:#C25E81; }
+  .concept-b .search { background:#FFFBFC; color:#B79CA6; border:1px solid #F6DCE4; }
+  .concept-b .tabs span { color:#B79CA6; }
+  .concept-b .tabs span.on { background:#FCE7EE; color:#C25E81; font-weight:700; }
+  .concept-b .ava { background:#F6C9D8; }
+  .concept-b .tree { border-right:1px solid #F8E1E8; }
+  .concept-b .row.sel { background:#FCE7EE; }
+  .concept-b .row:hover { background:#FDEFF3; }
+  .concept-b .ti { color:#5A4A52; }
+  .concept-b .nest { border-left: 2px solid; }
+  .concept-b .ico { font-size: 13px; }
+  .concept-b .pct, .concept-b .code, .concept-b .dnum, .concept-b .ticketrow .code {
+    font-family:"Galmuri11"; image-rendering: pixelated;
+  }
+  .concept-b .pct { color:#C25E81; font-size:10px; }
+  .concept-b .code { background:#FCE7EE; color:#C25E81; font-size: 11px; }
+  .concept-b .dtitle { color:#5A4A52; }
+  .concept-b .dtype { color:#C25E81; font-weight:700; font-size:12px; }
+  .concept-b .field .pill { background:#FFFBFC; border:1px solid #F6DCE4; color:#5A4A52; }
+  .concept-b .sec { color:#B79CA6; }
+  .concept-b .ur { border-color:#F8E1E8; color:#5A4A52; }
+  .concept-b .ur .cov { color:#C25E81; }
+  .note { max-width: 1308px; margin: 22px auto 0; font-size: 12.5px; color:#6b7280; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:14px 16px; line-height:1.7;}
+  .note b{color:#374151}
+</style>
+</head>
+<body>
+  <div class="page-title">Canopy — 디자인 방향 비교</div>
+  <div class="page-sub">동일한 트리+상세 레이아웃에 토큰만 교체. 왼쪽 A(차분 그린·토스톤) · 오른쪽 B(딸기우유 픽셀 카와이)</div>
+
+  <div class="stage">
+
+    <!-- ═══════════ A ═══════════ -->
+    <div class="col concept-a">
+      <div class="tag a">A — Canopy Light <small>빛이 닿는 나무 · Pretendard</small></div>
+      <div class="app">
+        <div class="topbar">
+          <div class="wm"><span class="leaf">▲</span> Canopy</div>
+          <div class="switch">TD · 타티카 디펜스 ▾</div>
+          <div class="search">🔍 검색…</div>
+          <div class="tabs"><span class="on">트리</span><span>보드</span><span>대시보드</span></div>
+          <div class="ava"></div>
+        </div>
+        <div class="body">
+          <div class="tree">
+            <div class="row"><span class="tw">▾</span><span class="ico" style="color:#1E8E5A">◆</span><span class="ti">전장</span>
+              <span class="pbar"><i style="width:75%;background:#1E8E5A"></i></span><span class="pct">75%</span></div>
+            <div class="nest" style="border-color:#7FC4A3">
+              <div class="row"><span class="tw">▾</span><span class="ico" style="color:#2E7D5B">⚙</span><span class="ti">소환수</span>
+                <span class="pbar"><i style="width:60%;background:#3DA574"></i></span><span class="pct">60%</span></div>
+              <div class="nest" style="border-color:#A9D8BF">
+                <div class="row sel"><span class="tw">▾</span><span class="ico" style="color:#7C5CCB">🔧</span><span class="ti">소환수 합성</span>
+                  <span class="pbar"><i style="width:70%;background:#1E8E5A"></i></span><span class="pct">70%</span></div>
+                <div class="nest" style="border-color:#E2E6E3">
+                  <div class="row"><span class="tw"></span><span class="ico" style="color:#8A938D">·</span><span class="ti">합성 로직</span>
+                    <span class="badge" style="border:1px solid #E0A12E;color:#9a6f12"><span class="dot" style="background:#E0A12E"></span>진행중</span></div>
+                  <div class="row"><span class="tw"></span><span class="ico" style="color:#8A938D">·</span><span class="ti">합성 UI</span>
+                    <span class="badge" style="border:1px solid #C7CDC9;color:#8A938D"><span class="dot" style="background:#8A938D"></span>할일</span></div>
+                </div>
+                <div class="row"><span class="tw">▸</span><span class="ico" style="color:#7C5CCB">🔧</span><span class="ti">소환수 소환</span>
+                  <span class="pbar"><i style="width:25%;background:#C7CDC9"></i></span><span class="pct">25%</span></div>
+              </div>
+              <div class="row"><span class="tw">▾</span><span class="ico" style="color:#2E7D5B">🎴</span><span class="ti">MD 제작</span>
+                <span class="pbar"><i style="width:100%;background:#1E8E5A"></i></span><span class="pct">100%</span></div>
+              <div class="nest" style="border-color:#1E8E5A">
+                <div class="row"><span class="tw"></span><span class="ico" style="color:#8A938D">·</span><span class="ti">아리아</span>
+                  <span class="badge" style="border:1px solid #1E8E5A;color:#1E8E5A"><span class="dot" style="background:#1E8E5A"></span>완료</span></div>
+              </div>
+            </div>
+            <div class="row"><span class="tw">▸</span><span class="ico" style="color:#1E8E5A">◆</span><span class="ti">정비</span>
+              <span class="pbar"><i style="width:40%;background:#3DA574"></i></span><span class="pct">40%</span></div>
+          </div>
+
+          <div class="detail">
+            <div class="ticketrow" style="display:flex;align-items:center;gap:8px">
+              <span class="code">TD-43</span>
+              <span class="dtype" style="margin-left:auto">작업</span>
+            </div>
+            <div class="dtitle">소환수 합성 UI</div>
+            <div class="fields">
+              <div class="field"><label>상태</label><span class="pill"><span style="width:7px;height:7px;border-radius:50%;background:#E0A12E"></span>진행중 ▾</span></div>
+              <div class="field"><label>도메인</label><span class="pill">디자인 ▾</span></div>
+              <div class="field"><label>담당</label><span class="pill">◷ 아리아 ▾</span></div>
+            </div>
+            <div class="sec">연결된 UR</div>
+            <div class="ur">✓ 2마리 합성 → 상위 소환수
+              <span class="cov">2/2 <span class="pbar" style="width:48px;background:#E8ECE9"><i style="width:100%;background:#1E8E5A"></i></span></span></div>
+            <div class="ur">◑ 합성 실패 시 재료 보존
+              <span class="cov">1/3 <span class="pbar" style="width:48px;background:#E8ECE9"><i style="width:33%;background:#E0A12E"></i></span></span></div>
+            <div class="ur" style="color:#E2533B">⚠ 합성 확률을 표시한다
+              <span class="cov" style="color:#E2533B">미커버</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ B ═══════════ -->
+    <div class="col concept-b">
+      <div class="tag b">B — Pixel Blossom <small>픽셀 벚꽃나무 · Galmuri 악센트</small></div>
+      <div class="app">
+        <div class="topbar">
+          <div class="wm"><span class="leaf">❀</span>Canopy</div>
+          <div class="switch">TD · 타티카 디펜스 ▾</div>
+          <div class="search">🔍 검색…</div>
+          <div class="tabs"><span class="on">트리</span><span>보드</span><span>대시보드</span></div>
+          <div class="ava"></div>
+        </div>
+        <div class="body">
+          <div class="tree">
+            <div class="row"><span class="tw">▾</span><span class="ico">🌳</span><span class="ti">전장</span>
+              <span class="blocks"><i style="background:#EC9BB6"></i><i style="background:#EC9BB6"></i><i style="background:#EC9BB6"></i><i style="background:#EAD7DE"></i></span><span class="pct">75</span></div>
+            <div class="nest" style="border-color:#F3C2D3">
+              <div class="row"><span class="tw">▾</span><span class="ico">⚙️</span><span class="ti">소환수</span>
+                <span class="blocks"><i style="background:#EC9BB6"></i><i style="background:#EC9BB6"></i><i style="background:#EAD7DE"></i><i style="background:#EAD7DE"></i></span><span class="pct">60</span></div>
+              <div class="nest" style="border-color:#F6D7E0">
+                <div class="row sel"><span class="tw">▾</span><span class="ico">🔧</span><span class="ti">소환수 합성</span>
+                  <span class="blocks"><i style="background:#EC9BB6"></i><i style="background:#EC9BB6"></i><i style="background:#EC9BB6"></i><i style="background:#EAD7DE"></i></span><span class="pct">70</span></div>
+                <div class="nest" style="border-color:#EFE2E7">
+                  <div class="row"><span class="tw"></span><span class="ico">✿</span><span class="ti">합성 로직</span>
+                    <span class="badge" style="border:1px solid #F0A98C;color:#C77a52;background:#FFF2EC"><span class="dot" style="background:#F6B99E"></span>진행중</span></div>
+                  <div class="row"><span class="tw"></span><span class="ico" style="color:#CFC4CC">❀</span><span class="ti">합성 UI</span>
+                    <span class="badge" style="border:1px solid #D7CCD3;color:#9b8e97;background:#fff"><span class="dot" style="background:#CFC4CC"></span>할일</span></div>
+                </div>
+                <div class="row"><span class="tw">▸</span><span class="ico">🔧</span><span class="ti">소환수 소환</span>
+                  <span class="blocks"><i style="background:#EC9BB6"></i><i style="background:#EAD7DE"></i><i style="background:#EAD7DE"></i><i style="background:#EAD7DE"></i></span><span class="pct">25</span></div>
+              </div>
+              <div class="row"><span class="tw">▾</span><span class="ico">🎴</span><span class="ti">MD 제작</span>
+                <span class="blocks"><i style="background:#EC9BB6"></i><i style="background:#EC9BB6"></i><i style="background:#EC9BB6"></i><i style="background:#EC9BB6"></i></span><span class="pct">100</span></div>
+              <div class="nest" style="border-color:#EC9BB6">
+                <div class="row"><span class="tw"></span><span class="ico">✿</span><span class="ti">아리아</span>
+                  <span class="badge" style="border:1px solid #EC9BB6;color:#C25E81;background:#FCEAF0"><span class="dot" style="background:#EC9BB6"></span>완료</span></div>
+              </div>
+            </div>
+            <div class="row"><span class="tw">▸</span><span class="ico">🌳</span><span class="ti">정비</span>
+              <span class="blocks"><i style="background:#EC9BB6"></i><i style="background:#EC9BB6"></i><i style="background:#EAD7DE"></i><i style="background:#EAD7DE"></i></span><span class="pct">40</span></div>
+          </div>
+
+          <div class="detail">
+            <div class="ticketrow" style="display:flex;align-items:center;gap:8px">
+              <span class="code">TD-43</span>
+              <span class="dtype" style="margin-left:auto">작업</span>
+            </div>
+            <div class="dtitle">소환수 합성 UI</div>
+            <div class="fields">
+              <div class="field"><label>상태</label><span class="pill"><span style="width:7px;height:7px;border-radius:50%;background:#F6B99E"></span>진행중 ▾</span></div>
+              <div class="field"><label>도메인</label><span class="pill">디자인 ▾</span></div>
+              <div class="field"><label>담당</label><span class="pill">◷ 아리아 ▾</span></div>
+            </div>
+            <div class="sec">연결된 UR</div>
+            <div class="ur">✿ 2마리 합성 → 상위 소환수
+              <span class="cov dnum">2/2 <span class="blocks"><i style="background:#EC9BB6"></i><i style="background:#EC9BB6"></i><i style="background:#EC9BB6"></i><i style="background:#EC9BB6"></i></span></span></div>
+            <div class="ur">◐ 합성 실패 시 재료 보존
+              <span class="cov dnum">1/3 <span class="blocks"><i style="background:#EC9BB6"></i><i style="background:#EAD7DE"></i><i style="background:#EAD7DE"></i></span></span></div>
+            <div class="ur" style="color:#E86A6A">❀ 합성 확률을 표시한다
+              <span class="cov" style="color:#E86A6A">미커버</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="note">
+    <b>읽는 법</b> — 같은 정보·같은 레이아웃이고 <b>색·폰트·진행 표현</b>만 다르다.
+    A는 진행바=매끈한 그린 바, B는 진행바=레트로 EXP 픽셀 칸(▰). 둘 다 상태 램프(할일→진행중→완료)를
+    색으로 강조. <b>판단 포인트</b>: ① 핑크 파스텔이 밀도 높은 트리에서 눈에 잘 익는지(쨍하지 않은지)
+    ② 픽셀 악센트(Galmuri 워드마크·티켓키·EXP칸)가 과하지 않고 귀여운지 ③ 그린(A)이 너무 점잖아
+    심심하진 않은지. ※ 노드 아이콘은 목업이라 이모지로 대체 — 실제 B안은 16px 픽셀 스프라이트.
+  </div>
+</body>
+</html>

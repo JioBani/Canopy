@@ -6,6 +6,7 @@ import { NoProjects } from "@/projects/NoProjects"
 import { NodesProvider } from "@/nodes/NodesProvider"
 import { TreeView } from "@/nodes/TreeView"
 import { NodeDetail } from "@/nodes/NodeDetail"
+import { StatusSettingsButton } from "@/projects/StatusSettingsDialog"
 import { Button } from "@/components/ui/button"
 
 /** 트리(좌) + 상세(우) 분할. 상세 패널은 다음 단계에서 채운다. */
@@ -14,9 +15,13 @@ function ProjectWorkspace({ projectId }: { projectId: string }) {
     <NodesProvider projectId={projectId}>
       <div className="flex min-h-[calc(100svh-57px)]">
         <aside
-          className="w-80 shrink-0 overflow-y-auto border-r"
+          className="flex w-80 shrink-0 flex-col overflow-y-auto border-r"
           data-testid="tree-panel"
         >
+          <div className="flex items-center justify-between border-b px-2 py-1">
+            <span className="text-muted-foreground text-xs font-medium">트리</span>
+            <StatusSettingsButton />
+          </div>
           <TreeView />
         </aside>
         <section className="flex-1 overflow-y-auto">

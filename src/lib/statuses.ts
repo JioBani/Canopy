@@ -31,3 +31,54 @@ export async function listStatuses(projectId: string): Promise<Status[]> {
   if (error) throw new Error(error.message)
   return (data ?? []) as Status[]
 }
+
+export async function insertStatus(input: {
+  project_id: string
+  name: string
+  category: StatusCategory
+  color: string | null
+  sort_order: number
+}): Promise<Status> {
+  const { data, error } = await supabase
+    .from("status")
+    .insert({ ...input, name: input.name.trim() })
+    .select("*")
+    .single()
+  if (error) throw new Error(error.message)
+  return data as Status
+}
+
+export async function updateStatus(
+  id: string,
+  patch: Partial<Pick<Status, "name" | "color" | "sort_order">>
+): Promise<void> {
+  const { error } = await supabase.from("status").update(patch).eq("id", id)
+  if (error) throw new Error(error.message)
+}
+
+export async function deleteStatus(id: string): Promise<void> {
+  const { error } = await supabase.from("status").delete().eq("id", id)
+  if (error) throw new Error(error.message)
+}
+
+/** 이 상태를 쓰는 노드 수 (삭제 가드용). */
+export async function countNodesUsingStatus(statusId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from("node")
+    .select("id", { count: "exact", head: true })
+    .eq("status_id", statusId)
+  if (error) throw new Error(error.message)
+  return count ?? 0
+}
+
+/** fromId 상태를 쓰는 노드들을 toId(또는 미지정=null)로 옮긴다. */
+export async function reassignStatusNodes(
+  fromId: string,
+  toId: string | null
+): Promise<void> {
+  const { error } = await supabase
+    .from("node")
+    .update({ status_id: toId })
+    .eq("status_id", fromId)
+  if (error) throw new Error(error.message)
+}

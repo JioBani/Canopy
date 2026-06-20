@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Canopy — A안 운영급 목업</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+  :root{
+    --page:#EFF1F0; --app:#FFFFFF; --side:#FAFBFA;
+    --ink:#18211D; --ink2:#5C655F; --ink3:#9AA39D;
+    --line:rgba(24,33,29,.07); --line2:rgba(24,33,29,.11);
+    --green:#1E8E5A; --green-d:#16734A; --green-bg:#EAF4EE; --green-bg2:#E0EFE7;
+    --amber:#B47E14; --amber-bg:#FAF1DC;
+    --ember:#C2543B;
+    --hover:rgba(24,33,29,.045);
+    --r:9px;
+    --shadow:0 1px 2px rgba(18,28,22,.05), 0 10px 26px -10px rgba(18,28,22,.14), 0 30px 60px -24px rgba(18,28,22,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif;
+    background:
+      radial-gradient(1200px 500px at 80% -10%, #F4F7F5 0%, transparent 60%),
+      var(--page);
+    color:var(--ink); padding:40px 24px; min-height:100vh;
+    font-feature-settings:"tnum" 1,"cv01" 1; letter-spacing:-0.003em;
+    -webkit-font-smoothing:antialiased;
+  }
+  .frame{max-width:1080px;margin:0 auto}
+  .hd{font-size:13px;color:var(--ink3);text-align:center;margin-bottom:18px;letter-spacing:0}
+  .hd b{color:var(--ink2);font-weight:600}
+
+  /* icons */
+  .ic{width:16px;height:16px;flex:none;display:inline-block;vertical-align:middle;
+      fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+  .ic.s14{width:14px;height:14px}
+
+  /* ── App shell ── */
+  .app{background:var(--app);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+  .top{display:flex;align-items:center;gap:12px;height:52px;padding:0 14px 0 16px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:750;font-size:15px;letter-spacing:-.02em}
+  .brand .mk{color:var(--green)}
+  .sep{width:1px;height:20px;background:var(--line2);margin:0 2px}
+  .proj{display:flex;align-items:center;gap:8px;height:32px;padding:0 9px 0 7px;border-radius:8px;cursor:pointer;transition:background .12s}
+  .proj:hover{background:var(--hover)}
+  .proj .key{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:var(--green-bg);color:var(--green-d);font:600 10.5px ui-monospace,"SF Mono",monospace;letter-spacing:.02em}
+  .proj .nm{font-size:13.5px;font-weight:600}
+  .proj .ic{color:var(--ink3)}
+  .grow{flex:1}
+  .search{display:flex;align-items:center;gap:8px;width:260px;height:34px;padding:0 10px;border-radius:9px;background:#F3F5F4;color:var(--ink3);font-size:13px;cursor:text;transition:box-shadow .12s,background .12s}
+  .search:hover{background:#EFF2F0}
+  .search .kbd{margin-left:auto;display:flex;gap:3px}
+  .search .kbd span{font:500 10.5px ui-monospace,monospace;color:var(--ink3);background:#fff;border:1px solid var(--line2);border-radius:5px;padding:1px 5px;line-height:1.4}
+  .tabs{display:flex;gap:2px;background:#F0F2F1;border-radius:9px;padding:3px}
+  .tabs button{border:0;background:none;font:600 12.5px Pretendard;color:var(--ink3);padding:5px 12px;border-radius:7px;cursor:pointer;transition:.12s}
+  .tabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(18,28,22,.10),0 0 0 1px var(--line)}
+  .iconbtn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;color:var(--ink2);cursor:pointer;transition:background .12s}
+  .iconbtn:hover{background:var(--hover)}
+  .newbtn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px 0 10px;border-radius:8px;background:var(--green);color:#fff;font:600 12.5px Pretendard;cursor:pointer;box-shadow:0 1px 1px rgba(16,80,50,.25),inset 0 1px 0 rgba(255,255,255,.18);transition:.12s}
+  .newbtn:hover{background:var(--green-d)}
+  .ava{width:28px;height:28px;border-radius:50%;background:linear-gradient(150deg,#BFE3CF,#7FC4A3);color:#0f5b39;display:flex;align-items:center;justify-content:center;font:650 12px Pretendard;box-shadow:0 0 0 1px var(--line2),0 1px 2px rgba(18,28,22,.12)}
+
+  .body{display:flex;min-height:440px}
+  /* ── Tree sidebar ── */
+  .side{width:286px;flex:none;background:var(--side);border-right:1px solid var(--line);padding:10px 8px;display:flex;flex-direction:column}
+  .side .sech{display:flex;align-items:center;gap:6px;padding:6px 8px 7px;font:650 11px Pretendard;letter-spacing:.04em;color:var(--ink3);text-transform:uppercase}
+  .side .sech .grow{flex:1}
+  .branch{position:relative;margin-left:15px;padding-left:11px}
+  .branch::before{content:"";position:absolute;left:0;top:2px;bottom:6px;width:1.5px;background:var(--line2);border-radius:2px}
+  .branch.lit::before{background:linear-gradient(var(--green),rgba(30,142,90,.25))} /* 빛이 닿는 가지 */
+  .row{position:relative;display:flex;align-items:center;gap:7px;height:30px;padding:0 8px 0 6px;border-radius:7px;cursor:pointer;transition:background .1s}
+  .row:hover{background:var(--hover)}
+  .row.sel{background:var(--green-bg)}
+  .row.sel::before{content:"";position:absolute;left:-11px;top:5px;bottom:5px;width:2px;background:var(--green);border-radius:2px}
+  .tog{width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:var(--ink3);flex:none}
+  .tog.empty{opacity:0}
+  .tname{flex:1;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:450}
+  .row.sel .tname{font-weight:600}
+  .tico{color:var(--ink2)}
+  .tico.c{color:#2E7D5B}
+  /* progress */
+  .prog{display:flex;align-items:center;gap:7px;flex:none}
+  .prog .bar{width:54px;height:5px;border-radius:99px;background:rgba(24,33,29,.08);overflow:hidden}
+  .prog .bar>i{display:block;height:100%;border-radius:99px;background:var(--green)}
+  .prog .bar>i.part{background:#9FCFB6}
+  .prog .pc{width:30px;text-align:right;font:540 11px Pretendard;color:var(--ink3);font-feature-settings:"tnum"}
+  /* status glyph */
+  .st{display:flex;align-items:center;gap:6px;flex:none;font-size:11.5px;font-weight:550}
+  .st.todo{color:var(--ink3)} .st.prog{color:var(--amber)} .st.done{color:var(--green-d)}
+
+  /* ── Detail ── */
+  .detail{flex:1;padding:24px 28px;overflow:hidden}
+  .crumb{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink3);margin-bottom:14px}
+  .crumb b{color:var(--ink2);font-weight:550}
+  .crumb .d{opacity:.5}
+  .tkrow{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .tk{font:560 12px ui-monospace,"SF Mono",monospace;color:var(--ink3);letter-spacing:.02em}
+  .tkcopy{color:var(--ink3);width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .tkcopy:hover{background:var(--hover);color:var(--ink2)}
+  .typetag{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink2)}
+  .typetag .dot{width:7px;height:7px;border-radius:2px;background:#2E7D5B}
+  .title{font-size:21px;font-weight:730;letter-spacing:-.016em;color:var(--ink);line-height:1.25;margin-bottom:18px}
+  .props{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:22px}
+  .pchip{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 10px 0 9px;border-radius:8px;background:#F3F5F4;font:550 12.5px Pretendard;color:var(--ink);cursor:pointer;transition:background .12s}
+  .pchip:hover{background:#EAEEEB}
+  .pchip .k{color:var(--ink3);font-weight:500}
+  .pchip .cv{color:var(--ink3)}
+  .hr{height:1px;background:var(--line);margin:4px 0 18px}
+  .desc{font-size:13.5px;color:var(--ink2);line-height:1.7;margin-bottom:8px;max-width:52ch}
+  .desc .muted{color:var(--ink3)}
+
+  .urhd{display:flex;align-items:center;gap:8px;margin:22px 0 6px}
+  .urhd .t{font:650 11px Pretendard;letter-spacing:.04em;color:var(--ink3);text-transform:uppercase}
+  .urhd .cnt{font:600 11px ui-monospace,monospace;color:var(--ink3);background:#F0F2F1;border-radius:99px;padding:1px 7px}
+  .urhd .add{margin-left:auto;color:var(--ink3);display:flex;align-items:center;gap:4px;font-size:12px;font-weight:550;cursor:pointer;padding:3px 7px;border-radius:6px}
+  .urhd .add:hover{background:var(--hover);color:var(--ink2)}
+  .ur{display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:7px}
+  .ur:hover{background:var(--hover)}
+  .ur+.ur{box-shadow:0 -1px 0 var(--line)}
+  .ur .ut{flex:1;font-size:13.5px;color:var(--ink);font-weight:450}
+  .ur .cov{display:flex;align-items:center;gap:8px;flex:none}
+  .ur .cov .fr{font:540 11.5px ui-monospace,monospace;color:var(--ink3)}
+  .ur .cov .bar{width:46px;height:5px;border-radius:99px;background:rgba(24,33,29,.08);overflow:hidden}
+  .ur .cov .bar>i{display:block;height:100%;background:var(--green)}
+  .ur.miss .ut{color:var(--ember)}
+  .ur.miss .warn{color:var(--ember)}
+  .ur .miss-tag{font-size:11.5px;font-weight:600;color:var(--ember);background:rgba(194,84,59,.10);border-radius:6px;padding:2px 8px}
+  .foot{max-width:1080px;margin:20px auto 0;font-size:12.5px;color:#5C655F;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;line-height:1.75}
+  .foot b{color:var(--ink)} .foot code{font:500 11.5px ui-monospace,monospace;background:#F0F2F1;padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="hd">A안 — <b>Canopy Light</b> · 운영급 실행 (커스텀 SVG 아이콘 · Linear식 상태 글리프 / property 칩 · 헤어라인 · property 패턴)</div>
+
+  <div class="app">
+    <!-- top bar -->
+    <div class="top">
+      <div class="brand"><svg class="ic mk" viewBox="0 0 16 16"><path d="M8 2.2 13 8H10l3 4.2H3L6 8H3z"/><path d="M8 12.2v1.6"/></svg>Canopy</div>
+      <div class="sep"></div>
+      <div class="proj"><span class="key">TD</span><span class="nm">타티카 디펜스</span><svg class="ic s14" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></div>
+      <div class="grow"></div>
+      <div class="search"><svg class="ic s14" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.3"/><path d="M11 11l3.2 3.2"/></svg>검색<span class="kbd"><span>⌘</span><span>K</span></span></div>
+      <div class="tabs"><button class="on">트리</button><button>보드</button><button>대시보드</button></div>
+      <div class="newbtn"><svg class="ic s14" viewBox="0 0 16 16"><path d="M8 3.2v9.6M3.2 8h9.6"/></svg>이슈</div>
+      <div class="ava">유</div>
+    </div>
+
+    <div class="body">
+      <!-- tree -->
+      <div class="side">
+        <div class="sech">계층 트리<span class="grow"></span>
+          <svg class="ic s14" viewBox="0 0 16 16" style="color:var(--ink3)"><path d="M8 3.2v9.6M3.2 8h9.6"/></svg></div>
+
+        <!-- 전장 -->
+        <div class="row">
+          <span class="tog"><svg class="ic s14" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></span>
+          <svg class="ic tico c" viewBox="0 0 16 16"><path d="M8 1.9l5.4 3.1v6.1L8 14.1 2.6 11.1V5z"/><path d="M2.6 5 8 8.1m0 0 5.4-3.1M8 8.1v6"/></svg>
+          <span class="tname">전장</span>
+          <span class="prog"><span class="bar"><i style="width:75%"></i></span><span class="pc">75%</span></span>
+        </div>
+        <div class="branch lit">
+          <!-- 소환수 -->
+          <div class="row">
+            <span class="tog"><svg class="ic s14" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></span>
+            <svg class="ic tico" viewBox="0 0 16 16"><rect x="2.4" y="2.4" width="4.3" height="4.3" rx="1.1"/><rect x="9.3" y="2.4" width="4.3" height="4.3" rx="1.1"/><rect x="2.4" y="9.3" width="4.3" height="4.3" rx="1.1"/><rect x="9.3" y="9.3" width="4.3" height="4.3" rx="1.1"/></svg>
+            <span class="tname">소환수</span>
+            <span class="prog"><span class="bar"><i class="part" style="width:60%"></i></span><span class="pc">60%</span></span>
+          </div>
+          <div class="branch lit">
+            <!-- 소환수 합성 (선택) -->
+            <div class="row sel">
+              <span class="tog"><svg class="ic s14" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></span>
+              <svg class="ic tico" viewBox="0 0 16 16"><circle cx="3.9" cy="4" r="1.5"/><circle cx="3.9" cy="12" r="1.5"/><circle cx="12.1" cy="8" r="1.5"/><path d="M5.3 4.6 10.7 7.4M5.3 11.4 10.7 8.6"/></svg>
+              <span class="tname">소환수 합성</span>
+              <span class="prog"><span class="bar"><i style="width:70%"></i></span><span class="pc">70%</span></span>
+            </div>
+            <div class="branch">
+              <div class="row">
+                <span class="tog empty"></span>
+                <svg class="ic tico" viewBox="0 0 16 16" style="color:var(--ink3)"><rect x="3.8" y="3.8" width="8.4" height="8.4" rx="2.4"/></svg>
+                <span class="tname">합성 로직</span>
+                <span class="st prog"><svg class="ic s14" viewBox="0 0 16 16" style="stroke-width:1.6"><circle cx="8" cy="8" r="5.4"/><path d="M8 8V2.6A5.4 5.4 0 0 1 13.4 8Z" fill="currentColor" stroke="none"/></svg>진행중</span>
+              </div>
+              <div class="row">
+                <span class="tog empty"></span>
+                <svg class="ic tico" viewBox="0 0 16 16" style="color:var(--ink3)"><rect x="3.8" y="3.8" width="8.4" height="8.4" rx="2.4"/></svg>
+                <span class="tname">합성 UI</span>
+                <span class="st todo"><svg class="ic s14" viewBox="0 0 16 16" style="stroke-width:1.6"><circle cx="8" cy="8" r="5.4" stroke-dasharray="2.2 2.2"/></svg>할일</span>
+              </div>
+            </div>
+            <!-- 소환수 소환 (접힘) -->
+            <div class="row">
+              <span class="tog"><svg class="ic s14" viewBox="0 0 16 16"><path d="M6.5 4 10.5 8 6.5 12"/></svg></span>
+              <svg class="ic tico" viewBox="0 0 16 16"><circle cx="3.9" cy="4" r="1.5"/><circle cx="3.9" cy="12" r="1.5"/><circle cx="12.1" cy="8" r="1.5"/><path d="M5.3 4.6 10.7 7.4M5.3 11.4 10.7 8.6"/></svg>
+              <span class="tname">소환수 소환</span>
+              <span class="prog"><span class="bar"><i class="part" style="width:25%"></i></span><span class="pc">25%</span></span>
+            </div>
+          </div>
+          <!-- MD 제작 -->
+          <div class="row">
+            <span class="tog"><svg class="ic s14" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></span>
+            <svg class="ic tico" viewBox="0 0 16 16"><ellipse cx="8" cy="4.2" rx="4.6" ry="1.9"/><path d="M3.4 4.2v7.6c0 1.05 2.06 1.9 4.6 1.9s4.6-.85 4.6-1.9V4.2"/><path d="M3.4 8c0 1.05 2.06 1.9 4.6 1.9s4.6-.85 4.6-1.9"/></svg>
+            <span class="tname">소환수 MD 제작</span>
+            <span class="prog"><span class="bar"><i style="width:100%"></i></span><span class="pc">100%</span></span>
+          </div>
+          <div class="branch lit">
+            <div class="row">
+              <span class="tog empty"></span>
+              <svg class="ic tico" viewBox="0 0 16 16" style="color:var(--ink3)"><rect x="3.8" y="3.8" width="8.4" height="8.4" rx="2.4"/></svg>
+              <span class="tname">아리아</span>
+              <span class="st done"><svg class="ic s14" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="currentColor" stroke="none"/><path d="M5.3 8.2l1.9 1.9 3.6-4" stroke="#fff" stroke-width="1.6"/></svg>완료</span>
+            </div>
+          </div>
+        </div>
+        <!-- 정비 -->
+        <div class="row">
+          <span class="tog"><svg class="ic s14" viewBox="0 0 16 16"><path d="M6.5 4 10.5 8 6.5 12"/></svg></span>
+          <svg class="ic tico c" viewBox="0 0 16 16"><path d="M8 1.9l5.4 3.1v6.1L8 14.1 2.6 11.1V5z"/><path d="M2.6 5 8 8.1m0 0 5.4-3.1M8 8.1v6"/></svg>
+          <span class="tname">정비</span>
+          <span class="prog"><span class="bar"><i class="part" style="width:40%"></i></span><span class="pc">40%</span></span>
+        </div>
+      </div>
+
+      <!-- detail -->
+      <div class="detail">
+        <div class="crumb"><b>전장</b><span class="d">/</span><b>소환수</b><span class="d">/</span>소환수 합성</div>
+        <div class="tkrow">
+          <span class="tk">TD-43</span>
+          <span class="tkcopy"><svg class="ic s14" viewBox="0 0 16 16"><rect x="5.6" y="5.6" width="7.4" height="7.4" rx="1.7"/><path d="M10.4 5.6V4A1.6 1.6 0 0 0 8.8 2.4H4A1.6 1.6 0 0 0 2.4 4v4.8A1.6 1.6 0 0 0 4 10.4h1.6"/></svg></span>
+          <span class="typetag"><span class="dot"></span>작업</span>
+        </div>
+        <div class="title">소환수 합성 UI</div>
+
+        <div class="props">
+          <div class="pchip"><span class="k">상태</span>
+            <svg class="ic s14" viewBox="0 0 16 16" style="stroke-width:1.6;color:var(--amber)"><circle cx="8" cy="8" r="5.4"/><path d="M8 8V2.6A5.4 5.4 0 0 1 13.4 8Z" fill="currentColor" stroke="none"/></svg>
+            진행중<svg class="ic s14 cv" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></div>
+          <div class="pchip"><span class="k">도메인</span>디자인<svg class="ic s14 cv" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></div>
+          <div class="pchip"><span class="k">담당</span>
+            <span style="width:18px;height:18px;border-radius:50%;background:linear-gradient(150deg,#F0D9B8,#E3B877);display:inline-flex;align-items:center;justify-content:center;font:650 9.5px Pretendard;color:#7a5410">아</span>
+            아리아<svg class="ic s14 cv" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5 12 6.5"/></svg></div>
+        </div>
+        <div class="hr"></div>
+
+        <div class="desc">합성 결과를 실시간 미리보기로 보여주고, 합성 버튼의 활성/비활성 상태와 실패 연출을 포함한다.
+          <span class="muted">마크다운으로 자유롭게 작성…</span></div>
+
+        <div class="urhd"><span class="t">연결된 UR</span><span class="cnt">3</span>
+          <span class="add"><svg class="ic s14" viewBox="0 0 16 16"><path d="M8 3.2v9.6M3.2 8h9.6"/></svg>UR 연결</span></div>
+
+        <div class="ur">
+          <svg class="ic s14" viewBox="0 0 16 16" style="color:var(--green-d)"><circle cx="8" cy="8" r="6" fill="currentColor" stroke="none"/><path d="M5.3 8.2l1.9 1.9 3.6-4" stroke="#fff" stroke-width="1.6"/></svg>
+          <span class="ut">2마리를 합쳐 상위 소환수를 얻는다</span>
+          <span class="cov"><span class="fr">2/2</span><span class="bar"><i style="width:100%"></i></span></span>
+        </div>
+        <div class="ur">
+          <svg class="ic s14" viewBox="0 0 16 16" style="stroke-width:1.6;color:var(--amber)"><circle cx="8" cy="8" r="5.4"/><path d="M8 8V2.6A5.4 5.4 0 0 1 13.4 8Z" fill="currentColor" stroke="none"/></svg>
+          <span class="ut">합성 실패 시 재료를 보존한다</span>
+          <span class="cov"><span class="fr">1/3</span><span class="bar"><i style="width:33%;background:var(--amber)"></i></span></span>
+        </div>
+        <div class="ur miss">
+          <svg class="ic s14 warn" viewBox="0 0 16 16"><path d="M8 2.4 14.4 13.2H1.6z"/><path d="M8 6.6v3.2M8 11.6h.01"/></svg>
+          <span class="ut">합성 확률을 표시한다</span>
+          <span class="cov"><span class="miss-tag">미커버</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>운영급으로 바뀐 지점</b> — ① 이모지 전부 제거, <b>커스텀 인라인 SVG 아이콘</b>(16px 그리드·1.4 stroke)로 통일 →
+    실제 컴포넌트 라이브러리 인상. ② 상태를 테두리 뱃지 대신 <b>Linear식 상태 글리프</b>(빈 점선원=할일 / 반원=진행중 / 체크원=완료)로.
+    ③ 상세의 Label+Select 폼을 <b>property 칩 행</b>으로 — "기본 폼" 느낌 제거. ④ 하드 회색선 대신 <b>저투명 헤어라인 + 다층 소프트 그림자 + 레이어 배경</b>으로 깊이.
+    ⑤ <b>브레드크럼·⌘K·tabular 숫자·세그먼트 탭·마이크로 hover/selected 레일</b>. ⑥ 시그니처 <b>"빛이 닿는 가지"</b>는 선택 경로의 가이드선만 그린으로 물들여 절제 표현.
+    <br>※ 정적 목업이라 인터랙션/드롭다운은 비활성. 실제 적용 시 동일 토큰으로 shadcn 컴포넌트를 커스텀.
+  </div>
+</div>
+</body>
+</html>
