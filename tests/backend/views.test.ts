@@ -195,11 +195,11 @@ describe("ur_coverage 뷰 (UR 커버리지/미커버)", () => {
     expect(data!.is_uncovered).toBe(false)
   })
 
-  it("연결 작업 0개 UR 은 미커버로 표시된다", async () => {
+  it("연결 작업 0개 + status≠완료 UR 은 미커버로 표시된다", async () => {
     const ur = (
       await admin
         .from("ur")
-        .insert({ feature_id: subId, text: "미커버 UR" })
+        .insert({ feature_id: subId, text: "미커버 UR", status: "미구현" })
         .select("id")
         .single()
     ).data!
@@ -212,5 +212,24 @@ describe("ur_coverage 뷰 (UR 커버리지/미커버)", () => {
 
     expect(Number(data!.linked_work_count)).toBe(0)
     expect(data!.is_uncovered).toBe(true)
+  })
+
+  it("status=완료 UR 은 연결 작업 0개여도 미커버가 아니다", async () => {
+    const ur = (
+      await admin
+        .from("ur")
+        .insert({ feature_id: subId, text: "완료 UR(링크 없음)", status: "완료" })
+        .select("id")
+        .single()
+    ).data!
+
+    const { data } = await admin
+      .from("ur_coverage")
+      .select("linked_work_count, is_uncovered")
+      .eq("ur_id", ur.id)
+      .single()
+
+    expect(Number(data!.linked_work_count)).toBe(0)
+    expect(data!.is_uncovered).toBe(false) // 완료는 작업 없어도 커버로 침
   })
 })

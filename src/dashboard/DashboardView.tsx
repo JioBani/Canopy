@@ -3,7 +3,8 @@ import { AlertTriangle } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
 import { useAuth } from "@/auth/AuthProvider"
 import { ticketKey } from "@/nodes/nodeGrammar"
-import { listUrCoverageByFeatures } from "@/lib/ur"
+import { listUrCoverageByFeatures, listUrs, type UrStatus } from "@/lib/ur"
+import { UR_STATE_META, UrStateGlyph } from "@/ur/urStateGlyph"
 import type { AppNode, NodeDomain } from "@/lib/nodes"
 import { CATEGORY_COLOR } from "@/lib/statuses"
 import { StatusBadge } from "@/nodes/NodeBadges"
@@ -16,6 +17,9 @@ const DOMAINS: NodeDomain[] = [
   "밸런싱",
   "기타",
 ]
+
+/** 상태 통계 표시 순서 (완료 → 미구현 → 오구현). */
+const UR_STAT_ORDER: UrStatus[] = ["완료", "미구현", "오구현"]
 
 function Card({
   title,
@@ -72,7 +76,11 @@ export function DashboardView() {
     ? tasks.filter((t) => t.assignee_id === user.id)
     : []
 
-  // 미커버 UR (ur_coverage)
+  // UR 상태 통계 + 미커버 (ur_coverage: is_uncovered = 연결 0 AND status≠완료)
+  const [urStatusCounts, setUrStatusCounts] = useState<Record<
+    UrStatus,
+    number
+  > | null>(null)
   const [uncoveredByFeature, setUncoveredByFeature] = useState<
     Map<string, number>
   >(new Map())
@@ -81,17 +89,26 @@ export function DashboardView() {
   useEffect(() => {
     const ids = subFeatures.map((f) => f.id)
     if (ids.length === 0) {
+      setUrStatusCounts({ 완료: 0, 미구현: 0, 오구현: 0 })
       setUncoveredByFeature(new Map())
       setUncoveredTotal(0)
       return
     }
     let cancelled = false
-    listUrCoverageByFeatures(ids)
-      .then((rows) => {
+    Promise.all([listUrs(ids), listUrCoverageByFeatures(ids)])
+      .then(([urs, cov]) => {
         if (cancelled) return
+        const counts: Record<UrStatus, number> = {
+          완료: 0,
+          미구현: 0,
+          오구현: 0,
+        }
+        for (const u of urs) counts[u.status] += 1
+        setUrStatusCounts(counts)
+
         const m = new Map<string, number>()
         let total = 0
-        for (const r of rows) {
+        for (const r of cov) {
           if (r.is_uncovered) {
             total += 1
             m.set(r.feature_id, (m.get(r.feature_id) ?? 0) + 1)
@@ -101,7 +118,8 @@ export function DashboardView() {
         setUncoveredTotal(total)
       })
       .catch((e) => {
-        console.error("[dashboard] 커버리지 로드 실패:", e)
+        console.error("[dashboard] UR 로드 실패:", e)
+        setUrStatusCounts({ 완료: 0, 미구현: 0, 오구현: 0 })
         setUncoveredTotal(0)
       })
     return () => {
@@ -117,6 +135,10 @@ export function DashboardView() {
   const uncoveredFeatures = [...uncoveredByFeature.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8)
+
+  const urTotal = urStatusCounts
+    ? urStatusCounts.완료 + urStatusCounts.미구현 + urStatusCounts.오구현
+    : 0
 
   function tk(n: AppNode) {
     return ticketKey(n.type, n.ticket_number)
@@ -162,18 +184,58 @@ export function DashboardView() {
         </div>
       </Card>
 
-      {/* 미커버 UR */}
-      <Card title="미커버 요구사항(UR)">
+      {/* 요구사항(UR): 상태 통계(위) → 미커버 패널(아래) */}
+      <Card title="요구사항(UR)">
+        {/* 상태 통계: 완료/미구현/오구현 (프로젝트 전체 UR) */}
+        <div className="flex flex-col gap-2" data-testid="dash-ur-stats">
+          <div className="flex items-center gap-4">
+            {UR_STAT_ORDER.map((s) => (
+              <span
+                key={s}
+                className="flex items-center gap-1.5"
+                data-testid={`dash-ur-stat-${s}`}
+              >
+                <UrStateGlyph status={s} className="size-4" />
+                <span
+                  className="tnum text-base font-bold"
+                  style={{ color: UR_STATE_META[s].color }}
+                >
+                  {urStatusCounts ? urStatusCounts[s] : "…"}
+                </span>
+                <span className="text-muted-foreground text-xs">
+                  {UR_STATE_META[s].label}
+                </span>
+              </span>
+            ))}
+          </div>
+          {urTotal > 0 && (
+            <span className="bg-[var(--c-exp-empty)] flex h-2 w-full overflow-hidden rounded-full">
+              {UR_STAT_ORDER.map((s) => (
+                <span
+                  key={s}
+                  style={{
+                    width: `${((urStatusCounts?.[s] ?? 0) / urTotal) * 100}%`,
+                    background: UR_STATE_META[s].color,
+                  }}
+                />
+              ))}
+            </span>
+          )}
+        </div>
+
+        <div className="border-border border-t" />
+
+        {/* 미커버: 연결 작업 0 AND status≠완료 */}
         <div className="flex items-baseline gap-2">
           <span
-            className="font-display text-3xl font-bold"
+            className="font-display text-2xl font-bold"
             style={{ color: uncoveredTotal ? "var(--c-ember)" : "var(--c-ink)" }}
             data-testid="dash-uncovered-count"
           >
             {uncoveredTotal ?? "…"}
           </span>
           <span className="text-muted-foreground text-sm">
-            개 (연결 작업 0)
+            개 미커버 (연결 작업 0·미완)
           </span>
           {uncoveredTotal !== null && uncoveredTotal > 0 && (
             <AlertTriangle

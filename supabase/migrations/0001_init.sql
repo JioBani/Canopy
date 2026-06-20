@@ -433,7 +433,8 @@ select
   u.ur_group_id,
   count(l.work_id)                                              as linked_work_count,
   count(l.work_id) filter (where st.category = '완료')          as done_work_count,
-  (count(l.work_id) = 0)                                        as is_uncovered
+  -- 미커버 = 연결 작업 0개 AND status≠완료. 완료 UR 은 작업 없어도 커버로 침.
+  (count(l.work_id) = 0 and u.status <> '완료')                 as is_uncovered
 from ur u
 left join ur_work_link l on l.ur_id = u.id
 left join node w        on w.id = l.work_id

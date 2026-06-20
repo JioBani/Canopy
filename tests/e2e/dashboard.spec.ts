@@ -54,7 +54,12 @@ test.describe.serial("대시보드", () => {
       page.getByTestId("dash-domain").filter({ hasText: "구현" })
     ).toBeVisible()
 
-    // 미커버 UR 수 ≥ 1
+    // 요구사항 상태 통계: 미구현 1 / 완료 0 (방금 추가한 UR 기본 미구현)
+    await expect(page.getByTestId("dash-ur-stats")).toBeVisible()
+    await expect(page.getByTestId("dash-ur-stat-미구현")).toContainText("1")
+    await expect(page.getByTestId("dash-ur-stat-완료")).toContainText("0")
+
+    // 미커버 UR 수 = 1 (연결 작업 0 · 미완)
     await expect(page.getByTestId("dash-uncovered-count")).toHaveText("1")
     await expect(
       page.getByTestId("dash-uncovered-feature").filter({ hasText: "합성세부" })
@@ -79,5 +84,34 @@ test.describe.serial("대시보드", () => {
       .filter({ hasText: "합성세부" })
       .click()
     await expect(page.getByTestId("detail-title")).toHaveValue("합성세부")
+  })
+
+  test("완료 UR 은 작업 0개여도 미커버에서 빠진다", async ({ page }) => {
+    const email = await signupAndEnter(page)
+    await createProject(page, `대시보드테스트3 ${Date.now()}`)
+    await build(page, email)
+
+    // 초기: 미커버 1
+    await page.getByTestId("view-tab-dashboard").click()
+    await expect(page.getByTestId("dash-uncovered-count")).toHaveText("1")
+
+    // 트리에서 그 UR 을 완료로 변경
+    await page.getByTestId("view-tab-tree").click()
+    await rowByTitle(page, "합성세부").click()
+    const detail = page.getByTestId("node-detail")
+    const row = detail
+      .getByTestId("ur-row")
+      .filter({ hasText: "미커버 요구사항" })
+    await row.getByTestId("ur-state").click()
+    await page.getByTestId("ur-state-option").filter({ hasText: "완료" }).click()
+    await expect(row.getByTestId("ur-state")).toHaveAttribute(
+      "data-status",
+      "완료"
+    )
+
+    // 대시보드 재진입: 미커버 0(완료 제외) + 상태통계 완료 1
+    await page.getByTestId("view-tab-dashboard").click()
+    await expect(page.getByTestId("dash-uncovered-count")).toHaveText("0")
+    await expect(page.getByTestId("dash-ur-stat-완료")).toContainText("1")
   })
 })
