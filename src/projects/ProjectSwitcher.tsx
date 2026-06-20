@@ -30,7 +30,10 @@ export function ProjectSwitcher() {
           >
             {currentProject ? (
               <span className="flex items-center gap-2">
-                <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-xs">
+                <span
+                  className="tnum rounded px-1.5 py-0.5 font-mono text-xs font-semibold"
+                  style={{ background: "var(--c-pink-bg)", color: "var(--c-plum)" }}
+                >
                   {currentProject.key_prefix}
                 </span>
                 <span data-testid="current-project-name">
@@ -55,7 +58,10 @@ export function ProjectSwitcher() {
               data-testid="project-option"
               className="gap-2"
             >
-              <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-xs">
+              <span
+                className="tnum rounded px-1.5 py-0.5 font-mono text-xs font-semibold"
+                style={{ background: "var(--c-pink-bg)", color: "var(--c-plum)" }}
+              >
                 {p.key_prefix}
               </span>
               <span className="flex-1 truncate">{p.name}</span>

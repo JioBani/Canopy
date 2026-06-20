@@ -7,6 +7,7 @@ import { NodesProvider } from "@/nodes/NodesProvider"
 import { TreeView } from "@/nodes/TreeView"
 import { NodeDetail } from "@/nodes/NodeDetail"
 import { StatusSettingsButton } from "@/projects/StatusSettingsDialog"
+import { BloomFull } from "@/nodes/bloomGlyph"
 import { Button } from "@/components/ui/button"
 
 /** 트리(좌) + 상세(우) 분할. 상세 패널은 다음 단계에서 채운다. */
@@ -57,7 +58,10 @@ function Workspace() {
     <div className="min-h-svh" data-testid="app-shell">
       <header className="flex items-center justify-between border-b px-6 py-3">
         <div className="flex items-center gap-3">
-          <span className="font-display text-lg font-bold">Canopy</span>
+          <span className="flex items-center gap-1.5">
+            <BloomFull style={{ color: "var(--c-sakura)" }} className="size-[18px]" />
+            <span className="font-display text-lg font-bold">Canopy</span>
+          </span>
           <ProjectSwitcher />
         </div>
         <div className="flex items-center gap-3">

@@ -2,20 +2,15 @@ import { useState, type KeyboardEvent } from "react"
 import {
   ChevronDown,
   ChevronRight,
-  Circle,
-  Cog,
-  Database,
   MoreHorizontal,
-  Package,
   Pencil,
   Plus,
   Trash2,
-  Wrench,
-  type LucideIcon,
 } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
 import { DeleteNodeDialog } from "@/nodes/DeleteNodeDialog"
 import { ProgressBadge, StatusBadge } from "@/nodes/NodeBadges"
+import { PIXEL_ICONS } from "@/nodes/pixelIcons"
 import {
   allowedChildTypes,
   TYPE_META,
@@ -31,14 +26,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-
-const ICONS: Record<NodeType, LucideIcon> = {
-  컨텐츠: Package,
-  기능: Cog,
-  세부기능: Wrench,
-  마스터데이터: Database,
-  작업: Circle,
-}
 
 const INDENT = 16
 
@@ -211,16 +198,25 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
   const kids = childrenOf(node.id)
   const hasKids = kids.length > 0
   const expanded = isExpanded(node.id)
-  const Icon = ICONS[node.type]
+  const selected = selectedId === node.id
+  const Icon = PIXEL_ICONS[node.type]
+  // 타입색 절제: 컨텐츠(나무)만 Sakura 1점 강조, 나머지 muted. 선택 행은 plum.
+  const iconColor = selected
+    ? "var(--c-plum)"
+    : node.type === "컨텐츠"
+      ? "var(--c-sakura)"
+      : "var(--c-ink-3)"
 
   return (
     <div>
       <div
         className={cn(
-          "group flex cursor-pointer items-center gap-1 rounded py-1 pr-1 hover:bg-accent/60",
-          selectedId === node.id && "bg-accent"
+          "group relative flex cursor-pointer items-center gap-1.5 rounded-lg py-1 pr-1 transition-colors",
+          selected
+            ? "bg-[var(--c-pink-bg)] before:absolute before:top-1 before:bottom-1 before:left-0 before:w-[2px] before:rounded-full before:bg-[var(--c-sakura)] before:content-['']"
+            : "hover:bg-[rgba(40,28,40,0.045)]"
         )}
-        style={{ paddingLeft: depth * INDENT }}
+        style={{ paddingLeft: depth * INDENT + 2 }}
         onClick={() => select(node.id)}
         data-testid="tree-node"
         data-node-type={node.type}
@@ -244,7 +240,7 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
           ) : null}
         </button>
 
-        <Icon className={cn("size-4 shrink-0", TYPE_META[node.type].color)} />
+        <Icon className="size-4 shrink-0" style={{ color: iconColor }} />
 
         {editing ? (
           <RenameInput
@@ -257,7 +253,7 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
           />
         ) : (
           <span
-            className="flex-1 truncate text-sm"
+            className={cn("flex-1 truncate text-[13px]", selected && "font-semibold")}
             data-testid="node-title"
             onDoubleClick={(e) => {
               e.stopPropagation()

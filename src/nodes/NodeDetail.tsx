@@ -6,6 +6,7 @@ import { ticketKey } from "@/lib/validation"
 import { renderMarkdown } from "@/lib/markdown"
 import { memberLabel } from "@/lib/members"
 import { TYPE_META } from "@/nodes/nodeGrammar"
+import { PIXEL_ICONS } from "@/nodes/pixelIcons"
 import { FeatureUrPanel } from "@/ur/FeatureUrPanel"
 import { TaskChecklist } from "@/ur/TaskChecklist"
 import { TaskUrLinks } from "@/ur/TaskUrLinks"
@@ -15,7 +16,6 @@ import type { StatusCategory } from "@/lib/statuses"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
 
 const DOMAINS: NodeDomain[] = [
   "기획",
@@ -28,7 +28,7 @@ const DOMAINS: NodeDomain[] = [
 const CATEGORY_ORDER: StatusCategory[] = ["할일", "진행중", "완료", "취소됨"]
 
 const selectClass =
-  "border-input h-9 rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+  "h-9 rounded-[9px] border border-transparent bg-[#F5F2F4] px-3 text-sm outline-none transition-colors hover:bg-[#EFE7EC] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
 
 export function NodeDetail() {
   const { nodes, selectedId, updateFields, statuses, members } = useNodes()
@@ -94,49 +94,88 @@ export function NodeDetail() {
     featureAncestorId = cur?.id ?? null
   }
 
+  // 브레드크럼: 조상 경로(자기 제외, 루트→부모)
+  const breadcrumb: string[] = []
+  {
+    let cur: AppNode | null = node.parent_id
+      ? (nodes.find((n) => n.id === node.parent_id) ?? null)
+      : null
+    while (cur) {
+      breadcrumb.unshift(cur.title)
+      cur = cur.parent_id
+        ? (nodes.find((n) => n.id === cur!.parent_id) ?? null)
+        : null
+    }
+  }
+
+  const TypeIcon = PIXEL_ICONS[node.type]
+
   return (
-    <div className="flex flex-col gap-5 p-6" data-testid="node-detail">
-      {/* 헤더: 티켓키 + 타입 */}
-      <div className="flex items-center gap-2">
-        <code
-          className="bg-muted rounded px-1.5 py-0.5 font-mono text-xs"
-          data-testid="detail-ticket"
-        >
-          {ticket}
-        </code>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-6"
-          title="티켓키 복사"
-          data-testid="copy-ticket"
-          onClick={() => void navigator.clipboard?.writeText(ticket)}
-        >
-          <Copy className="size-3.5" />
-        </Button>
-        <span
-          className={cn("ml-auto text-xs font-medium", TYPE_META[node.type].color)}
-          data-testid="detail-type"
-        >
-          {TYPE_META[node.type].label}
-        </span>
+    <div className="flex flex-col gap-5 p-7" data-testid="node-detail">
+      {/* 헤더: 브레드크럼 + 티켓키 + 타입태그 */}
+      <div className="flex flex-col gap-2">
+        {breadcrumb.length > 0 && (
+          <nav
+            className="flex items-center gap-1 text-xs"
+            style={{ color: "var(--c-ink-3)" }}
+          >
+            {breadcrumb.map((b, i) => (
+              <span key={i} className="flex items-center gap-1">
+                {i > 0 && <span>/</span>}
+                <span className="truncate">{b}</span>
+              </span>
+            ))}
+          </nav>
+        )}
+        <div className="flex items-center gap-2">
+          <code
+            className="tnum font-mono text-[11.5px] font-semibold"
+            style={{ color: "var(--c-plum)" }}
+            data-testid="detail-ticket"
+          >
+            {ticket}
+          </code>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-6"
+            title="티켓키 복사"
+            data-testid="copy-ticket"
+            onClick={() => void navigator.clipboard?.writeText(ticket)}
+          >
+            <Copy className="size-3.5" />
+          </Button>
+          <span
+            className="ml-auto inline-flex items-center gap-1.5 text-xs font-medium"
+            style={{ color: "var(--c-ink-2)" }}
+            data-testid="detail-type"
+          >
+            <TypeIcon
+              className="size-3.5"
+              style={{
+                color:
+                  node.type === "컨텐츠"
+                    ? "var(--c-sakura)"
+                    : "var(--c-ink-3)",
+              }}
+            />
+            {TYPE_META[node.type].label}
+          </span>
+        </div>
       </div>
 
-      {/* 제목 */}
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="detail-title">제목</Label>
-        <Input
-          id="detail-title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={saveTitle}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") e.currentTarget.blur()
-          }}
-          className="font-display h-auto py-1.5 text-lg font-bold"
-          data-testid="detail-title"
-        />
-      </div>
+      {/* 제목 — 메이플체 Bold 21px */}
+      <Input
+        id="detail-title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onBlur={saveTitle}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur()
+        }}
+        className="font-display h-auto border-transparent px-2 py-1 text-[21px] leading-tight font-bold shadow-none hover:border-input focus-visible:border-input"
+        data-testid="detail-title"
+      />
 
       {/* 작업 전용 필드 */}
       {isTask && (
