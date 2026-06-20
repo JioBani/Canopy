@@ -5,7 +5,7 @@ export const PASSWORD = "password123"
 
 /**
  * 이 워커(스펙 파일)가 만든 프로젝트 이름들. afterAll 에서 정확히 이 프로젝트들만
- * 정리한다 → 시드(Tatica Defense)나 다른 스펙 프로젝트를 건드리지 않음(격리).
+ * 정리한다 → 시드(Tactica Defense, 0003 마이그레이션)나 다른 스펙 프로젝트를 건드리지 않음(격리).
  */
 export const createdProjects: string[] = []
 

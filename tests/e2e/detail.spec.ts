@@ -25,7 +25,7 @@ function embedWork(page: Page, title: string) {
 test.describe.serial("노드 상세 패널", () => {
   test.afterAll(cleanupCreatedProjects)
 
-  test("선택→상세, 제목·body 편집, 상태→임베드 뱃지, 도메인·작업자 저장", async ({
+  test("선택→상세, 제목·body 편집, 상태→임베드 뱃지, 도메인 저장", async ({
     page,
   }) => {
     await signupAndEnter(page)
