@@ -49,9 +49,8 @@ test.describe.serial("노드 상세 패널", () => {
       "완료"
     )
 
-    // 도메인 / 작업자 (작업자: index 1 = '없음' 다음 첫 멤버)
+    // 도메인 (작업자=담당자는 로그인 없어 멤버 없음 → 생략)
     await selectByLabel(page, "detail-domain", "디자인")
-    await selectByIndex(page, "detail-assignee", 1)
 
     // 제목 편집 (Enter 저장) → 임베드 작업 행에 반영
     await page.getByTestId("detail-title").fill("로직작업-수정")
@@ -86,7 +85,6 @@ test.describe.serial("노드 상세 패널", () => {
     expect(tasks[0].title).toBe("로직작업-수정")
     expect(tasks[0].body).toContain("# 개요")
     expect(tasks[0].domain).toBe("디자인")
-    expect(tasks[0].assignee_id).not.toBeNull()
     expect(tasks[0].status_id).not.toBeNull()
   })
 

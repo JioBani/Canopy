@@ -50,16 +50,13 @@ export async function pickCombobox(
   await option.first().click()
 }
 
-/** 가입 → 인증 셸 진입. 생성된 이메일 반환(현재 유저 식별용). */
-export async function signupAndEnter(page: Page): Promise<string> {
-  const email = uniqueEmail()
+/**
+ * 앱 진입. 로그인 게이트 제거(팀 내부용·anon) → goto 후 셸 대기만.
+ * (이름은 호환 위해 유지. 더는 가입하지 않는다.)
+ */
+export async function signupAndEnter(page: Page): Promise<void> {
   await page.goto("/")
-  await page.getByTestId("toggle-mode").click()
-  await page.getByTestId("email-input").fill(email)
-  await page.getByTestId("password-input").fill(PASSWORD)
-  await page.getByTestId("submit-button").click()
   await expect(page.getByTestId("app-shell")).toBeVisible()
-  return email
 }
 
 /**

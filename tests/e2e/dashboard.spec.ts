@@ -12,17 +12,16 @@ import {
   signupAndEnter,
 } from "./_helpers"
 
-async function build(page: Page, myEmail: string) {
+async function build(page: Page) {
   await addContentRoot(page, "전장")
   await addChildSingle(page, "전장", "소환수기능")
   await addChildTyped(page, "소환수기능", "세부기능", "합성세부")
   await addWork(page, "합성세부", "로직작업")
 
-  // 작업: 완료 + 도메인 구현 + 나에게 배정(현재 유저 이메일로)
+  // 작업: 완료 + 도메인 구현 (담당자는 로그인 없어 멤버 없음 → 생략)
   await selectWorkInEmbed(page, "로직작업")
   await selectByLabel(page, "detail-status", "완료")
   await selectByLabel(page, "detail-domain", "구현")
-  await selectByLabel(page, "detail-assignee", myEmail)
 
   // 세부기능에 UR 추가(연결 작업 없음 → 미커버)
   await rowByTitle(page, "합성세부").click()
@@ -37,10 +36,10 @@ async function build(page: Page, myEmail: string) {
 test.describe.serial("대시보드", () => {
   test.afterAll(cleanupCreatedProjects)
 
-  test("컨텐츠 진행률·도메인·내 작업·미커버 렌더 + 점프", async ({ page }) => {
-    const email = await signupAndEnter(page)
-    await createProject(page, `대시보드테스트 ${Date.now()}`, "DB")
-    await build(page, email)
+  test("컨텐츠 진행률·도메인·요구사항 통계·미커버 렌더", async ({ page }) => {
+    await signupAndEnter(page)
+    await createProject(page, `대시보드테스트 ${Date.now()}`)
+    await build(page)
 
     await page.getByTestId("view-tab-dashboard").click()
     await expect(page.getByTestId("dashboard-view")).toBeVisible()
@@ -64,19 +63,12 @@ test.describe.serial("대시보드", () => {
     await expect(
       page.getByTestId("dash-uncovered-feature").filter({ hasText: "합성세부" })
     ).toBeVisible()
-
-    // 내 작업 → 클릭 시 트리 전환 + 상세
-    const myTask = page.getByTestId("dash-my-task").filter({ hasText: "로직작업" })
-    await expect(myTask).toBeVisible()
-    await myTask.click()
-    await expect(page.getByTestId("node-detail")).toBeVisible()
-    await expect(page.getByTestId("detail-title")).toHaveValue("로직작업")
   })
 
   test("미커버 기능 클릭 → 해당 기능 점프", async ({ page }) => {
-    const email = await signupAndEnter(page)
-    await createProject(page, `대시보드테스트2 ${Date.now()}`, "DC")
-    await build(page, email)
+    await signupAndEnter(page)
+    await createProject(page, `대시보드테스트2 ${Date.now()}`)
+    await build(page)
 
     await page.getByTestId("view-tab-dashboard").click()
     await page
@@ -87,9 +79,9 @@ test.describe.serial("대시보드", () => {
   })
 
   test("완료 UR 은 작업 0개여도 미커버에서 빠진다", async ({ page }) => {
-    const email = await signupAndEnter(page)
+    await signupAndEnter(page)
     await createProject(page, `대시보드테스트3 ${Date.now()}`)
-    await build(page, email)
+    await build(page)
 
     // 초기: 미커버 1
     await page.getByTestId("view-tab-dashboard").click()
