@@ -60,10 +60,15 @@ export async function insertNode(input: {
   return data as AppNode
 }
 
-/** 제목/본문 등 수정. */
+/** 제목/본문/상태/도메인/작업자 등 수정. */
 export async function updateNode(
   id: string,
-  patch: Partial<Pick<AppNode, "title" | "body" | "sort_order" | "status_id">>
+  patch: Partial<
+    Pick<
+      AppNode,
+      "title" | "body" | "sort_order" | "status_id" | "domain" | "assignee_id"
+    >
+  >
 ): Promise<AppNode> {
   const { data, error } = await supabase
     .from("node")

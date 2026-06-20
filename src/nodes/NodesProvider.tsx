@@ -17,6 +17,7 @@ import {
   type NodeProgress,
 } from "@/lib/nodes"
 import { listStatuses, type Status } from "@/lib/statuses"
+import { listMembers, type Member } from "@/lib/members"
 import type { NodeType } from "@/nodes/nodeGrammar"
 
 interface NodesContextValue {
@@ -36,10 +37,19 @@ interface NodesContextValue {
   ) => Promise<AppNode>
   renameNode: (id: string, title: string) => Promise<void>
   removeNode: (id: string) => Promise<void>
+  /** 노드 필드 부분 수정 (상태 변경 시 진행률 자동 갱신). */
+  updateFields: (
+    id: string,
+    patch: Partial<
+      Pick<AppNode, "title" | "body" | "status_id" | "domain" | "assignee_id">
+    >
+  ) => Promise<void>
   /** node_progress roll-up (없으면 undefined). */
   getProgress: (nodeId: string) => NodeProgress | undefined
   /** status_id → 상태 (없으면 undefined). */
   getStatus: (statusId: string | null) => Status | undefined
+  statuses: Status[]
+  members: Member[]
 }
 
 const NodesContext = createContext<NodesContextValue | undefined>(undefined)
@@ -57,6 +67,7 @@ export function NodesProvider({
   // 기본은 펼침. collapsed 에 든 id 만 접힘.
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [statuses, setStatuses] = useState<Status[]>([])
+  const [members, setMembers] = useState<Member[]>([])
   const [progress, setProgress] = useState<Map<string, NodeProgress>>(new Map())
 
   /** 주어진(또는 현재) 노드들의 진행률을 뷰에서 다시 가져온다. loading 토글 없음. */
@@ -67,12 +78,14 @@ export function NodesProvider({
 
   const reload = useCallback(async () => {
     setLoading(true)
-    const [list, statusList] = await Promise.all([
+    const [list, statusList, memberList] = await Promise.all([
       listNodes(projectId),
       listStatuses(projectId),
+      listMembers(),
     ])
     setNodes(list)
     setStatuses(statusList)
+    setMembers(memberList)
     await refreshProgress(list.map((n) => n.id))
     setLoading(false)
   }, [projectId, refreshProgress])
@@ -157,6 +170,19 @@ export function NodesProvider({
     setNodes((prev) => prev.map((n) => (n.id === id ? updated : n)))
   }, [])
 
+  const updateFields = useCallback<NodesContextValue["updateFields"]>(
+    async (id, patch) => {
+      const updated = await updateNode(id, patch)
+      const next = nodes.map((n) => (n.id === id ? updated : n))
+      setNodes(next)
+      // 상태 변경은 조상 진행률에 영향 → 즉시 갱신(가시성 핵심).
+      if ("status_id" in patch) {
+        await refreshProgress(next.map((n) => n.id))
+      }
+    },
+    [nodes, refreshProgress]
+  )
+
   const statusById = useMemo(
     () => new Map(statuses.map((s) => [s.id, s])),
     [statuses]
@@ -210,8 +236,11 @@ export function NodesProvider({
       createChild,
       renameNode,
       removeNode,
+      updateFields,
       getProgress,
       getStatus,
+      statuses,
+      members,
     }),
     [
       nodes,
@@ -225,8 +254,11 @@ export function NodesProvider({
       createChild,
       renameNode,
       removeNode,
+      updateFields,
       getProgress,
       getStatus,
+      statuses,
+      members,
     ]
   )
 

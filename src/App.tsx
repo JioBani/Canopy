@@ -5,6 +5,7 @@ import { ProjectSwitcher } from "@/projects/ProjectSwitcher"
 import { NoProjects } from "@/projects/NoProjects"
 import { NodesProvider } from "@/nodes/NodesProvider"
 import { TreeView } from "@/nodes/TreeView"
+import { NodeDetail } from "@/nodes/NodeDetail"
 import { Button } from "@/components/ui/button"
 
 /** 트리(좌) + 상세(우) 분할. 상세 패널은 다음 단계에서 채운다. */
@@ -18,10 +19,8 @@ function ProjectWorkspace({ projectId }: { projectId: string }) {
         >
           <TreeView />
         </aside>
-        <section className="flex-1 p-6">
-          <p className="text-muted-foreground text-sm">
-            노드를 선택하면 상세가 표시됩니다. (상세 패널은 다음 단계)
-          </p>
+        <section className="flex-1 overflow-y-auto">
+          <NodeDetail />
         </section>
       </div>
     </NodesProvider>
