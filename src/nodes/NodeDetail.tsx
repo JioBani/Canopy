@@ -6,7 +6,11 @@ import { ticketKey } from "@/lib/validation"
 import { renderMarkdown } from "@/lib/markdown"
 import { memberLabel } from "@/lib/members"
 import { TYPE_META } from "@/nodes/nodeGrammar"
-import type { NodeDomain } from "@/lib/nodes"
+import { FeatureUrPanel } from "@/ur/FeatureUrPanel"
+import { TaskChecklist } from "@/ur/TaskChecklist"
+import { TaskUrLinks } from "@/ur/TaskUrLinks"
+import { TaskBlocks } from "@/ur/TaskBlocks"
+import type { AppNode, NodeDomain } from "@/lib/nodes"
 import type { StatusCategory } from "@/lib/statuses"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -76,6 +80,18 @@ export function NodeDetail() {
   function saveBody() {
     if (node && body !== (node.body ?? ""))
       void updateFields(node.id, { body })
+  }
+
+  // 작업의 기능 조상(부모의 부모) — UR 피커 기본 강조용.
+  let featureAncestorId: string | null = null
+  if (isTask) {
+    let cur: AppNode | null = node
+    while (cur && cur.type !== "기능") {
+      cur = cur.parent_id
+        ? (nodes.find((n) => n.id === cur!.parent_id) ?? null)
+        : null
+    }
+    featureAncestorId = cur?.id ?? null
   }
 
   return (
@@ -231,6 +247,26 @@ export function NodeDetail() {
           />
         )}
       </div>
+
+      {/* 기능: UR 관리 */}
+      {node.type === "기능" && (
+        <div className="border-t pt-4">
+          <FeatureUrPanel featureId={node.id} />
+        </div>
+      )}
+
+      {/* 작업: 작업내용 + 만족 UR (나란히) + 선제조건 */}
+      {isTask && (
+        <>
+          <div className="grid grid-cols-1 gap-4 border-t pt-4 lg:grid-cols-2">
+            <TaskChecklist workId={node.id} />
+            <TaskUrLinks workId={node.id} featureId={featureAncestorId} />
+          </div>
+          <div className="border-t pt-4">
+            <TaskBlocks nodeId={node.id} />
+          </div>
+        </>
+      )}
     </div>
   )
 }
