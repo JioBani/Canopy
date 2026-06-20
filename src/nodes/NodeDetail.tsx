@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react"
-import { ChevronDown, Copy } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { Copy } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
 import { useProjects } from "@/projects/ProjectProvider"
 import { ticketKey } from "@/lib/validation"
@@ -17,7 +17,15 @@ import type { AppNode, NodeDomain } from "@/lib/nodes"
 import type { StatusCategory } from "@/lib/statuses"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const DOMAINS: NodeDomain[] = [
   "기획",
@@ -28,53 +36,31 @@ const DOMAINS: NodeDomain[] = [
   "기타",
 ]
 const CATEGORY_ORDER: StatusCategory[] = ["할일", "진행중", "완료", "취소됨"]
+const NONE = "__none__"
 
-const chipBase =
-  "h-8 appearance-none rounded-[9px] border border-transparent bg-[#F5F2F4] pr-7 text-[13px] outline-none transition-colors hover:bg-[#EFE7EC] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-
-/** 인라인 property 칩 — 네이티브 select(접근성·E2E 보존)를 칩으로 재스타일 + 리딩 글리프. */
-function ChipSelect({
+/** 작은 라벨 + shadcn Select 를 묶은 property 행 셀. */
+function PropField({
   label,
-  leading,
-  value,
-  onChange,
-  testid,
   children,
 }: {
   label: string
-  leading?: ReactNode
-  value: string
-  onChange: (v: string) => void
-  testid: string
-  children: ReactNode
+  children: React.ReactNode
 }) {
   return (
-    <label className="inline-flex items-center gap-1.5">
-      <span className="text-[11px] font-medium" style={{ color: "var(--c-ink-3)" }}>
+    <label className="inline-flex items-center gap-2">
+      <span
+        className="text-[11px] font-medium"
+        style={{ color: "var(--c-ink-3)" }}
+      >
         {label}
       </span>
-      <span className="relative inline-flex items-center">
-        {leading && (
-          <span className="pointer-events-none absolute left-2 flex items-center">
-            {leading}
-          </span>
-        )}
-        <select
-          className={cn(chipBase, leading ? "pl-[30px]" : "pl-2.5")}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          data-testid={testid}
-        >
-          {children}
-        </select>
-        <ChevronDown
-          className="pointer-events-none absolute right-1.5 size-3.5"
-          style={{ color: "var(--c-ink-3)" }}
-        />
-      </span>
+      {children}
     </label>
   )
 }
+
+const triggerClass =
+  "h-8 min-w-[7.5rem] gap-1.5 rounded-[9px] bg-card text-[13px] font-medium shadow-xs"
 
 export function NodeDetail() {
   const { nodes, selectedId, updateFields, statuses, members, getStatus } =
@@ -162,36 +148,28 @@ export function NodeDetail() {
   const StatusGlyph = curStatus ? BLOOM_GLYPH[curStatus.category] : null
   const statusLeading = StatusGlyph ? (
     <StatusGlyph
-      className="size-[14px]"
+      className="size-[14px] shrink-0"
       style={{
         color: curStatus!.color ?? CATEGORY_COLOR[curStatus!.category],
       }}
     />
   ) : (
     <span
-      className="inline-block size-[10px] rounded-full border"
+      className="inline-block size-[10px] shrink-0 rounded-full border"
       style={{ borderColor: "var(--c-ink-3)" }}
     />
   )
 
-  // 담당 칩 리딩 아바타
+  // 담당 아바타
   const assignee = node.assignee_id
     ? members.find((m) => m.id === node.assignee_id)
     : undefined
-  const assigneeLeading = assignee ? (
-    <span
-      className="inline-flex size-[18px] items-center justify-center rounded-full text-[9.5px] font-bold"
-      style={{
-        background: "linear-gradient(150deg,#F6CFDD,#EC9EBA)",
-        color: "#9b3a5e",
-      }}
-    >
-      {memberLabel(assignee).slice(0, 1).toUpperCase()}
-    </span>
-  ) : undefined
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5 p-7" data-testid="node-detail">
+    <div
+      className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-8 py-7"
+      data-testid="node-detail"
+    >
       {/* 헤더: 브레드크럼 + 티켓키 + 타입태그 */}
       <div className="flex flex-col gap-2">
         {breadcrumb.length > 0 && (
@@ -244,7 +222,7 @@ export function NodeDetail() {
         </div>
       </div>
 
-      {/* 제목 — 메이플체 Bold 21px (편집 가능) */}
+      {/* 제목 — 메이플체 Bold (편집 가능) */}
       <Input
         id="detail-title"
         value={title}
@@ -253,66 +231,113 @@ export function NodeDetail() {
         onKeyDown={(e) => {
           if (e.key === "Enter") e.currentTarget.blur()
         }}
-        className="font-display -mx-2 h-auto border-transparent bg-transparent px-2 py-1 text-[22px] leading-tight font-bold shadow-none hover:bg-[#F5F2F4]/60 focus-visible:bg-transparent"
+        className="font-display -mx-2 h-auto border-transparent bg-transparent px-2 py-1 text-[22px] leading-snug font-bold shadow-none hover:bg-[#F5F2F4]/60 focus-visible:bg-transparent"
         data-testid="detail-title"
       />
 
-      {/* 작업 전용 — property 칩 행 */}
+      {/* 작업 전용 — property 행 (shadcn Select) */}
       {isTask && (
-        <div className="flex flex-wrap items-center gap-2">
-          <ChipSelect
-            label="상태"
-            leading={statusLeading}
-            value={node.status_id ?? ""}
-            onChange={(v) => void updateFields(node.id, { status_id: v || null })}
-            testid="detail-status"
-          >
-            <option value="">미지정</option>
-            {statusGroups.map((g) => (
-              <optgroup key={g.cat} label={g.cat}>
-                {g.items.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+          <PropField label="상태">
+            <Select
+              value={node.status_id ?? NONE}
+              onValueChange={(v) =>
+                void updateFields(node.id, {
+                  status_id: v === NONE ? null : v,
+                })
+              }
+            >
+              <SelectTrigger
+                className={triggerClass}
+                data-testid="detail-status"
+              >
+                {statusLeading}
+                <SelectValue placeholder="상태" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE}>미지정</SelectItem>
+                {statusGroups.map((g) => (
+                  <SelectGroup key={g.cat}>
+                    <SelectLabel>{g.cat}</SelectLabel>
+                    {g.items.map((s) => {
+                      const G = BLOOM_GLYPH[s.category]
+                      return (
+                        <SelectItem key={s.id} value={s.id} textValue={s.name}>
+                          <G
+                            className="size-[14px]"
+                            style={{
+                              color: s.color ?? CATEGORY_COLOR[s.category],
+                            }}
+                          />
+                          {s.name}
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectGroup>
                 ))}
-              </optgroup>
-            ))}
-          </ChipSelect>
+              </SelectContent>
+            </Select>
+          </PropField>
 
-          <ChipSelect
-            label="도메인"
-            value={node.domain ?? ""}
-            onChange={(v) =>
-              void updateFields(node.id, {
-                domain: (v || null) as NodeDomain | null,
-              })
-            }
-            testid="detail-domain"
-          >
-            <option value="">미지정</option>
-            {DOMAINS.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </ChipSelect>
+          <PropField label="도메인">
+            <Select
+              value={node.domain ?? NONE}
+              onValueChange={(v) =>
+                void updateFields(node.id, {
+                  domain: (v === NONE ? null : v) as NodeDomain | null,
+                })
+              }
+            >
+              <SelectTrigger className={triggerClass} data-testid="detail-domain">
+                <SelectValue placeholder="도메인" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE}>미지정</SelectItem>
+                {DOMAINS.map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {d}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </PropField>
 
-          <ChipSelect
-            label="담당"
-            leading={assigneeLeading}
-            value={node.assignee_id ?? ""}
-            onChange={(v) =>
-              void updateFields(node.id, { assignee_id: v || null })
-            }
-            testid="detail-assignee"
-          >
-            <option value="">없음</option>
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {memberLabel(m)}
-              </option>
-            ))}
-          </ChipSelect>
+          <PropField label="담당">
+            <Select
+              value={node.assignee_id ?? NONE}
+              onValueChange={(v) =>
+                void updateFields(node.id, {
+                  assignee_id: v === NONE ? null : v,
+                })
+              }
+            >
+              <SelectTrigger
+                className={triggerClass}
+                data-testid="detail-assignee"
+              >
+                {assignee && (
+                  <span
+                    className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-full text-[9.5px] font-bold"
+                    style={{
+                      background: "linear-gradient(150deg,#F6CFDD,#EC9EBA)",
+                      color: "#9b3a5e",
+                    }}
+                  >
+                    {memberLabel(assignee).slice(0, 1).toUpperCase()}
+                  </span>
+                )}
+                <SelectValue placeholder="담당" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE}>없음</SelectItem>
+                {members.map((m) => (
+                  <SelectItem key={m.id} value={m.id} textValue={memberLabel(m)}>
+                    {memberLabel(m)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </PropField>
         </div>
       )}
 
@@ -348,7 +373,7 @@ export function NodeDetail() {
         ) : (
           <textarea
             id="detail-body"
-            className="min-h-24 rounded-[10px] border border-transparent bg-[#F5F2F4] p-3.5 text-sm leading-relaxed outline-none transition-colors hover:bg-[#EFE7EC] focus-visible:border-ring focus-visible:bg-transparent focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+            className="min-h-24 rounded-[10px] border border-transparent bg-[#F5F2F4] p-3.5 text-sm leading-relaxed outline-none transition-colors hover:bg-[#EFE7EC] focus-visible:border-ring focus-visible:bg-card focus-visible:ring-ring/50 focus-visible:ring-[3px]"
             value={body}
             onChange={(e) => setBody(e.target.value)}
             onBlur={saveBody}
@@ -368,11 +393,11 @@ export function NodeDetail() {
       {/* 작업: 작업내용 + 만족 UR (나란히) + 선제조건 */}
       {isTask && (
         <>
-          <div className="border-border grid grid-cols-1 gap-5 border-t pt-5 lg:grid-cols-2">
+          <div className="border-border grid grid-cols-1 gap-x-8 gap-y-6 border-t pt-6 lg:grid-cols-2">
             <TaskChecklist workId={node.id} />
             <TaskUrLinks workId={node.id} featureId={featureAncestorId} />
           </div>
-          <div className="border-border border-t pt-5">
+          <div className="border-border border-t pt-6">
             <TaskBlocks nodeId={node.id} />
           </div>
         </>

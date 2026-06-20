@@ -9,6 +9,7 @@ import {
 } from "@/lib/checklist"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export function TaskChecklist({ workId }: { workId: string }) {
   const [items, setItems] = useState<ChecklistItem[]>([])
@@ -40,58 +41,70 @@ export function TaskChecklist({ workId }: { workId: string }) {
   const doneCount = items.filter((i) => i.done).length
 
   return (
-    <div className="flex flex-col gap-2" data-testid="task-checklist">
-      <h3 className="font-display text-base font-bold">
-        작업내용{" "}
+    <section className="flex flex-col gap-2.5" data-testid="task-checklist">
+      <div className="flex items-baseline gap-2">
+        <h3 className="font-display text-[15px] font-bold">작업내용</h3>
         {items.length > 0 && (
-          <span className="text-muted-foreground font-sans text-xs font-normal tabular-nums">
-            ({doneCount}/{items.length})
+          <span
+            className="tnum text-xs font-medium"
+            style={{ color: "var(--c-ink-3)" }}
+          >
+            {doneCount}/{items.length}
           </span>
         )}
-      </h3>
-      {items.map((it) => (
-        <label
-          key={it.id}
-          className="group/ci flex items-center gap-2 text-sm"
-          data-testid="checklist-item"
-        >
-          <input
-            type="checkbox"
-            checked={it.done}
-            onChange={(e) => {
-              const done = e.target.checked
-              setItems((prev) =>
-                prev.map((x) => (x.id === it.id ? { ...x, done } : x))
-              )
-              void updateChecklistItem(it.id, { done })
-            }}
-            data-testid="checklist-toggle"
-          />
-          <span className={it.done ? "text-muted-foreground line-through" : ""}>
-            {it.text}
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-destructive ml-auto size-5 opacity-0 group-hover/ci:opacity-100"
-            onClick={() => {
-              setItems((prev) => prev.filter((x) => x.id !== it.id))
-              void deleteChecklistItem(it.id)
-            }}
-            data-testid="checklist-delete"
+      </div>
+
+      <div className="flex flex-col">
+        {items.map((it) => (
+          <label
+            key={it.id}
+            className="group/ci flex items-center gap-2.5 rounded-md px-1.5 py-1.5 transition-colors hover:bg-[var(--c-pink-bg)]/50"
+            data-testid="checklist-item"
           >
-            <Trash2 className="size-3" />
-          </Button>
-        </label>
-      ))}
+            <Checkbox
+              checked={it.done}
+              onCheckedChange={(c) => {
+                const done = c === true
+                setItems((prev) =>
+                  prev.map((x) => (x.id === it.id ? { ...x, done } : x))
+                )
+                void updateChecklistItem(it.id, { done })
+              }}
+              data-testid="checklist-toggle"
+            />
+            <span
+              className={
+                "flex-1 text-[13.5px] leading-snug " +
+                (it.done ? "text-muted-foreground line-through" : "")
+              }
+            >
+              {it.text}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-destructive size-6 opacity-0 group-hover/ci:opacity-100"
+              onClick={(e) => {
+                e.preventDefault()
+                setItems((prev) => prev.filter((x) => x.id !== it.id))
+                void deleteChecklistItem(it.id)
+              }}
+              data-testid="checklist-delete"
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          </label>
+        ))}
+      </div>
+
       <Input
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={onKey}
         placeholder="할 일 추가 후 Enter"
-        className="h-7"
+        className="h-8"
         data-testid="checklist-input"
       />
-    </div>
+    </section>
   )
 }

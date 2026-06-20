@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { FilterSelect } from "@/components/ui/filter-select"
 
 const DOMAINS: NodeDomain[] = [
   "기획",
@@ -22,8 +23,6 @@ const DOMAINS: NodeDomain[] = [
   "밸런싱",
   "기타",
 ]
-const selectClass =
-  "h-8 rounded-[9px] border border-transparent bg-[#F5F2F4] px-2 text-xs outline-none hover:bg-[#EFE7EC] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
 
 function ancestorsOf(node: AppNode, byId: Map<string, AppNode>) {
   let contentId: string | null = null
@@ -86,71 +85,44 @@ function SearchBody({ onClose }: { onClose: () => void }) {
         data-testid="search-input"
       />
       <div className="flex flex-wrap gap-2">
-        <select
-          className={selectClass}
+        <FilterSelect
           value={fType}
-          onChange={(e) => setFType(e.target.value)}
-          data-testid="search-type"
-        >
-          <option value="">타입</option>
-          {NODE_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-        <select
-          className={selectClass}
+          onChange={setFType}
+          allLabel="타입"
+          items={NODE_TYPES.map((t) => ({ value: t, label: t }))}
+          testid="search-type"
+        />
+        <FilterSelect
           value={fStatus}
-          onChange={(e) => setFStatus(e.target.value)}
-          data-testid="search-status"
-        >
-          <option value="">상태</option>
-          {statuses.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.category} / {s.name}
-            </option>
-          ))}
-        </select>
-        <select
-          className={selectClass}
+          onChange={setFStatus}
+          allLabel="상태"
+          items={statuses.map((s) => ({
+            value: s.id,
+            label: `${s.category} / ${s.name}`,
+          }))}
+          testid="search-status"
+        />
+        <FilterSelect
           value={fDomain}
-          onChange={(e) => setFDomain(e.target.value)}
-          data-testid="search-domain"
-        >
-          <option value="">도메인</option>
-          {DOMAINS.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
-        <select
-          className={selectClass}
+          onChange={setFDomain}
+          allLabel="도메인"
+          items={DOMAINS.map((d) => ({ value: d, label: d }))}
+          testid="search-domain"
+        />
+        <FilterSelect
           value={fAssignee}
-          onChange={(e) => setFAssignee(e.target.value)}
-          data-testid="search-assignee"
-        >
-          <option value="">담당자</option>
-          {members.map((m) => (
-            <option key={m.id} value={m.id}>
-              {memberLabel(m)}
-            </option>
-          ))}
-        </select>
-        <select
-          className={selectClass}
+          onChange={setFAssignee}
+          allLabel="담당자"
+          items={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
+          testid="search-assignee"
+        />
+        <FilterSelect
           value={fContent}
-          onChange={(e) => setFContent(e.target.value)}
-          data-testid="search-content"
-        >
-          <option value="">컨텐츠</option>
-          {contents.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.title}
-            </option>
-          ))}
-        </select>
+          onChange={setFContent}
+          allLabel="컨텐츠"
+          items={contents.map((c) => ({ value: c.id, label: c.title }))}
+          testid="search-content"
+        />
       </div>
 
       <div

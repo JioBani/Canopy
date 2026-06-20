@@ -7,6 +7,7 @@ import type { StatusCategory } from "@/lib/statuses"
 import type { AppNode, NodeDomain } from "@/lib/nodes"
 import { BLOOM_GLYPH, CATEGORY_TEXT_COLOR } from "@/nodes/bloomGlyph"
 import { CATEGORY_COLOR } from "@/lib/statuses"
+import { FilterSelect } from "@/components/ui/filter-select"
 
 const CATEGORIES: StatusCategory[] = ["할일", "진행중", "완료", "취소됨"]
 const DOMAINS: NodeDomain[] = [
@@ -17,9 +18,6 @@ const DOMAINS: NodeDomain[] = [
   "밸런싱",
   "기타",
 ]
-
-const selectClass =
-  "h-8 rounded-[9px] border border-transparent bg-[#F5F2F4] px-2.5 text-sm outline-none hover:bg-[#EFE7EC] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
 
 /** 작업의 조상 컨텐츠/기능 id. */
 function ancestorsOf(
@@ -176,60 +174,36 @@ export function BoardView() {
   return (
     <div className="flex h-full flex-col" data-testid="board-view">
       {/* 필터 */}
-      <div className="flex flex-wrap items-center gap-2 border-b px-4 py-2.5">
-        <span className="text-muted-foreground text-xs">필터</span>
-        <select
-          className={selectClass}
+      <div className="border-border flex flex-wrap items-center gap-2 border-b px-4 py-2.5">
+        <span className="text-muted-foreground mr-1 text-xs">필터</span>
+        <FilterSelect
           value={fContent}
-          onChange={(e) => setFContent(e.target.value)}
-          data-testid="board-filter-content"
-        >
-          <option value="">컨텐츠</option>
-          {contents.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.title}
-            </option>
-          ))}
-        </select>
-        <select
-          className={selectClass}
+          onChange={setFContent}
+          allLabel="컨텐츠"
+          items={contents.map((c) => ({ value: c.id, label: c.title }))}
+          testid="board-filter-content"
+        />
+        <FilterSelect
           value={fFeature}
-          onChange={(e) => setFFeature(e.target.value)}
-          data-testid="board-filter-feature"
-        >
-          <option value="">기능</option>
-          {features.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.title}
-            </option>
-          ))}
-        </select>
-        <select
-          className={selectClass}
+          onChange={setFFeature}
+          allLabel="기능"
+          items={features.map((f) => ({ value: f.id, label: f.title }))}
+          testid="board-filter-feature"
+        />
+        <FilterSelect
           value={fDomain}
-          onChange={(e) => setFDomain(e.target.value)}
-          data-testid="board-filter-domain"
-        >
-          <option value="">도메인</option>
-          {DOMAINS.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
-        <select
-          className={selectClass}
+          onChange={setFDomain}
+          allLabel="도메인"
+          items={DOMAINS.map((d) => ({ value: d, label: d }))}
+          testid="board-filter-domain"
+        />
+        <FilterSelect
           value={fAssignee}
-          onChange={(e) => setFAssignee(e.target.value)}
-          data-testid="board-filter-assignee"
-        >
-          <option value="">담당자</option>
-          {members.map((m) => (
-            <option key={m.id} value={m.id}>
-              {memberLabel(m)}
-            </option>
-          ))}
-        </select>
+          onChange={setFAssignee}
+          allLabel="담당자"
+          items={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
+          testid="board-filter-assignee"
+        />
       </div>
 
       {/* 컬럼 */}

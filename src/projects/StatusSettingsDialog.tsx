@@ -22,11 +22,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { FilterSelect } from "@/components/ui/filter-select"
 
 const CATEGORIES: StatusCategory[] = ["할일", "진행중", "완료", "취소됨"]
-
-const selectClass =
-  "border-input h-8 rounded-md border bg-transparent px-2 text-sm outline-none"
 
 function AddStatusRow({
   category,
@@ -230,21 +228,18 @@ function StatusSettingsContent({ projectId }: { projectId: string }) {
               <p className="text-sm">
                 이 상태를 쓰는 작업 <b>{deleting.count}</b>개가 있습니다. 옮길 상태를 고르세요.
               </p>
-              <select
-                className={selectClass}
+              <FilterSelect
                 value={reassignTo}
-                onChange={(e) => setReassignTo(e.target.value)}
-                data-testid="status-reassign"
-              >
-                <option value="">미지정으로</option>
-                {statuses
+                onChange={setReassignTo}
+                allLabel="미지정으로"
+                items={statuses
                   .filter((s) => s.id !== deleting.id)
-                  .map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.category} / {s.name}
-                    </option>
-                  ))}
-              </select>
+                  .map((s) => ({
+                    value: s.id,
+                    label: `${s.category} / ${s.name}`,
+                  }))}
+                testid="status-reassign"
+              />
             </>
           ) : (
             <p className="text-sm">이 상태를 삭제할까요?</p>

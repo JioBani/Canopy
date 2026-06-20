@@ -9,9 +9,7 @@ import {
   type Ur,
 } from "@/lib/ur"
 import { Button } from "@/components/ui/button"
-
-const selectClass =
-  "border-input h-8 w-full rounded-md border bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+import { Picker, type PickerGroup } from "@/components/ui/picker"
 
 export function TaskUrLinks({
   workId,
@@ -50,8 +48,8 @@ export function TaskUrLinks({
   const linked = urs.filter((u) => linkedSet.has(u.id))
   const available = urs.filter((u) => !linkedSet.has(u.id))
 
-  // 피커: 현재 기능 먼저, 그 외 기능 순. optgroup 그룹화.
-  const groupedAvailable = useMemo(() => {
+  // 피커: 현재 기능 먼저, 그 외 기능 순. 그룹화.
+  const groups: PickerGroup[] = useMemo(() => {
     const byFeature = new Map<string, Ur[]>()
     for (const u of available) {
       const arr = byFeature.get(u.feature_id) ?? []
@@ -64,68 +62,71 @@ export function TaskUrLinks({
       return (featureTitle.get(a) ?? "").localeCompare(featureTitle.get(b) ?? "")
     })
     return featureIds.map((fid) => ({
-      featureId: fid,
+      key: fid,
       label:
         (featureTitle.get(fid) ?? "기능") +
         (fid === featureId ? " (현재 기능)" : ""),
-      items: byFeature.get(fid)!,
+      items: byFeature.get(fid)!.map((u) => ({ value: u.id, label: u.text })),
     }))
   }, [available, featureId, featureTitle])
 
   return (
-    <div className="flex flex-col gap-2" data-testid="task-ur-links">
-      <h3 className="font-display text-base font-bold">만족시키는 UR</h3>
+    <section className="flex flex-col gap-2.5" data-testid="task-ur-links">
+      <h3 className="font-display text-[15px] font-bold">만족시키는 UR</h3>
 
-      {linked.map((u) => (
-        <div
-          key={u.id}
-          className="flex items-center gap-2 rounded border px-2 py-1 text-sm"
-          data-testid="linked-ur"
-        >
-          <span className="flex-1">{u.text}</span>
-          <span className="text-muted-foreground text-xs">
-            {featureTitle.get(u.feature_id) ?? ""}
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-5"
-            onClick={async () => {
-              await unlinkUrWork(u.id, workId)
-              await reload()
-            }}
-            data-testid="unlink-ur"
-            title="연결 해제"
+      <div className="flex flex-col gap-1.5">
+        {linked.map((u) => (
+          <div
+            key={u.id}
+            className="group/lu border-border bg-card flex items-start gap-2 rounded-[10px] border px-3 py-2.5"
+            data-testid="linked-ur"
           >
-            <X className="size-3" />
-          </Button>
-        </div>
-      ))}
-      {linked.length === 0 && (
-        <p className="text-muted-foreground text-xs">연결된 UR 이 없습니다.</p>
-      )}
+            <span
+              className="mt-[7px] size-[7px] shrink-0 rounded-full"
+              style={{ background: "var(--c-sakura)" }}
+            />
+            <div className="flex-1">
+              <p className="text-[13.5px] leading-relaxed">{u.text}</p>
+              <p
+                className="mt-0.5 text-[11px]"
+                style={{ color: "var(--c-ink-3)" }}
+              >
+                {featureTitle.get(u.feature_id) ?? ""}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-destructive size-6 shrink-0 opacity-0 group-hover/lu:opacity-100"
+              onClick={async () => {
+                await unlinkUrWork(u.id, workId)
+                await reload()
+              }}
+              data-testid="unlink-ur"
+              title="연결 해제"
+            >
+              <X className="size-3.5" />
+            </Button>
+          </div>
+        ))}
+        {linked.length === 0 && (
+          <p className="text-muted-foreground text-[13px]">
+            연결된 UR 이 없습니다.
+          </p>
+        )}
+      </div>
 
-      <select
-        className={selectClass}
-        value=""
-        onChange={async (e) => {
-          if (!e.target.value) return
-          await linkUrWork(e.target.value, workId)
+      <Picker
+        triggerLabel="UR 연결"
+        placeholder="UR 검색…"
+        empty="연결할 UR 이 없습니다."
+        groups={groups}
+        onPick={async (urId) => {
+          await linkUrWork(urId, workId)
           await reload()
         }}
-        data-testid="ur-link-picker"
-      >
-        <option value="">+ UR 연결…</option>
-        {groupedAvailable.map((g) => (
-          <optgroup key={g.featureId} label={g.label}>
-            {g.items.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.text}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
-    </div>
+        testid="ur-link-picker"
+      />
+    </section>
   )
 }

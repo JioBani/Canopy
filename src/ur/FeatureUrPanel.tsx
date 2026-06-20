@@ -240,7 +240,7 @@ export function FeatureUrPanel({ featureId }: { featureId: string }) {
             {list.map((u) => (
               <div
                 key={u.id}
-                className="group/ur flex items-center gap-2 rounded border px-2 py-1"
+                className="group/ur border-border bg-card flex items-center gap-2 rounded-[10px] border px-3 py-2"
                 data-testid="ur-row"
               >
                 {editingUr === u.id ? (
@@ -258,7 +258,7 @@ export function FeatureUrPanel({ featureId }: { featureId: string }) {
                 ) : (
                   <>
                     <span
-                      className="flex-1 text-sm"
+                      className="flex-1 text-[13.5px] leading-relaxed"
                       data-testid="ur-text"
                       onDoubleClick={() => setEditingUr(u.id)}
                     >
