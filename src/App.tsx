@@ -3,17 +3,15 @@ import { RequireAuth } from "@/auth/RequireAuth"
 import { ProjectProvider, useProjects } from "@/projects/ProjectProvider"
 import { ProjectSwitcher } from "@/projects/ProjectSwitcher"
 import { NoProjects } from "@/projects/NoProjects"
-import { useState } from "react"
-import { NodesProvider } from "@/nodes/NodesProvider"
+import { NodesProvider, useNodes } from "@/nodes/NodesProvider"
 import { TreeView } from "@/nodes/TreeView"
 import { NodeDetail } from "@/nodes/NodeDetail"
 import { BoardView } from "@/board/BoardView"
+import { SearchButton } from "@/search/SearchDialog"
 import { StatusSettingsButton } from "@/projects/StatusSettingsDialog"
 import { BloomFull } from "@/nodes/bloomGlyph"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-
-type WorkspaceView = "tree" | "board"
 
 function SegmentTab({
   active,
@@ -44,53 +42,60 @@ function SegmentTab({
   )
 }
 
-/** 트리/보드 뷰 전환 + 각 뷰. */
+/** 트리/보드 뷰 전환 + 각 뷰. (view 는 NodesProvider 공유 — 카드/검색 점프가 트리로 전환) */
+function WorkspaceInner() {
+  const { view, setView } = useNodes()
+  return (
+    <div className="flex h-[calc(100svh-57px)] flex-col">
+      <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
+        <div
+          className="flex items-center gap-1 rounded-lg bg-[var(--c-bg-sunken)] p-0.5"
+          role="tablist"
+        >
+          <SegmentTab
+            active={view === "tree"}
+            onClick={() => setView("tree")}
+            testid="view-tab-tree"
+          >
+            트리
+          </SegmentTab>
+          <SegmentTab
+            active={view === "board"}
+            onClick={() => setView("board")}
+            testid="view-tab-board"
+          >
+            보드
+          </SegmentTab>
+        </div>
+        <SearchButton />
+        <StatusSettingsButton />
+      </div>
+
+      {view === "tree" ? (
+        <div className="flex min-h-0 flex-1">
+          <aside
+            className="flex w-80 shrink-0 flex-col overflow-y-auto border-r"
+            data-testid="tree-panel"
+          >
+            <TreeView />
+          </aside>
+          <section className="flex-1 overflow-y-auto">
+            <NodeDetail />
+          </section>
+        </div>
+      ) : (
+        <div className="min-h-0 flex-1">
+          <BoardView />
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ProjectWorkspace({ projectId }: { projectId: string }) {
-  const [view, setView] = useState<WorkspaceView>("tree")
   return (
     <NodesProvider projectId={projectId}>
-      <div className="flex h-[calc(100svh-57px)] flex-col">
-        <div className="flex items-center justify-between border-b px-3 py-2">
-          <div
-            className="flex items-center gap-1 rounded-lg bg-[var(--c-bg-sunken)] p-0.5"
-            role="tablist"
-          >
-            <SegmentTab
-              active={view === "tree"}
-              onClick={() => setView("tree")}
-              testid="view-tab-tree"
-            >
-              트리
-            </SegmentTab>
-            <SegmentTab
-              active={view === "board"}
-              onClick={() => setView("board")}
-              testid="view-tab-board"
-            >
-              보드
-            </SegmentTab>
-          </div>
-          <StatusSettingsButton />
-        </div>
-
-        {view === "tree" ? (
-          <div className="flex min-h-0 flex-1">
-            <aside
-              className="flex w-80 shrink-0 flex-col overflow-y-auto border-r"
-              data-testid="tree-panel"
-            >
-              <TreeView />
-            </aside>
-            <section className="flex-1 overflow-y-auto">
-              <NodeDetail />
-            </section>
-          </div>
-        ) : (
-          <div className="min-h-0 flex-1">
-            <BoardView />
-          </div>
-        )}
-      </div>
+      <WorkspaceInner />
     </NodesProvider>
   )
 }

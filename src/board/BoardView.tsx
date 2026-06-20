@@ -40,7 +40,7 @@ function ancestorsOf(
 }
 
 function BoardCard({ node }: { node: AppNode }) {
-  const { getStatus, getMember } = useNodes()
+  const { getStatus, getMember, openNode } = useNodes()
   const { currentProject } = useProjects()
   const status = getStatus(node.status_id)
   const assignee = node.assignee_id ? getMember(node.assignee_id) : undefined
@@ -57,7 +57,8 @@ function BoardCard({ node }: { node: AppNode }) {
     <div
       draggable
       onDragStart={onDragStart}
-      className="flex cursor-grab flex-col gap-2 rounded-[10px] border bg-card p-2.5 shadow-xs active:cursor-grabbing"
+      onClick={() => openNode(node.id)}
+      className="flex cursor-grab flex-col gap-2 rounded-[10px] border bg-card p-2.5 shadow-xs transition-shadow hover:shadow-sm active:cursor-grabbing"
       style={{ borderColor: "var(--c-line)" }}
       data-testid="board-card"
       data-task-id={node.id}

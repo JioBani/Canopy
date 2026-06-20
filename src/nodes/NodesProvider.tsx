@@ -28,6 +28,11 @@ interface NodesContextValue {
   descendantCount: (id: string) => number
   selectedId: string | null
   select: (id: string | null) => void
+  /** 워크스페이스 뷰(트리/보드) — 카드·검색 점프가 트리로 전환할 수 있게 공유. */
+  view: "tree" | "board"
+  setView: (v: "tree" | "board") => void
+  /** 노드로 점프: 선택 + 트리뷰 전환 (보드 카드·검색 결과용). */
+  openNode: (id: string) => void
   isExpanded: (id: string) => boolean
   toggleCollapse: (id: string) => void
   createChild: (
@@ -66,8 +71,14 @@ export function NodesProvider({
   const [nodes, setNodes] = useState<AppNode[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [view, setView] = useState<"tree" | "board">("tree")
   // 기본은 펼침. collapsed 에 든 id 만 접힘.
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+
+  const openNode = useCallback((id: string) => {
+    setSelectedId(id)
+    setView("tree")
+  }, [])
   const [statuses, setStatuses] = useState<Status[]>([])
   const [members, setMembers] = useState<Member[]>([])
   const [progress, setProgress] = useState<Map<string, NodeProgress>>(new Map())
@@ -243,6 +254,9 @@ export function NodesProvider({
       descendantCount,
       selectedId,
       select: setSelectedId,
+      view,
+      setView,
+      openNode,
       isExpanded,
       toggleCollapse,
       createChild,
@@ -262,6 +276,8 @@ export function NodesProvider({
       childrenOf,
       descendantCount,
       selectedId,
+      view,
+      openNode,
       isExpanded,
       toggleCollapse,
       createChild,
