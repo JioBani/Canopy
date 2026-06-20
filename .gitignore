@@ -23,13 +23,25 @@ dist-ssr
 *.sln
 *.sw?
 
-# Env — 실제 키가 든 .env 류는 커밋 금지 (.env.example 은 커밋)
+# Env — 실제 키가 든 .env 류는 커밋 금지 (.env.example / .env.e2e 는 커밋)
 .env
 .env.*
 !.env.example
+!.env.e2e
+
 
 # Vercel
 .vercel
+
+# Supabase 로컬 (config.toml·migrations 는 커밋, 로컬 임시상태는 제외)
+supabase/.temp
+supabase/.branches
+
+# Playwright
+test-results
+playwright-report
+blob-report
+playwright/.cache
 
 # 로컬 전용 툴링 (머신 의존적 — 공유 저장소에 부적합)
 .mcp.json

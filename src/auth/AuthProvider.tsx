@@ -8,10 +8,19 @@ import {
 import type { Session, User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase"
 
+interface AuthResult {
+  error: string | null
+}
+
 interface AuthContextValue {
   session: Session | null
   user: User | null
   loading: boolean
+  /** 개발용 이메일+비밀번호 로그인 */
+  signInWithPassword: (email: string, password: string) => Promise<AuthResult>
+  /** 개발용 이메일+비밀번호 회원가입 (Confirm email off 전제 → 가입 즉시 세션) */
+  signUpWithPassword: (email: string, password: string) => Promise<AuthResult>
+  /** 배포용 구글 로그인 (현재는 보조) */
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
 }
@@ -39,6 +48,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  async function signInWithPassword(
+    email: string,
+    password: string
+  ): Promise<AuthResult> {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    return { error: error?.message ?? null }
+  }
+
+  async function signUpWithPassword(
+    email: string,
+    password: string
+  ): Promise<AuthResult> {
+    const { error } = await supabase.auth.signUp({ email, password })
+    return { error: error?.message ?? null }
+  }
+
+  // 배포용 구글 로그인 — 지금은 보조. 배포 직전 구글 OAuth 설정 후 LoginPage 에서 노출.
   async function signInWithGoogle() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -62,6 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     user: session?.user ?? null,
     loading,
+    signInWithPassword,
+    signUpWithPassword,
     signInWithGoogle,
     signOut,
   }
