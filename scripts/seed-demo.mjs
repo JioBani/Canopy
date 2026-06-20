@@ -1,7 +1,8 @@
 // 데모용 테스트 데이터 시드 — 로컬 Supabase 대상.
 // 출처: C:\Project\tactica-defense-resources\decompose\완료정의-점검\01~07.md
-// 매핑: 전장(컨텐츠) > 파일(기능) > [Task](세부기능 + ur_group) > 요구사항(UR + 작업, 링크)
-//   작업 상태: [x]→완료 / 미구현→할일 / 오구현→진행중  (완료정의 보존)
+// 매핑: 전장(컨텐츠) > 파일(기능) > [Task](세부기능) > 요구사항(UR)
+//   UR 상태: [x]→완료 / 미구현 / 오구현(+사유)  (완료정의 보존)
+//   작업은 시드하지 않음 — 원본은 요구사항만 담으므로 작업은 데모에서 직접 생성/매핑.
 // 실행: node scripts/seed-demo.mjs   (npx supabase start 로 로컬 스택이 떠 있어야 함)
 
 import { readFileSync, readdirSync } from "node:fs"
@@ -165,44 +166,9 @@ async function main() {
       )
       counts.ur += urRows.length
 
-      // 작업 들 (순서 동일)
-      const taskRows = await ins(
-        "node",
-        task.reqs.map((r, idx) => ({
-          project_id: project.id,
-          type: "작업",
-          title: r.text,
-          body: r.reason,
-          parent_id: sub.id,
-          status_id: statusFor(r, statusByCat),
-          domain: "구현",
-          sort_order: idx,
-        })),
-        "id"
-      )
-      counts.task += taskRows.length
-
-      // UR ↔ 작업 링크 — N:M 다양화:
-      //  · 기본 1:1, 일부 작업은 다중 UR 만족(idx%5==0 → 다음 UR도)
-      //  · 일부 작업은 UR 0개(idx%7==6 → 미매핑)
-      //  · 공유 인프라: 첫 UR을 여러 작업이 만족
-      const seen = new Set()
-      const links = []
-      const addLink = (workId, urId) => {
-        if (!workId || !urId) return
-        const k = `${workId}:${urId}`
-        if (seen.has(k)) return
-        seen.add(k)
-        links.push({ ur_id: urId, work_id: workId })
-      }
-      taskRows.forEach((t, idx) => {
-        if (idx % 7 === 6) return // UR 0개 매핑(미커버 작업)
-        addLink(t.id, urRows[idx]?.id) // 기본 1:1
-        if (idx % 5 === 0) addLink(t.id, urRows[idx + 1]?.id) // 다중 UR
-      })
-      if (taskRows.length >= 3) addLink(taskRows[2].id, urRows[0]?.id) // 공유 UR
-      if (links.length) await ins("ur_work_link", links, "id")
-      counts.link += links.length
+      // 작업은 시드하지 않는다. 원본(완료정의-점검)은 "요구사항"만 담고 있어
+      // 작업(작업내용 그룹)으로 베끼면 작업≡요구사항이 되어 모델이 흐려진다.
+      // 세부기능엔 UR 만 채우고, 작업은 데모에서 직접 만들어 UR 에 M:N 매핑한다.
     }
     console.log(`  ${parsed.feature}: 세부기능 ${parsed.tasks.length}`)
   }
