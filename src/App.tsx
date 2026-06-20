@@ -113,7 +113,7 @@ function SegmentTab({
       data-testid={testid}
       aria-pressed={active}
       className={cn(
-        "rounded-md px-3 py-1 text-[13px] font-semibold transition-colors",
+        "shrink-0 rounded-md px-2.5 py-1 text-[13px] font-semibold whitespace-nowrap transition-colors sm:px-3",
         active
           ? "bg-card text-foreground shadow-[0_1px_2px_rgba(90,40,60,.10),0_0_0_1px_var(--c-line)]"
           : "text-muted-foreground hover:text-foreground"
@@ -245,7 +245,7 @@ function WorkspaceInner() {
       <TopBar
         center={
           <div
-            className="flex items-center gap-0.5 rounded-lg bg-[var(--c-bg-sunken)] p-0.5"
+            className="flex shrink-0 items-center gap-0.5 rounded-lg bg-[var(--c-bg-sunken)] p-0.5"
             role="tablist"
           >
             <SegmentTab active={view === "tree"} onClick={() => setView("tree")} testid="view-tab-tree">

@@ -25,17 +25,17 @@ export function ProjectSwitcher() {
           <Button
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="min-w-0 max-w-[40vw] gap-2 sm:max-w-[220px]"
             data-testid="project-switcher"
           >
             {currentProject ? (
-              <span data-testid="current-project-name">
+              <span className="truncate" data-testid="current-project-name">
                 {currentProject.name}
               </span>
             ) : (
-              <span className="text-muted-foreground">프로젝트 선택</span>
+              <span className="text-muted-foreground truncate">프로젝트 선택</span>
             )}
-            <ChevronsUpDown className="size-4 opacity-50" />
+            <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-64">
