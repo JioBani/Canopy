@@ -6,6 +6,7 @@ import {
   cleanupCreatedProjects,
   createProject,
   rowByTitle,
+  selectByLabel,
   signupAndEnter,
 } from "./_helpers"
 
@@ -17,9 +18,9 @@ async function build(page: Page, myEmail: string) {
 
   // 작업: 완료 + 도메인 구현 + 나에게 배정(현재 유저 이메일로)
   await rowByTitle(page, "로직작업").click()
-  await page.getByTestId("detail-status").selectOption({ label: "완료" })
-  await page.getByTestId("detail-domain").selectOption("구현")
-  await page.getByTestId("detail-assignee").selectOption({ label: myEmail })
+  await selectByLabel(page, "detail-status", "완료")
+  await selectByLabel(page, "detail-domain", "구현")
+  await selectByLabel(page, "detail-assignee", myEmail)
 
   // 기능에 UR 추가(연결 작업 없음 → 미커버)
   await rowByTitle(page, "소환수기능").click()

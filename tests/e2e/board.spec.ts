@@ -6,6 +6,7 @@ import {
   cleanupCreatedProjects,
   createProject,
   rowByTitle,
+  selectByLabel,
   signupAndEnter,
 } from "./_helpers"
 
@@ -27,8 +28,8 @@ async function buildBoardData(page: Page) {
 
   // 작업A → 완료 + 도메인 디자인
   await rowByTitle(page, "작업A").click()
-  await page.getByTestId("detail-status").selectOption({ label: "완료" })
-  await page.getByTestId("detail-domain").selectOption("디자인")
+  await selectByLabel(page, "detail-status", "완료")
+  await selectByLabel(page, "detail-domain", "디자인")
   // 작업B 는 미지정으로 둠
 }
 
@@ -56,7 +57,7 @@ test.describe.serial("보드 뷰", () => {
     await buildBoardData(page)
     await page.getByTestId("view-tab-board").click()
 
-    await page.getByTestId("board-filter-domain").selectOption("디자인")
+    await selectByLabel(page, "board-filter-domain", "디자인")
     await expect(page.getByTestId("board-card")).toHaveCount(1)
     await expect(page.getByTestId("board-card")).toContainText("작업A")
   })

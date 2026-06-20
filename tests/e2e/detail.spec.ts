@@ -7,6 +7,8 @@ import {
   cleanupCreatedProjects,
   createProject,
   rowByTitle,
+  selectByIndex,
+  selectByLabel,
   signupAndEnter,
 } from "./_helpers"
 
@@ -31,7 +33,7 @@ test.describe.serial("노드 상세 패널", () => {
     await expect(page.getByTestId("detail-ticket")).toContainText("DT-")
 
     // 상태 '완료' → 세부기능 진행바 100% (실시간, 새로고침 없이) + 작업 뱃지
-    await page.getByTestId("detail-status").selectOption({ label: "완료" })
+    await selectByLabel(page, "detail-status", "완료")
     await expect(
       rowByTitle(page, "합성세부").getByTestId("node-progress")
     ).toHaveAttribute("data-progress", "100")
@@ -39,9 +41,9 @@ test.describe.serial("노드 상세 패널", () => {
       rowByTitle(page, "로직작업").getByTestId("status-badge")
     ).toHaveAttribute("data-status", "완료")
 
-    // 도메인 / 작업자 (작업자: index 1 = 가입 유저)
-    await page.getByTestId("detail-domain").selectOption("디자인")
-    await page.getByTestId("detail-assignee").selectOption({ index: 1 })
+    // 도메인 / 작업자 (작업자: index 1 = '없음' 다음 첫 멤버)
+    await selectByLabel(page, "detail-domain", "디자인")
+    await selectByIndex(page, "detail-assignee", 1)
 
     // 제목 편집 (Enter 저장) → 트리 갱신
     await page.getByTestId("detail-title").fill("로직작업-수정")

@@ -6,6 +6,7 @@ import {
   cleanupCreatedProjects,
   createProject,
   rowByTitle,
+  selectByLabel,
   signupAndEnter,
 } from "./_helpers"
 
@@ -54,7 +55,7 @@ test.describe.serial("검색 + 카드 점프", () => {
     await buildTree(page)
 
     await page.getByTestId("search-open").click()
-    await page.getByTestId("search-type").selectOption("컨텐츠")
+    await selectByLabel(page, "search-type", "컨텐츠")
     // 컨텐츠 타입은 '전장' 하나만
     await expect(page.getByTestId("search-result")).toHaveCount(1)
     await expect(page.getByTestId("search-result")).toContainText("전장")

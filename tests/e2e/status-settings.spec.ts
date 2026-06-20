@@ -6,6 +6,7 @@ import {
   cleanupCreatedProjects,
   createProject,
   rowByTitle,
+  selectByLabel,
   signupAndEnter,
 } from "./_helpers"
 
@@ -39,7 +40,7 @@ test.describe.serial("커스텀 상태 설정", () => {
     await page.keyboard.press("Escape")
     await expect(page.getByTestId("status-settings")).toHaveCount(0)
     await rowByTitle(page, "로직작업").click()
-    await page.getByTestId("detail-status").selectOption({ label: "개발중" })
+    await selectByLabel(page, "detail-status", "개발중")
     await expect(
       rowByTitle(page, "로직작업").getByTestId("status-badge")
     ).toHaveAttribute("data-status", "진행중")
@@ -51,7 +52,7 @@ test.describe.serial("커스텀 상태 설정", () => {
     await devRow.getByTestId("status-delete").click()
     await expect(page.getByTestId("status-delete-confirm")).toContainText("1")
     // 할일/할일 로 재지정 후 삭제
-    await page.getByTestId("status-reassign").selectOption({ label: "할일 / 할일" })
+    await selectByLabel(page, "status-reassign", "할일 / 할일")
     await page.getByTestId("status-delete-go").click()
     await expect(cat(page, "진행중").getByTestId("status-row")).toHaveCount(1)
 
@@ -70,7 +71,7 @@ test.describe.serial("커스텀 상태 설정", () => {
 
     // 작업을 완료 상태로
     await rowByTitle(page, "로직작업").click()
-    await page.getByTestId("detail-status").selectOption({ label: "완료" })
+    await selectByLabel(page, "detail-status", "완료")
 
     // 완료 상태 이름을 "릴리스"로 변경
     await page.getByTestId("project-settings").click()

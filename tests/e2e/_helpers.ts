@@ -23,6 +23,33 @@ export function rowByTitle(page: Page, title: string): Locator {
   return page.getByTestId("tree-node").filter({ hasText: title })
 }
 
+// ── shadcn 컴포넌트 상호작용 헬퍼 (native select → Select/Combobox 마이그레이션) ──
+
+/** shadcn Select: 트리거(testid) 클릭 → 보이는 텍스트로 옵션 선택. */
+export async function selectByLabel(page: Page, testid: string, label: string) {
+  await page.getByTestId(testid).click()
+  await page.getByRole("option", { name: label }).first().click()
+}
+
+/** shadcn Select: 트리거 클릭 → n번째 옵션 선택(0=빈값 라벨). */
+export async function selectByIndex(page: Page, testid: string, index: number) {
+  await page.getByTestId(testid).click()
+  await page.getByRole("option").nth(index).click()
+}
+
+/** shadcn Combobox(Popover+Command): 트리거 클릭 → (선택)타이핑 → 옵션 클릭. */
+export async function pickCombobox(
+  page: Page,
+  testid: string,
+  label?: string
+) {
+  await page.getByTestId(testid).click()
+  const option = label
+    ? page.getByRole("option", { name: label })
+    : page.getByRole("option")
+  await option.first().click()
+}
+
 /** 가입 → 인증 셸 진입. 생성된 이메일 반환(현재 유저 식별용). */
 export async function signupAndEnter(page: Page): Promise<string> {
   const email = uniqueEmail()

@@ -5,7 +5,9 @@ import {
   addContentRoot,
   cleanupCreatedProjects,
   createProject,
+  pickCombobox,
   rowByTitle,
+  selectByLabel,
   signupAndEnter,
 } from "./_helpers"
 
@@ -57,7 +59,7 @@ test.describe.serial("UR 서브시스템", () => {
     // 작업 선택 → UR 링크
     await rowByTitle(page, "로직작업").click()
     await expect(page.getByTestId("task-ur-links")).toBeVisible()
-    await page.getByTestId("ur-link-picker").selectOption({ label: "2마리 합성" })
+    await pickCombobox(page, "ur-link-picker", "2마리 합성")
     await expect(
       page.getByTestId("linked-ur").filter({ hasText: "2마리 합성" })
     ).toBeVisible()
@@ -71,7 +73,7 @@ test.describe.serial("UR 서브시스템", () => {
 
     // 작업 완료 처리 → 기능 재선택 → 완료 1
     await rowByTitle(page, "로직작업").click()
-    await page.getByTestId("detail-status").selectOption({ label: "완료" })
+    await selectByLabel(page, "detail-status", "완료")
     await rowByTitle(page, "소환수기능").click()
     await expect(
       urRow(page, "2마리 합성").getByTestId("ur-coverage")
@@ -93,12 +95,12 @@ test.describe.serial("UR 서브시스템", () => {
       hasText: "합성 패널 만들기",
     })
     await expect(item).toBeVisible()
-    await item.getByTestId("checklist-toggle").check()
+    await item.getByTestId("checklist-toggle").click()
     await expect(item.getByTestId("checklist-toggle")).toBeChecked()
 
-    // 선제조건(blocks) 추가 — 다른 노드 선택
+    // 선제조건(blocks) 추가 — 콤보박스에서 첫 후보 선택
     await expect(page.getByTestId("task-blocks")).toBeVisible()
-    await page.getByTestId("block-picker").selectOption({ index: 1 })
+    await pickCombobox(page, "block-picker")
     await expect(page.getByTestId("block-link")).toHaveCount(1)
   })
 })
