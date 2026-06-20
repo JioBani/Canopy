@@ -25,7 +25,7 @@ function embedWork(page: Page, title: string) {
 test.describe.serial("노드 상세 패널", () => {
   test.afterAll(cleanupCreatedProjects)
 
-  test("선택→상세, 제목·body 편집, 상태→진행바 실시간, 도메인·작업자 저장", async ({
+  test("선택→상세, 제목·body 편집, 상태→임베드 뱃지, 도메인·작업자 저장", async ({
     page,
   }) => {
     await signupAndEnter(page)
@@ -42,11 +42,8 @@ test.describe.serial("노드 상세 패널", () => {
     await expect(page.getByTestId("detail-type")).toHaveText("작업")
     await expect(page.getByTestId("detail-ticket")).toContainText("Task-")
 
-    // 상태 '완료' → 세부기능 진행바 100%(실시간) + 임베드 작업 뱃지
+    // 상태 '완료' → 임베드 작업 뱃지 반영 (진행도는 UR 기준이라 작업 상태와 별개)
     await selectByLabel(page, "detail-status", "완료")
-    await expect(
-      rowByTitle(page, "합성세부").getByTestId("node-progress")
-    ).toHaveAttribute("data-progress", "100")
     await expect(embedWork(page, "로직작업").getByTestId("status-badge")).toHaveAttribute(
       "data-status",
       "완료"

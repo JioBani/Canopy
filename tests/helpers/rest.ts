@@ -31,6 +31,18 @@ export async function restDelete(query: string): Promise<void> {
   if (!res.ok) throw new Error(`REST DELETE 실패 ${res.status}: ${await res.text()}`)
 }
 
+export async function restPost(
+  table: string,
+  body: Record<string, unknown> | Record<string, unknown>[]
+): Promise<void> {
+  const res = await fetch(`${URL}/rest/v1/${table}`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`REST POST 실패 ${res.status}: ${await res.text()}`)
+}
+
 export async function restPatch(
   query: string,
   body: Record<string, unknown>

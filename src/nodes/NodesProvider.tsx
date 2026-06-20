@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react"
@@ -51,6 +52,8 @@ interface NodesContextValue {
   ) => Promise<void>
   /** node_progress roll-up (없으면 undefined). */
   getProgress: (nodeId: string) => NodeProgress | undefined
+  /** 진행률 재조회(생략 시 전체). UR 변경 등 외부 요인 반영용. */
+  refreshProgress: (ids?: string[]) => Promise<void>
   /** status_id → 상태 (없으면 undefined). */
   getStatus: (statusId: string | null) => Status | undefined
   /** member_id → 멤버 (없으면 undefined). */
@@ -83,9 +86,17 @@ export function NodesProvider({
   const [members, setMembers] = useState<Member[]>([])
   const [progress, setProgress] = useState<Map<string, NodeProgress>>(new Map())
 
-  /** 주어진(또는 현재) 노드들의 진행률을 뷰에서 다시 가져온다. loading 토글 없음. */
-  const refreshProgress = useCallback(async (ids: string[]) => {
-    const rows = await listNodeProgress(ids)
+  // 현재 노드 스냅샷 ref — refreshProgress 가 nodes 의존 없이(안정 identity) 전체 id 를
+  // 읽게 해 reload→setNodes→refreshProgress 재생성→reload 무한루프를 막는다.
+  const nodesRef = useRef<AppNode[]>([])
+  useEffect(() => {
+    nodesRef.current = nodes
+  }, [nodes])
+
+  /** 주어진(생략 시 현재 전체) 노드들의 진행률을 뷰에서 다시 가져온다. loading 토글 없음. */
+  const refreshProgress = useCallback(async (ids?: string[]) => {
+    const target = ids ?? nodesRef.current.map((n) => n.id)
+    const rows = await listNodeProgress(target)
     setProgress(new Map(rows.map((r) => [r.node_id, r])))
   }, [])
 
@@ -264,6 +275,7 @@ export function NodesProvider({
       removeNode,
       updateFields,
       getProgress,
+      refreshProgress,
       getStatus,
       getMember,
       statuses,
@@ -285,6 +297,7 @@ export function NodesProvider({
       removeNode,
       updateFields,
       getProgress,
+      refreshProgress,
       getStatus,
       getMember,
       statuses,

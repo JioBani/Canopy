@@ -88,9 +88,11 @@ export async function deleteNode(id: string): Promise<void> {
 
 export interface NodeProgress {
   node_id: string
-  total_tasks: number
-  done_tasks: number
-  /** 완료 비율(0~1). 하위 작업 0개면 null. */
+  /** 하위(자신 포함) UR 총 개수. */
+  total_urs: number
+  /** 그중 status=완료 개수. */
+  done_urs: number
+  /** UR 완료 비율(0~1). 하위 UR 0개면 null(진행바 없음). */
   progress: number | null
 }
 
@@ -109,14 +111,14 @@ export async function listNodeProgress(
     const chunk = nodeIds.slice(i, i + PROGRESS_CHUNK)
     const { data, error } = await supabase
       .from("node_progress")
-      .select("node_id, total_tasks, done_tasks, progress")
+      .select("node_id, total_urs, done_urs, progress")
       .in("node_id", chunk)
     if (error) throw new Error(error.message)
     for (const r of data ?? []) {
       out.push({
         node_id: r.node_id as string,
-        total_tasks: Number(r.total_tasks),
-        done_tasks: Number(r.done_tasks),
+        total_urs: Number(r.total_urs),
+        done_urs: Number(r.done_urs),
         progress: r.progress === null ? null : Number(r.progress),
       })
     }

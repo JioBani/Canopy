@@ -150,8 +150,8 @@ export function DashboardView() {
                     className="tnum text-xs"
                     style={{ color: "var(--c-plum)" }}
                   >
-                    {np && np.total_tasks > 0
-                      ? `${np.done_tasks}/${np.total_tasks} · ${Math.round(ratio * 100)}%`
+                    {np && np.total_urs > 0
+                      ? `${np.done_urs}/${np.total_urs} · ${Math.round(ratio * 100)}%`
                       : "—"}
                   </span>
                 </div>

@@ -13,6 +13,7 @@ let pid: string
 let contentId: string
 let featureId: string
 let subId: string
+let masterId: string
 let taskAId: string
 let taskBId: string
 let doneStatusId: string
@@ -21,19 +22,19 @@ let todoStatusId: string
 async function progressOf(nodeId: string) {
   const { data, error } = await admin
     .from("node_progress")
-    .select("total_tasks, done_tasks, progress")
+    .select("total_urs, done_urs, progress")
     .eq("node_id", nodeId)
     .single()
   if (error) throw new Error(error.message)
   return {
-    total: Number(data.total_tasks),
-    done: Number(data.done_tasks),
+    total: Number(data.total_urs),
+    done: Number(data.done_urs),
     progress: data.progress === null ? null : Number(data.progress),
   }
 }
 
 beforeAll(async () => {
-  pid = await createProject(admin, "뷰 테스트", "VW")
+  pid = await createProject(admin, "뷰 테스트")
   created.push(pid)
 
   const { data: statuses } = await admin
@@ -80,14 +81,38 @@ beforeAll(async () => {
       status_id: todoStatusId,
     })
   ).data!.id
+
+  // 진행도(UR 기반)용: 세부기능에 UR 2개(완료 1 / 미구현 1) → 0.5
+  await admin
+    .from("ur")
+    .insert([
+      { feature_id: subId, text: "진행UR-완료", status: "완료" },
+      { feature_id: subId, text: "진행UR-미구현", status: "미구현" },
+    ])
+
+  // 마스터데이터 엣지: UR 없음 + 작업만 → progress=null(진행도 제외)
+  masterId = (
+    await createNode(admin, {
+      project_id: pid,
+      type: "마스터데이터",
+      title: "M",
+      parent_id: featureId,
+    })
+  ).data!.id
+  await createNode(admin, {
+    project_id: pid,
+    type: "작업",
+    title: "M작업",
+    parent_id: masterId,
+  })
 })
 
 afterAll(async () => {
   await cleanupProjects(admin, created)
 })
 
-describe("node_progress 뷰 (재귀 roll-up)", () => {
-  it("작업 2개 중 1개 완료 → 세부기능 진행률 0.5", async () => {
+describe("node_progress 뷰 (UR 완료율 roll-up)", () => {
+  it("세부기능 = 자기 UR 완료율 (완료 1 / 총 2 → 0.5)", async () => {
     expect(await progressOf(subId)).toEqual({
       total: 2,
       done: 1,
@@ -95,25 +120,36 @@ describe("node_progress 뷰 (재귀 roll-up)", () => {
     })
   })
 
-  it("상위 노드(기능·컨텐츠)로 roll-up 된다", async () => {
-    expect(await progressOf(featureId)).toMatchObject({ total: 2, done: 1 })
-    expect(await progressOf(contentId)).toMatchObject({ total: 2, done: 1 })
-  })
-
-  it("작업 노드 자신은 완료면 1/1, 미완료면 0/1", async () => {
-    expect(await progressOf(taskAId)).toEqual({
-      total: 1,
+  it("상위(기능·컨텐츠)로 UR roll-up 된다 (마스터데이터 작업은 분모에 안 들어감)", async () => {
+    expect(await progressOf(featureId)).toEqual({
+      total: 2,
       done: 1,
-      progress: 1,
+      progress: 0.5,
     })
-    expect(await progressOf(taskBId)).toEqual({
-      total: 1,
-      done: 0,
-      progress: 0,
+    expect(await progressOf(contentId)).toEqual({
+      total: 2,
+      done: 1,
+      progress: 0.5,
     })
   })
 
-  it("하위 작업이 없는 빈 컨텐츠는 progress=null", async () => {
+  it("작업 노드는 UR 을 소유하지 않으므로 progress=null", async () => {
+    expect(await progressOf(taskAId)).toEqual({
+      total: 0,
+      done: 0,
+      progress: null,
+    })
+  })
+
+  it("마스터데이터(UR 없음, 작업만) 엣지 → progress=null (진행도 제외)", async () => {
+    expect(await progressOf(masterId)).toEqual({
+      total: 0,
+      done: 0,
+      progress: null,
+    })
+  })
+
+  it("UR 이 없는 빈 컨텐츠는 progress=null", async () => {
     const empty = (
       await createNode(admin, {
         project_id: pid,

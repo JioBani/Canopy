@@ -394,9 +394,11 @@ create trigger trg_project_seed_statuses
 --    security_invoker=true 로 base 테이블 RLS 를 그대로 따른다.
 -- ---------------------------------------------------------------------------
 
--- node_progress: 노드별 "하위 작업(자신 포함) 중 완료 카테고리 비율" roll-up.
---   비-잎 노드 = 하위 작업 집계, 작업 노드 = 자기 자신(완료면 1/1).
---   하위 작업이 0개면 progress = null (진행바 없음).
+-- node_progress: 노드별 "하위(자신 포함) UR 중 status=완료 비율" roll-up.
+--   진행도 기준 = 사용자 요구사항(UR) 완료율(미구현·오구현=미완, 완료만 done).
+--   UR 은 세부기능 소유 → 세부기능=자기 UR, 기능/컨텐츠=하위 UR roll-up.
+--   UR 이 없는 가지(마스터데이터·작업·UR 미작성 세부기능)는 progress = null(진행바 없음).
+--   ※ 작업 완료 신호(ur_coverage)와 다른 축 — 진행도는 UR 완료만 본다.
 create or replace view node_progress
 with (security_invoker = true)
 as
@@ -409,17 +411,16 @@ with recursive subtree as (
 )
 select
   s.root_id as node_id,
-  count(*) filter (where tn.type = '작업')                                as total_tasks,
-  count(*) filter (where tn.type = '작업' and st.category = '완료')        as done_tasks,
+  count(u.id)                                       as total_urs,
+  count(u.id) filter (where u.status = '완료')       as done_urs,
   case
-    when count(*) filter (where tn.type = '작업') = 0 then null
+    when count(u.id) = 0 then null
     else round(
-      count(*) filter (where tn.type = '작업' and st.category = '완료')::numeric
-      / count(*) filter (where tn.type = '작업'), 4)
+      count(u.id) filter (where u.status = '완료')::numeric
+      / count(u.id), 4)
   end as progress
 from subtree s
-join node tn   on tn.id = s.node_id
-left join status st on st.id = tn.status_id
+left join ur u on u.feature_id = s.node_id
 group by s.root_id;
 
 -- ur_coverage: UR 별 연결 작업 수 / 완료 작업 수 / 미커버 여부.

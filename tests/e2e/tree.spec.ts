@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test"
-import { restGet, restPatch } from "../helpers/rest"
+import { restGet, restPatch, restPost } from "../helpers/rest"
 import {
   addChildSingle,
   addChildTyped,
@@ -143,20 +143,45 @@ test.describe.serial("노드 트리", () => {
     await expect(rowByTitle(page, "전장")).toBeVisible()
   })
 
-  test("진행바(null/0%/완료) + 작업 상태 뱃지(임베드)", async ({ page }) => {
+  test("진행바 = UR 완료율(none/0%/100%) + 작업 상태 뱃지(임베드)", async ({
+    page,
+  }) => {
     const projectName = await setup(page)
     await addContentRoot(page, "전장")
     await addChildSingle(page, "전장", "소환수기능")
     await addChildTyped(page, "소환수기능", "세부기능", "합성세부")
     await addWork(page, "합성세부", "로직작업")
 
-    // 작업(임베드): 미지정 뱃지
+    // 작업(임베드): 미지정 뱃지 — 작업 상태는 진행도(UR)와 별개 축
     await expect(await embedWorkBadge(page, "로직작업")).toHaveAttribute(
       "data-status",
       "미지정"
     )
 
-    // 비-잎: 작업 1개·완료 0 → 0%
+    // UR 없음 → 진행바 중립 "—"(작업만 있어도 진행도는 UR 기준)
+    await expect(
+      rowByTitle(page, "합성세부").getByTestId("node-progress")
+    ).toHaveAttribute("data-progress", "none")
+    await expect(
+      rowByTitle(page, "전장").getByTestId("node-progress")
+    ).toHaveAttribute("data-progress", "none")
+
+    const projs = await restGet<{ id: string }>(
+      `project?name=eq.${encodeURIComponent(projectName)}&select=id`
+    )
+    const subs = await restGet<{ id: string }>(
+      `node?project_id=eq.${projs[0].id}&type=eq.${encodeURIComponent("세부기능")}&select=id`
+    )
+
+    // UR 1개(미구현) 추가 → 0% (세부기능·상위 롤업)
+    await restPost("ur", {
+      feature_id: subs[0].id,
+      text: "진행 UR",
+      status: "미구현",
+    })
+    await page.reload()
+    await expand(page, "전장")
+    await expand(page, "소환수기능")
     await expect(
       rowByTitle(page, "합성세부").getByTestId("node-progress")
     ).toHaveAttribute("data-progress", "0")
@@ -164,35 +189,16 @@ test.describe.serial("노드 트리", () => {
       rowByTitle(page, "전장").getByTestId("node-progress")
     ).toHaveAttribute("data-progress", "0")
 
-    // 하위 작업 없는 컨텐츠 → 중립 "—"
-    await addContentRoot(page, "정비")
-    await expect(
-      rowByTitle(page, "정비").getByTestId("node-progress")
-    ).toHaveAttribute("data-progress", "none")
-
-    // 작업 완료(REST) + 새로고침 → 세부기능 100% + 임베드 작업 완료 뱃지
-    const projs = await restGet<{ id: string }>(
-      `project?name=eq.${encodeURIComponent(projectName)}&select=id`
-    )
-    const doneStatus = await restGet<{ id: string }>(
-      `status?project_id=eq.${projs[0].id}&category=eq.${encodeURIComponent("완료")}&select=id`
-    )
-    const tasks = await restGet<{ id: string }>(
-      `node?project_id=eq.${projs[0].id}&type=eq.${encodeURIComponent("작업")}&select=id`
-    )
-    await restPatch(`node?id=eq.${tasks[0].id}`, { status_id: doneStatus[0].id })
-
+    // UR 완료로 → 100% (롤업)
+    await restPatch(`ur?feature_id=eq.${subs[0].id}`, { status: "완료" })
     await page.reload()
-    // 기본 접힘 → 경로 펼치기(전장 > 소환수기능 > 합성세부)
     await expand(page, "전장")
     await expand(page, "소환수기능")
     await expect(
       rowByTitle(page, "합성세부").getByTestId("node-progress")
     ).toHaveAttribute("data-progress", "100")
-    await expand(page, "합성세부")
-    await expect(await embedWorkBadge(page, "로직작업")).toHaveAttribute(
-      "data-status",
-      "완료"
-    )
+    await expect(
+      rowByTitle(page, "전장").getByTestId("node-progress")
+    ).toHaveAttribute("data-progress", "100")
   })
 })

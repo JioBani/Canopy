@@ -58,6 +58,10 @@ test.describe.serial("UR 서브시스템 (세부기능 소유)", () => {
       "data-status",
       "완료"
     )
+    // UR 완료 → 세부기능 진행바 100% 실시간 반영(리로드 없음, UR 1/1)
+    await expect(
+      rowByTitle(page, "합성세부").getByTestId("node-progress")
+    ).toHaveAttribute("data-progress", "100")
 
     // 상태 오구현 + 사유 입력
     await urRow(page, "2마리 합성").getByTestId("ur-state").click()

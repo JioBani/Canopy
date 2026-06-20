@@ -10,14 +10,14 @@ export function ProgressBadge({ nodeId }: { nodeId: string }) {
   const { getProgress } = useNodes()
   const np = getProgress(nodeId)
 
-  if (!np || np.total_tasks === 0 || np.progress === null) {
+  if (!np || np.total_urs === 0 || np.progress === null) {
     return (
       <span
         className="w-[68px] text-right text-xs"
         style={{ color: "var(--c-ink-3)" }}
         data-testid="node-progress"
         data-progress="none"
-        title="하위 작업 없음"
+        title="요구사항 없음"
       >
         —
       </span>
@@ -32,7 +32,7 @@ export function ProgressBadge({ nodeId }: { nodeId: string }) {
       className="flex w-[68px] items-center justify-end gap-1.5"
       data-testid="node-progress"
       data-progress={String(pct)}
-      title={`${np.done_tasks}/${np.total_tasks} 완료`}
+      title={`요구사항 ${np.done_urs}/${np.total_urs} 완료`}
     >
       <span className="flex gap-[2.5px]">
         {Array.from({ length: cells }).map((_, i) => (

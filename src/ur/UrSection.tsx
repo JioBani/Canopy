@@ -15,6 +15,7 @@ import {
   type UrGroup,
   type UrStatus,
 } from "@/lib/ur"
+import { useNodes } from "@/nodes/NodesProvider"
 import { UR_STATE_META, UrStateGlyph } from "@/ur/urStateGlyph"
 import { UrStateMenu } from "@/ur/UrStateMenu"
 import { Button } from "@/components/ui/button"
@@ -100,6 +101,7 @@ interface Props {
 }
 
 export function UrSection({ subFeatureId, compact = false }: Props) {
+  const { refreshProgress } = useNodes()
   const [groups, setGroups] = useState<UrGroup[]>([])
   const [urs, setUrs] = useState<Ur[]>([])
   const [cov, setCov] = useState<Map<string, UrCoverage>>(new Map())
@@ -161,10 +163,17 @@ export function UrSection({ subFeatureId, compact = false }: Props) {
     })
     setAddingIn(null)
     await reload()
+    await refreshProgress() // UR 추가 → 진행도 분모 변화
   }
   async function setStatus(u: Ur, status: UrStatus) {
     await updateUr(u.id, { status })
     await reload()
+    await refreshProgress() // UR 완료상태 변화 → 진행도 분자 변화
+  }
+  async function removeUr(id: string) {
+    await deleteUr(id)
+    await reload()
+    await refreshProgress() // UR 삭제 → 진행도 변화
   }
   async function saveReason(u: Ur, reason: string) {
     await updateUr(u.id, { misimpl_reason: reason })
@@ -409,10 +418,7 @@ export function UrSection({ subFeatureId, compact = false }: Props) {
                               variant="ghost"
                               size="icon"
                               className="text-destructive size-6"
-                              onClick={async () => {
-                                await deleteUr(u.id)
-                                await reload()
-                              }}
+                              onClick={() => void removeUr(u.id)}
                               data-testid="ur-delete"
                             >
                               <Trash2 className="size-3" />
