@@ -12,6 +12,7 @@ import { WorkSection } from "@/ur/WorkSection"
 import { TaskChecklist } from "@/ur/TaskChecklist"
 import { TaskUrLinks } from "@/ur/TaskUrLinks"
 import { TaskBlocks } from "@/ur/TaskBlocks"
+import { WorkLogSection } from "@/ur/WorkLogSection"
 import type { NodeDomain } from "@/lib/nodes"
 import type { StatusCategory } from "@/lib/statuses"
 import { Button } from "@/components/ui/button"
@@ -365,6 +366,14 @@ export function NodeDetail() {
             </div>
             <div className="border-border border-t pt-6">
               <TaskBlocks nodeId={node.id} editable={editing} />
+            </div>
+            <div className="border-border border-t pt-6">
+              <WorkLogSection
+                workId={node.id}
+                assigneeId={node.assignee_id}
+                baseMinutes={node.time_spent_minutes}
+                editable={editing}
+              />
             </div>
           </div>
         )}

@@ -21,6 +21,8 @@ export interface AppNode {
   status_id: string | null
   domain: NodeDomain | null
   assignee_id: string | null
+  /** 작업 시간 수동 보정(분). 표시 총시간 = 이 값 + Σ(종료 로그 duration). */
+  time_spent_minutes: number
   created_at: string
   updated_at: string
 }
@@ -68,7 +70,13 @@ export async function updateNode(
   patch: Partial<
     Pick<
       AppNode,
-      "title" | "body" | "sort_order" | "status_id" | "domain" | "assignee_id"
+      | "title"
+      | "body"
+      | "sort_order"
+      | "status_id"
+      | "domain"
+      | "assignee_id"
+      | "time_spent_minutes"
     >
   >
 ): Promise<AppNode> {

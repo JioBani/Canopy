@@ -47,7 +47,15 @@ interface NodesContextValue {
   updateFields: (
     id: string,
     patch: Partial<
-      Pick<AppNode, "title" | "body" | "status_id" | "domain" | "assignee_id">
+      Pick<
+        AppNode,
+        | "title"
+        | "body"
+        | "status_id"
+        | "domain"
+        | "assignee_id"
+        | "time_spent_minutes"
+      >
     >
   ) => Promise<void>
   /** node_progress roll-up (없으면 undefined). */
