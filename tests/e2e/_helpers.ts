@@ -102,8 +102,19 @@ export async function addContentRoot(page: Page, title: string) {
   await input.fill(title)
   await input.press("Enter")
   await expect(rowByTitle(page, title)).toBeVisible()
-  await input.press("Escape")
-  await expect(input).toHaveCount(0)
+  await closeInlineAdd(page)
+}
+
+/**
+ * 인라인 추가 입력 닫기. 생성 직후 setNodes/refreshProgress 재렌더로 input 이 잠깐
+ * detach 되어 단일 Escape 가 실패하는 레이스가 있어, 닫힐 때까지 재시도한다.
+ */
+async function closeInlineAdd(page: Page) {
+  const input = page.getByTestId("inline-add-input")
+  await expect(async () => {
+    if (await input.count()) await input.press("Escape", { timeout: 1000 })
+    await expect(input).toHaveCount(0, { timeout: 1000 })
+  }).toPass({ timeout: 8000 })
 }
 
 /** 허용 자식타입이 1종인 부모에 인라인 추가. */
@@ -117,8 +128,34 @@ export async function addChildSingle(
   await input.fill(title)
   await input.press("Enter")
   await expect(rowByTitle(page, title)).toBeVisible()
-  await input.press("Escape")
-  await expect(input).toHaveCount(0)
+  await closeInlineAdd(page)
+}
+
+/**
+ * 세부기능에 작업 추가. 작업은 트리 행이 아니므로(임베드 패널에 들어감) 행 검증은
+ * 안 하고 인라인 입력이 닫히는 것으로 생성 완료를 확인한다. 생성 직후 그 작업이 선택됨.
+ */
+export async function addWork(
+  page: Page,
+  subFeatureTitle: string,
+  title: string
+) {
+  await rowByTitle(page, subFeatureTitle).getByTestId("node-add").click()
+  const input = page.getByTestId("inline-add-input")
+  await input.fill(title)
+  await input.press("Enter")
+  await expect(input).toHaveValue("") // 생성 성공 시 입력 비워짐(연속입력)
+  await closeInlineAdd(page)
+}
+
+/** 세부기능 임베드(컴팩트) 작업탭에서 작업 선택 → 상세 로드(openNode). */
+export async function selectWorkInEmbed(page: Page, workTitle: string) {
+  await page.getByTestId("subfeature-embed").getByTestId("work-tab").click()
+  await page
+    .getByTestId("subfeature-embed")
+    .getByTestId("work-row")
+    .filter({ hasText: workTitle })
+    .click()
 }
 
 /** 허용 자식타입이 여러 종인 부모(예: 기능)에 타입 선택 후 추가. */
@@ -134,6 +171,5 @@ export async function addChildTyped(
   await input.fill(title)
   await input.press("Enter")
   await expect(rowByTitle(page, title)).toBeVisible()
-  await input.press("Escape")
-  await expect(input).toHaveCount(0)
+  await closeInlineAdd(page)
 }

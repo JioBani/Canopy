@@ -3,9 +3,9 @@ import {
   addChildSingle,
   addChildTyped,
   addContentRoot,
+  addWork,
   cleanupCreatedProjects,
   createProject,
-  rowByTitle,
   selectByLabel,
   signupAndEnter,
 } from "./_helpers"
@@ -14,7 +14,7 @@ async function buildTree(page: Page) {
   await addContentRoot(page, "전장")
   await addChildSingle(page, "전장", "소환수기능")
   await addChildTyped(page, "소환수기능", "세부기능", "합성세부")
-  await addChildSingle(page, "합성세부", "로직작업")
+  await addWork(page, "합성세부", "로직작업")
 }
 
 test.describe.serial("검색 + 카드 점프", () => {

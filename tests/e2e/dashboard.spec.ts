@@ -3,10 +3,12 @@ import {
   addChildSingle,
   addChildTyped,
   addContentRoot,
+  addWork,
   cleanupCreatedProjects,
   createProject,
   rowByTitle,
   selectByLabel,
+  selectWorkInEmbed,
   signupAndEnter,
 } from "./_helpers"
 
@@ -14,16 +16,16 @@ async function build(page: Page, myEmail: string) {
   await addContentRoot(page, "전장")
   await addChildSingle(page, "전장", "소환수기능")
   await addChildTyped(page, "소환수기능", "세부기능", "합성세부")
-  await addChildSingle(page, "합성세부", "로직작업")
+  await addWork(page, "합성세부", "로직작업")
 
   // 작업: 완료 + 도메인 구현 + 나에게 배정(현재 유저 이메일로)
-  await rowByTitle(page, "로직작업").click()
+  await selectWorkInEmbed(page, "로직작업")
   await selectByLabel(page, "detail-status", "완료")
   await selectByLabel(page, "detail-domain", "구현")
   await selectByLabel(page, "detail-assignee", myEmail)
 
-  // 기능에 UR 추가(연결 작업 없음 → 미커버)
-  await rowByTitle(page, "소환수기능").click()
+  // 세부기능에 UR 추가(연결 작업 없음 → 미커버)
+  await rowByTitle(page, "합성세부").click()
   await page.getByTestId("add-ur").first().click()
   await page.getByTestId("ur-text-input").fill("미커버 요구사항")
   await page.getByTestId("ur-text-input").press("Enter")
@@ -55,7 +57,7 @@ test.describe.serial("대시보드", () => {
     // 미커버 UR 수 ≥ 1
     await expect(page.getByTestId("dash-uncovered-count")).toHaveText("1")
     await expect(
-      page.getByTestId("dash-uncovered-feature").filter({ hasText: "소환수기능" })
+      page.getByTestId("dash-uncovered-feature").filter({ hasText: "합성세부" })
     ).toBeVisible()
 
     // 내 작업 → 클릭 시 트리 전환 + 상세
@@ -74,8 +76,8 @@ test.describe.serial("대시보드", () => {
     await page.getByTestId("view-tab-dashboard").click()
     await page
       .getByTestId("dash-uncovered-feature")
-      .filter({ hasText: "소환수기능" })
+      .filter({ hasText: "합성세부" })
       .click()
-    await expect(page.getByTestId("detail-title")).toHaveValue("소환수기능")
+    await expect(page.getByTestId("detail-title")).toHaveValue("합성세부")
   })
 })

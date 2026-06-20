@@ -11,6 +11,7 @@ import { useNodes } from "@/nodes/NodesProvider"
 import { DeleteNodeDialog } from "@/nodes/DeleteNodeDialog"
 import { ProgressBadge, StatusBadge } from "@/nodes/NodeBadges"
 import { PIXEL_ICONS } from "@/nodes/pixelIcons"
+import { SubFeatureSections } from "@/ur/SubFeatureSections"
 import {
   allowedChildTypes,
   TYPE_META,
@@ -329,7 +330,20 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
         />
       )}
 
-      {expanded && hasKids && (
+      {/* 세부기능 펼침 = 작업 raw 행 대신 UR/작업 임베드 패널(컴팩트) */}
+      {expanded && node.type === "세부기능" && (
+        <div
+          className="py-1 pr-1"
+          style={{ paddingLeft: (depth + 1) * INDENT }}
+          onClick={(e) => e.stopPropagation()}
+          data-testid="subfeature-embed"
+        >
+          <SubFeatureSections subFeatureId={node.id} compact />
+        </div>
+      )}
+
+      {/* 그 외(컨텐츠/기능/마스터데이터 등): 자식 행 렌더 */}
+      {expanded && hasKids && node.type !== "세부기능" && (
         <>
           {/* 가지 가이드선 — 완료율 따라 sakura 로 물듦(꽃핀 가지) */}
           <span

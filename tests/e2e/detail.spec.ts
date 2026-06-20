@@ -1,16 +1,26 @@
-import { test, expect } from "@playwright/test"
+import { test, expect, type Page } from "@playwright/test"
 import { restGet } from "../helpers/rest"
 import {
   addChildSingle,
   addChildTyped,
   addContentRoot,
+  addWork,
   cleanupCreatedProjects,
   createProject,
   rowByTitle,
   selectByIndex,
   selectByLabel,
+  selectWorkInEmbed,
   signupAndEnter,
 } from "./_helpers"
+
+/** 임베드 작업 행(작업탭 활성화 후). */
+function embedWork(page: Page, title: string) {
+  return page
+    .getByTestId("subfeature-embed")
+    .getByTestId("work-row")
+    .filter({ hasText: title })
+}
 
 test.describe.serial("노드 상세 패널", () => {
   test.afterAll(cleanupCreatedProjects)
@@ -24,31 +34,32 @@ test.describe.serial("노드 상세 패널", () => {
     await addContentRoot(page, "전장")
     await addChildSingle(page, "전장", "소환수기능")
     await addChildTyped(page, "소환수기능", "세부기능", "합성세부")
-    await addChildSingle(page, "합성세부", "로직작업")
+    await addWork(page, "합성세부", "로직작업")
 
-    // 작업 선택 → 상세 표시
-    await rowByTitle(page, "로직작업").click()
+    // 작업 선택(임베드) → 상세 표시
+    await selectWorkInEmbed(page, "로직작업")
     await expect(page.getByTestId("node-detail")).toBeVisible()
     await expect(page.getByTestId("detail-type")).toHaveText("작업")
     await expect(page.getByTestId("detail-ticket")).toContainText("DT-")
 
-    // 상태 '완료' → 세부기능 진행바 100% (실시간, 새로고침 없이) + 작업 뱃지
+    // 상태 '완료' → 세부기능 진행바 100%(실시간) + 임베드 작업 뱃지
     await selectByLabel(page, "detail-status", "완료")
     await expect(
       rowByTitle(page, "합성세부").getByTestId("node-progress")
     ).toHaveAttribute("data-progress", "100")
-    await expect(
-      rowByTitle(page, "로직작업").getByTestId("status-badge")
-    ).toHaveAttribute("data-status", "완료")
+    await expect(embedWork(page, "로직작업").getByTestId("status-badge")).toHaveAttribute(
+      "data-status",
+      "완료"
+    )
 
     // 도메인 / 작업자 (작업자: index 1 = '없음' 다음 첫 멤버)
     await selectByLabel(page, "detail-domain", "디자인")
     await selectByIndex(page, "detail-assignee", 1)
 
-    // 제목 편집 (Enter 저장) → 트리 갱신
+    // 제목 편집 (Enter 저장) → 임베드 작업 행에 반영
     await page.getByTestId("detail-title").fill("로직작업-수정")
     await page.getByTestId("detail-title").press("Enter")
-    await expect(rowByTitle(page, "로직작업-수정")).toBeVisible()
+    await expect(embedWork(page, "로직작업-수정")).toBeVisible()
 
     // body: 수정 모드 진입 → 입력 → 완료 → 기본 마크다운 렌더 확인
     await page.getByTestId("body-edit").click()

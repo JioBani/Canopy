@@ -3,6 +3,7 @@ import { RequireAuth } from "@/auth/RequireAuth"
 import { ProjectProvider, useProjects } from "@/projects/ProjectProvider"
 import { ProjectSwitcher } from "@/projects/ProjectSwitcher"
 import { NoProjects } from "@/projects/NoProjects"
+import { useEffect, useRef, useState } from "react"
 import { NodesProvider, useNodes } from "@/nodes/NodesProvider"
 import { TreeView } from "@/nodes/TreeView"
 import { NodeDetail } from "@/nodes/NodeDetail"
@@ -11,6 +12,7 @@ import { DashboardView } from "@/dashboard/DashboardView"
 import { SearchButton } from "@/search/SearchDialog"
 import { StatusSettingsButton } from "@/projects/StatusSettingsDialog"
 import { BloomFull } from "@/nodes/bloomGlyph"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { LogOut } from "lucide-react"
 import {
   DropdownMenu,
@@ -121,6 +123,89 @@ function SegmentTab({
   )
 }
 
+const SIDEBAR_MIN = 240
+const SIDEBAR_MAX = 560
+const SIDEBAR_DEFAULT = 300
+const SIDEBAR_KEY = "canopy.sidebarWidth"
+
+function clampWidth(w: number) {
+  return Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, w))
+}
+
+/** 트리 사이드바 + 상세 분할 (px 리사이즈, localStorage, 더블클릭 리셋, a11y). */
+function ResizableSplit({
+  sidebar,
+  main,
+}: {
+  sidebar: React.ReactNode
+  main: React.ReactNode
+}) {
+  const [width, setWidth] = useState(() => {
+    const saved = Number(localStorage.getItem(SIDEBAR_KEY))
+    return saved ? clampWidth(saved) : SIDEBAR_DEFAULT
+  })
+  const dragging = useRef(false)
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_KEY, String(width))
+  }, [width])
+
+  useEffect(() => {
+    function onMove(e: PointerEvent) {
+      if (!dragging.current) return
+      setWidth(clampWidth(e.clientX))
+    }
+    function onUp() {
+      if (!dragging.current) return
+      dragging.current = false
+      document.body.style.userSelect = ""
+      document.body.style.cursor = ""
+    }
+    window.addEventListener("pointermove", onMove)
+    window.addEventListener("pointerup", onUp)
+    return () => {
+      window.removeEventListener("pointermove", onMove)
+      window.removeEventListener("pointerup", onUp)
+    }
+  }, [])
+
+  return (
+    <div className="flex min-h-0 flex-1">
+      <aside
+        className="flex shrink-0 flex-col overflow-y-auto border-r bg-[var(--c-surface)]"
+        style={{ width }}
+        data-testid="tree-panel"
+      >
+        {sidebar}
+      </aside>
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-valuenow={width}
+        aria-valuemin={SIDEBAR_MIN}
+        aria-valuemax={SIDEBAR_MAX}
+        tabIndex={0}
+        data-testid="sidebar-resize"
+        title="드래그로 너비 조절, 더블클릭 리셋"
+        onPointerDown={() => {
+          dragging.current = true
+          document.body.style.userSelect = "none"
+          document.body.style.cursor = "col-resize"
+        }}
+        onDoubleClick={() => setWidth(SIDEBAR_DEFAULT)}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft") setWidth((w) => clampWidth(w - 16))
+          else if (e.key === "ArrowRight") setWidth((w) => clampWidth(w + 16))
+        }}
+        className="group relative w-1 shrink-0 cursor-col-resize focus-visible:outline-none"
+      >
+        <span className="bg-border group-hover:bg-[var(--c-sakura)] group-focus-visible:bg-[var(--c-sakura)] absolute inset-y-0 left-0 w-px transition-colors" />
+      </div>
+      <section className="min-w-0 flex-1 overflow-y-auto">{main}</section>
+    </div>
+  )
+}
+
 /** 트리/보드/대시보드 — 통합 톱바 + 뷰. (view 는 NodesProvider 공유) */
 function WorkspaceInner() {
   const { view, setView } = useNodes()
@@ -152,17 +237,7 @@ function WorkspaceInner() {
       />
 
       {view === "tree" && (
-        <div className="flex min-h-0 flex-1">
-          <aside
-            className="border-border flex w-[300px] shrink-0 flex-col overflow-y-auto border-r bg-[var(--c-surface)]"
-            data-testid="tree-panel"
-          >
-            <TreeView />
-          </aside>
-          <section className="flex-1 overflow-y-auto">
-            <NodeDetail />
-          </section>
-        </div>
+        <ResizableSplit sidebar={<TreeView />} main={<NodeDetail />} />
       )}
       {view === "board" && (
         <div className="min-h-0 flex-1">
@@ -227,10 +302,12 @@ function WorkspaceBody() {
 
 export default function App() {
   return (
-    <RequireAuth>
-      <ProjectProvider>
-        <WorkspaceBody />
-      </ProjectProvider>
-    </RequireAuth>
+    <TooltipProvider delayDuration={300}>
+      <RequireAuth>
+        <ProjectProvider>
+          <WorkspaceBody />
+        </ProjectProvider>
+      </RequireAuth>
+    </TooltipProvider>
   )
 }

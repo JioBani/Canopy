@@ -182,12 +182,26 @@ async function main() {
       )
       counts.task += taskRows.length
 
-      // UR ↔ 작업 링크 (index 짝)
-      const links = urRows.map((u, idx) => ({
-        ur_id: u.id,
-        work_id: taskRows[idx].id,
-      }))
-      await ins("ur_work_link", links, "id")
+      // UR ↔ 작업 링크 — N:M 다양화:
+      //  · 기본 1:1, 일부 작업은 다중 UR 만족(idx%5==0 → 다음 UR도)
+      //  · 일부 작업은 UR 0개(idx%7==6 → 미매핑)
+      //  · 공유 인프라: 첫 UR을 여러 작업이 만족
+      const seen = new Set()
+      const links = []
+      const addLink = (workId, urId) => {
+        if (!workId || !urId) return
+        const k = `${workId}:${urId}`
+        if (seen.has(k)) return
+        seen.add(k)
+        links.push({ ur_id: urId, work_id: workId })
+      }
+      taskRows.forEach((t, idx) => {
+        if (idx % 7 === 6) return // UR 0개 매핑(미커버 작업)
+        addLink(t.id, urRows[idx]?.id) // 기본 1:1
+        if (idx % 5 === 0) addLink(t.id, urRows[idx + 1]?.id) // 다중 UR
+      })
+      if (taskRows.length >= 3) addLink(taskRows[2].id, urRows[0]?.id) // 공유 UR
+      if (links.length) await ins("ur_work_link", links, "id")
       counts.link += links.length
     }
     console.log(`  ${parsed.feature}: 세부기능 ${parsed.tasks.length}`)

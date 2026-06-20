@@ -55,7 +55,11 @@ export function DashboardView() {
 
   const contents = nodes.filter((n) => n.type === "컨텐츠")
   const tasks = useMemo(() => nodes.filter((n) => n.type === "작업"), [nodes])
-  const features = useMemo(() => nodes.filter((n) => n.type === "기능"), [nodes])
+  // UR 은 세부기능 소유 → 커버리지는 세부기능 기준
+  const subFeatures = useMemo(
+    () => nodes.filter((n) => n.type === "세부기능"),
+    [nodes]
+  )
 
   // 도메인별 분포
   const domainStats = DOMAINS.map((d) => {
@@ -78,7 +82,7 @@ export function DashboardView() {
   const [uncoveredTotal, setUncoveredTotal] = useState<number | null>(null)
 
   useEffect(() => {
-    const ids = features.map((f) => f.id)
+    const ids = subFeatures.map((f) => f.id)
     if (ids.length === 0) {
       setUncoveredByFeature(new Map())
       setUncoveredTotal(0)
@@ -110,8 +114,8 @@ export function DashboardView() {
   }, [nodes]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const featureTitle = useMemo(
-    () => new Map(features.map((f) => [f.id, f.title])),
-    [features]
+    () => new Map(subFeatures.map((f) => [f.id, f.title])),
+    [subFeatures]
   )
   const uncoveredFeatures = [...uncoveredByFeature.entries()]
     .sort((a, b) => b[1] - a[1])

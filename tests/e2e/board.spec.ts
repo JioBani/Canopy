@@ -3,10 +3,11 @@ import {
   addChildSingle,
   addChildTyped,
   addContentRoot,
+  addWork,
   cleanupCreatedProjects,
   createProject,
-  rowByTitle,
   selectByLabel,
+  selectWorkInEmbed,
   signupAndEnter,
 } from "./_helpers"
 
@@ -23,11 +24,11 @@ async function buildBoardData(page: Page) {
   await addContentRoot(page, "전장")
   await addChildSingle(page, "전장", "소환수기능")
   await addChildTyped(page, "소환수기능", "세부기능", "합성세부")
-  await addChildSingle(page, "합성세부", "작업A")
-  await addChildSingle(page, "합성세부", "작업B")
+  await addWork(page, "합성세부", "작업A")
+  await addWork(page, "합성세부", "작업B")
 
-  // 작업A → 완료 + 도메인 디자인
-  await rowByTitle(page, "작업A").click()
+  // 작업A → 완료 + 도메인 디자인 (임베드에서 선택)
+  await selectWorkInEmbed(page, "작업A")
   await selectByLabel(page, "detail-status", "완료")
   await selectByLabel(page, "detail-domain", "디자인")
   // 작업B 는 미지정으로 둠

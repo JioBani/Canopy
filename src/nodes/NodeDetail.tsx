@@ -9,7 +9,9 @@ import { TYPE_META } from "@/nodes/nodeGrammar"
 import { PIXEL_ICONS } from "@/nodes/pixelIcons"
 import { BLOOM_GLYPH } from "@/nodes/bloomGlyph"
 import { CATEGORY_COLOR } from "@/lib/statuses"
-import { FeatureUrPanel } from "@/ur/FeatureUrPanel"
+import { ChildNav } from "@/nodes/ChildNav"
+import { SubFeatureSections } from "@/ur/SubFeatureSections"
+import { WorkSection } from "@/ur/WorkSection"
 import { TaskChecklist } from "@/ur/TaskChecklist"
 import { TaskUrLinks } from "@/ur/TaskUrLinks"
 import { TaskBlocks } from "@/ur/TaskBlocks"
@@ -113,18 +115,6 @@ export function NodeDetail() {
   function saveBody() {
     if (node && body !== (node.body ?? ""))
       void updateFields(node.id, { body })
-  }
-
-  // 작업의 기능 조상(부모의 부모) — UR 피커 기본 강조용.
-  let featureAncestorId: string | null = null
-  if (isTask) {
-    let cur: AppNode | null = node
-    while (cur && cur.type !== "기능") {
-      cur = cur.parent_id
-        ? (nodes.find((n) => n.id === cur!.parent_id) ?? null)
-        : null
-    }
-    featureAncestorId = cur?.id ?? null
   }
 
   // 브레드크럼: 조상 경로(자기 제외, 루트→부모)
@@ -405,10 +395,28 @@ export function NodeDetail() {
         )}
       </div>
 
-      {/* 기능: UR 관리 */}
-      {node.type === "기능" && (
+      {/* 컨텐츠/기능: 한 단계 아래 자식 드릴다운 네비 */}
+      {(node.type === "컨텐츠" || node.type === "기능") && (
         <div className="border-border border-t pt-5">
-          <FeatureUrPanel featureId={node.id} />
+          <h3 className="font-display mb-3 text-[15px] font-bold">
+            {node.type === "컨텐츠" ? "기능" : "세부기능 · 마스터데이터"}
+          </h3>
+          <ChildNav parentId={node.id} />
+        </div>
+      )}
+
+      {/* 세부기능: UR/작업 형제 섹션 (풀 편집) */}
+      {node.type === "세부기능" && (
+        <div className="border-border border-t pt-5">
+          <SubFeatureSections subFeatureId={node.id} />
+        </div>
+      )}
+
+      {/* 마스터데이터: 작업만 (UR 없음) */}
+      {node.type === "마스터데이터" && (
+        <div className="border-border border-t pt-5">
+          <h3 className="font-display mb-3 text-[15px] font-bold">작업</h3>
+          <WorkSection parentId={node.id} featureId={node.id} />
         </div>
       )}
 
@@ -417,7 +425,7 @@ export function NodeDetail() {
         <>
           <div className="border-border grid grid-cols-1 gap-x-8 gap-y-6 border-t pt-6 lg:grid-cols-2">
             <TaskChecklist workId={node.id} />
-            <TaskUrLinks workId={node.id} featureId={featureAncestorId} />
+            <TaskUrLinks workId={node.id} featureId={node.parent_id} />
           </div>
           <div className="border-border border-t pt-6">
             <TaskBlocks nodeId={node.id} />

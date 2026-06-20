@@ -8,6 +8,7 @@ import {
   unlinkUrWork,
   type Ur,
 } from "@/lib/ur"
+import { UrStateGlyph } from "@/ur/urStateGlyph"
 import { Button } from "@/components/ui/button"
 import { Picker, type PickerGroup } from "@/components/ui/picker"
 
@@ -16,21 +17,25 @@ export function TaskUrLinks({
   featureId,
 }: {
   workId: string
+  /** 강조할 소유 세부기능 id (작업의 부모). */
   featureId: string | null
 }) {
   const { nodes } = useNodes()
   const [urs, setUrs] = useState<Ur[]>([])
   const [linkedIds, setLinkedIds] = useState<string[]>([])
 
+  // UR 은 세부기능 소유 → 세부기능 제목으로 그룹/표시
   const featureTitle = useMemo(() => {
     const map = new Map<string, string>()
-    nodes.filter((n) => n.type === "기능").forEach((n) => map.set(n.id, n.title))
+    nodes
+      .filter((n) => n.type === "세부기능")
+      .forEach((n) => map.set(n.id, n.title))
     return map
   }, [nodes])
 
   const reload = useCallback(async () => {
     const featureIds = nodes
-      .filter((n) => n.type === "기능")
+      .filter((n) => n.type === "세부기능")
       .map((n) => n.id)
     const [allUrs, linked] = await Promise.all([
       listUrs(featureIds),
@@ -64,8 +69,8 @@ export function TaskUrLinks({
     return featureIds.map((fid) => ({
       key: fid,
       label:
-        (featureTitle.get(fid) ?? "기능") +
-        (fid === featureId ? " (현재 기능)" : ""),
+        (featureTitle.get(fid) ?? "세부기능") +
+        (fid === featureId ? " (현재)" : ""),
       items: byFeature.get(fid)!.map((u) => ({ value: u.id, label: u.text })),
     }))
   }, [available, featureId, featureTitle])
@@ -81,9 +86,9 @@ export function TaskUrLinks({
             className="group/lu border-border bg-card flex items-start gap-2 rounded-[10px] border px-3 py-2.5"
             data-testid="linked-ur"
           >
-            <span
-              className="mt-[7px] size-[7px] shrink-0 rounded-full"
-              style={{ background: "var(--c-sakura)" }}
+            <UrStateGlyph
+              status={u.status}
+              className="mt-0.5 size-[15px] shrink-0"
             />
             <div className="flex-1">
               <p className="text-[13.5px] leading-relaxed">{u.text}</p>
