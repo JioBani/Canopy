@@ -145,4 +145,61 @@ test.describe.serial("노드 트리", () => {
     await rowByTitle(page, "전장").getByTestId("tree-toggle").click()
     await expect(rowByTitle(page, "소환수기능")).toBeVisible()
   })
+
+  test("이름 변경 — 더블클릭 인라인 편집", async ({ page }) => {
+    await setup(page)
+    await addContentRoot(page, "전장")
+
+    await rowByTitle(page, "전장").getByTestId("node-title").dblclick()
+    const input = page.getByTestId("rename-input")
+    await input.fill("정비")
+    await input.press("Enter")
+
+    await expect(rowByTitle(page, "정비")).toBeVisible()
+    await expect(rowByTitle(page, "전장")).toHaveCount(0)
+  })
+
+  test("이름 변경 — Esc 로 취소하면 원래 제목 유지", async ({ page }) => {
+    await setup(page)
+    await addContentRoot(page, "전장")
+
+    await rowByTitle(page, "전장").getByTestId("node-title").dblclick()
+    const input = page.getByTestId("rename-input")
+    await input.fill("버려질이름")
+    await input.press("Escape")
+
+    await expect(rowByTitle(page, "전장")).toBeVisible()
+    await expect(rowByTitle(page, "버려질이름")).toHaveCount(0)
+  })
+
+  test("삭제 — 하위 cascade confirm 후 트리 갱신", async ({ page }) => {
+    await setup(page)
+    await addContentRoot(page, "전장")
+    await addChildSingle(page, "전장", "소환수기능")
+
+    await rowByTitle(page, "전장").getByTestId("node-more").click()
+    await page.getByTestId("delete-action").click()
+    await expect(page.getByTestId("delete-message")).toContainText("하위 1개")
+    await page.getByTestId("confirm-delete").click()
+
+    // 컨텐츠+하위 모두 사라지고 빈 상태로
+    await expect(rowByTitle(page, "전장")).toHaveCount(0)
+    await expect(rowByTitle(page, "소환수기능")).toHaveCount(0)
+    await expect(page.getByTestId("empty-state")).toBeVisible()
+  })
+
+  test("삭제 — 잎 노드는 하위 안내 없이 삭제", async ({ page }) => {
+    await setup(page)
+    await addContentRoot(page, "전장")
+    await addChildSingle(page, "전장", "소환수기능")
+
+    await rowByTitle(page, "소환수기능").getByTestId("node-more").click()
+    await page.getByTestId("delete-action").click()
+    await expect(page.getByTestId("delete-message")).not.toContainText("하위")
+    await page.getByTestId("confirm-delete").click()
+
+    await expect(rowByTitle(page, "소환수기능")).toHaveCount(0)
+    // 부모(전장)는 유지
+    await expect(rowByTitle(page, "전장")).toBeVisible()
+  })
 })

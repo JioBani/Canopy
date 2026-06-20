@@ -5,12 +5,16 @@ import {
   Circle,
   Cog,
   Database,
+  MoreHorizontal,
   Package,
+  Pencil,
   Plus,
+  Trash2,
   Wrench,
   type LucideIcon,
 } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
+import { DeleteNodeDialog } from "@/nodes/DeleteNodeDialog"
 import {
   allowedChildTypes,
   TYPE_META,
@@ -98,6 +102,41 @@ function InlineAdd({
   )
 }
 
+/** 제목 인라인 편집: Enter 저장 / Esc·blur 취소. */
+function RenameInput({
+  initial,
+  onSave,
+  onCancel,
+}: {
+  initial: string
+  onSave: (title: string) => void
+  onCancel: () => void
+}) {
+  const [value, setValue] = useState(initial)
+  return (
+    <Input
+      autoFocus
+      value={value}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => setValue(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault()
+          const t = value.trim()
+          if (t) onSave(t)
+          else onCancel()
+        } else if (e.key === "Escape") {
+          e.preventDefault()
+          onCancel()
+        }
+      }}
+      onBlur={onCancel}
+      className="h-7"
+      data-testid="rename-input"
+    />
+  )
+}
+
 /** 노드의 [+] — 허용 자식 타입이 1개면 바로, 여러 개면 드롭다운으로 선택. */
 function AddChildButton({
   parentType,
@@ -157,9 +196,17 @@ function AddChildButton({
 }
 
 function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
-  const { childrenOf, isExpanded, toggleCollapse, selectedId, select } =
-    useNodes()
+  const {
+    childrenOf,
+    isExpanded,
+    toggleCollapse,
+    selectedId,
+    select,
+    renameNode,
+  } = useNodes()
   const [addingType, setAddingType] = useState<NodeType | null>(null)
+  const [editing, setEditing] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const kids = childrenOf(node.id)
   const hasKids = kids.length > 0
   const expanded = isExpanded(node.id)
@@ -197,16 +244,68 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
         </button>
 
         <Icon className={cn("size-4 shrink-0", TYPE_META[node.type].color)} />
-        <span className="flex-1 truncate text-sm" data-testid="node-title">
-          {node.title}
-        </span>
 
-        <span className="opacity-0 group-hover:opacity-100">
-          <AddChildButton
-            parentType={node.type}
-            onPick={(t) => setAddingType(t)}
+        {editing ? (
+          <RenameInput
+            initial={node.title}
+            onSave={(t) => {
+              void renameNode(node.id, t)
+              setEditing(false)
+            }}
+            onCancel={() => setEditing(false)}
           />
-        </span>
+        ) : (
+          <span
+            className="flex-1 truncate text-sm"
+            data-testid="node-title"
+            onDoubleClick={(e) => {
+              e.stopPropagation()
+              setEditing(true)
+            }}
+          >
+            {node.title}
+          </span>
+        )}
+
+        {!editing && (
+          <span className="flex items-center opacity-0 group-hover:opacity-100">
+            <AddChildButton
+              parentType={node.type}
+              onPick={(t) => setAddingType(t)}
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-6"
+                  onClick={(e) => e.stopPropagation()}
+                  data-testid="node-more"
+                  title="더보기"
+                >
+                  <MoreHorizontal className="size-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onSelect={() => setEditing(true)}
+                  data-testid="rename-action"
+                >
+                  <Pencil className="size-4" />
+                  이름 변경
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setDeleteOpen(true)}
+                  data-testid="delete-action"
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="size-4" />
+                  삭제
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </span>
+        )}
       </div>
 
       {addingType && (
@@ -222,6 +321,12 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
         kids.map((child) => (
           <TreeNodeRow key={child.id} node={child} depth={depth + 1} />
         ))}
+
+      <DeleteNodeDialog
+        node={node}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+      />
     </div>
   )
 }
