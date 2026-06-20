@@ -17,6 +17,7 @@ import type { NodeDomain } from "@/lib/nodes"
 import type { StatusCategory } from "@/lib/statuses"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 import {
   Select,
   SelectContent,
@@ -59,8 +60,16 @@ function PropField({
   )
 }
 
+// 읽기 모드(disabled)에서도 평상시처럼 또렷하게(흐려짐 제거). 편집 모드만 하이라이트.
 const triggerClass =
-  "h-8 min-w-[7.5rem] gap-1.5 rounded-[9px] bg-card text-[13px] font-medium shadow-xs"
+  "h-8 min-w-[7.5rem] gap-1.5 rounded-[9px] bg-card text-[13px] font-medium shadow-xs disabled:cursor-default disabled:opacity-100"
+/** 편집 모드 강조 링/보더 (편집 가능함을 표시). */
+const editRing = "border-[var(--c-sakura)] ring-2 ring-[var(--c-sakura)]/30"
+
+/** 상태/도메인/담당 셀렉트 트리거 클래스(편집 시 하이라이트). */
+function fieldClass(editing: boolean) {
+  return cn(triggerClass, editing && editRing)
+}
 
 export function NodeDetail() {
   const { nodes, selectedId, updateFields, statuses, members } = useNodes()
@@ -195,7 +204,12 @@ export function NodeDetail() {
             readOnly={!editing}
             onChange={(e) => setTitle(e.target.value)}
             style={{ fontSize: "clamp(28px, 4vw, 32px)", letterSpacing: "-0.01em" }}
-            className="font-display h-auto flex-1 border-transparent bg-transparent px-1 py-0.5 leading-[1.2] font-bold shadow-none read-only:cursor-default hover:bg-[#F5F2F4]/60 read-only:hover:bg-transparent focus-visible:bg-transparent"
+            className={cn(
+              "font-display h-auto flex-1 px-1 py-0.5 leading-[1.2] font-bold shadow-none",
+              editing
+                ? "border-[var(--c-sakura)] bg-[var(--c-pink-bg)]/20 ring-2 ring-[var(--c-sakura)]/20"
+                : "border-transparent bg-transparent read-only:cursor-default read-only:hover:bg-transparent"
+            )}
             data-testid="detail-title"
           />
         </div>
@@ -208,7 +222,7 @@ export function NodeDetail() {
               disabled={!editing}
               onValueChange={setDraftStatus}
             >
-              <SelectTrigger className={triggerClass} data-testid="detail-status">
+              <SelectTrigger className={fieldClass(editing)} data-testid="detail-status">
                 <SelectValue placeholder="상태" />
               </SelectTrigger>
               <SelectContent>
@@ -244,7 +258,7 @@ export function NodeDetail() {
                   disabled={!editing}
                   onValueChange={setDraftDomain}
                 >
-                  <SelectTrigger className={triggerClass} data-testid="detail-domain">
+                  <SelectTrigger className={fieldClass(editing)} data-testid="detail-domain">
                     <SelectValue placeholder="도메인" />
                   </SelectTrigger>
                   <SelectContent>
@@ -264,7 +278,7 @@ export function NodeDetail() {
                   disabled={!editing}
                   onValueChange={setDraftAssignee}
                 >
-                  <SelectTrigger className={triggerClass} data-testid="detail-assignee">
+                  <SelectTrigger className={fieldClass(editing)} data-testid="detail-assignee">
                     {assignee && (
                       <span
                         className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-full text-[9.5px] font-bold"
@@ -303,7 +317,7 @@ export function NodeDetail() {
           {editing ? (
             <textarea
               id="detail-body"
-              className="min-h-32 rounded-[10px] border border-transparent bg-[#F5F2F4] p-3.5 text-sm leading-relaxed outline-none transition-colors hover:bg-[#EFE7EC] focus-visible:border-ring focus-visible:bg-card focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+              className="min-h-32 rounded-[10px] border border-[var(--c-sakura)]/50 bg-[#F5F2F4] p-3.5 text-sm leading-relaxed outline-none ring-2 ring-[var(--c-sakura)]/20 transition-colors focus-visible:border-ring focus-visible:bg-card focus-visible:ring-ring/50 focus-visible:ring-[3px]"
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="마크다운으로 설명을 작성하세요 (#, **굵게**, - 목록, | 표 | …)"
@@ -347,7 +361,7 @@ export function NodeDetail() {
         {node.type === "마스터데이터" && (
           <div className="border-border border-t pt-5">
             <h3 className="font-display mb-3 text-[15px] font-bold">작업</h3>
-            <WorkSection parentId={node.id} editable={editing} />
+            <WorkSection parentId={node.id} />
           </div>
         )}
 

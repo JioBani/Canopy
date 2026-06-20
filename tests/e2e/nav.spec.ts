@@ -7,7 +7,6 @@ import {
   addWork,
   cleanupCreatedProjects,
   createProject,
-  enterEdit,
   rowByTitle,
   signupAndEnter,
 } from "./_helpers"
@@ -58,9 +57,8 @@ test.describe.serial("상세 드릴다운 + 작업 독립 생성", () => {
     await addChildSingle(page, "전장", "소환수기능")
     await addChildTyped(page, "소환수기능", "세부기능", "합성세부")
 
-    // 세부기능 상세 → '수정' → 작업 탭 → 작업 추가(특정 UR 종속 없음)
+    // 세부기능 상세 → 작업 탭 → 작업 추가(수정 모드 없이 항상 가능, 특정 UR 종속 없음)
     await rowByTitle(page, "합성세부").click()
-    await enterEdit(page)
     await detail(page).getByTestId("work-tab").click()
     await detail(page).getByTestId("add-work").click()
     await detail(page).getByTestId("add-work-input").fill("독립작업")

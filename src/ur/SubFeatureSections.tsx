@@ -82,11 +82,7 @@ export function SubFeatureSections({
           editable={editable}
         />
       ) : (
-        <WorkSection
-          parentId={subFeatureId}
-          compact={compact}
-          editable={editable}
-        />
+        <WorkSection parentId={subFeatureId} compact={compact} />
       )}
     </div>
   )
