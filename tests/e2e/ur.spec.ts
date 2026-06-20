@@ -7,7 +7,6 @@ import {
   addWork,
   cleanupCreatedProjects,
   createProject,
-  enterEdit,
   pickCombobox,
   rowByTitle,
   selectWorkInEmbed,
@@ -35,10 +34,9 @@ test.describe.serial("UR 서브시스템 (세부기능 소유)", () => {
     const projectName = await signupProj(page, "UR")
     await buildTree(page)
 
-    // 세부기능 선택 → 상세 UR/작업 섹션 → '수정'(편집 모드)
+    // 세부기능 선택 → 상세 UR/작업 섹션(상시 편집)
     await rowByTitle(page, "합성세부").click()
     await expect(detail(page).getByTestId("subfeature-sections")).toBeVisible()
-    await enterEdit(page)
 
     // UR 추가 (미분류)
     await detail(page).getByTestId("add-ur").click()
@@ -93,18 +91,16 @@ test.describe.serial("UR 서브시스템 (세부기능 소유)", () => {
     await signupProj(page, "UV")
     await buildTree(page)
 
-    // 세부기능에 UR 추가 (편집 모드)
+    // 세부기능에 UR 추가 (상시 편집)
     await rowByTitle(page, "합성세부").click()
-    await enterEdit(page)
     await detail(page).getByTestId("add-ur").click()
     await detail(page).getByTestId("ur-text-input").fill("링크대상 UR")
     await detail(page).getByTestId("ur-text-input").press("Enter")
     await expect(urRow(page, "링크대상 UR")).toBeVisible()
 
-    // 임베드에서 작업 선택 → 작업 상세 → '수정'
+    // 임베드에서 작업 선택 → 작업 상세(상시 편집)
     await selectWorkInEmbed(page, "로직작업")
     await expect(page.getByTestId("task-checklist")).toBeVisible()
-    await enterEdit(page)
 
     // 체크리스트
     await page.getByTestId("checklist-input").fill("패널 만들기")

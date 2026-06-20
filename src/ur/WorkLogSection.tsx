@@ -51,22 +51,23 @@ export function WorkLogSection({
   workId,
   assigneeId,
   baseMinutes,
-  editable = false,
 }: {
   workId: string
   assigneeId: string | null
   baseMinutes: number
-  editable?: boolean
 }) {
   const { members, updateFields } = useNodes()
   const [logs, setLogs] = useState<WorkLog[]>([])
   const [stopNote, setStopNote] = useState("")
+  // 로그 상세(총시간 보정·duration·작업자·note·삭제) 편집 토글. 시작/종료는 즉시.
+  const [editing, setEditing] = useState(false)
 
   const reload = useCallback(async () => {
     setLogs(await listWorkLogs(workId))
   }, [workId])
   useEffect(() => {
     reload().catch((e) => console.error("[worklog] 로드 실패:", e))
+    setEditing(false)
   }, [reload])
 
   const active = logs.find((l) => !l.ended_at)
@@ -98,7 +99,7 @@ export function WorkLogSection({
         <h3 className="font-display text-[15px] font-bold">작업 시간</h3>
 
         {/* 총 작업 시간 (편집 모드에서 직접 보정) */}
-        {editable ? (
+        {editing ? (
           <label className="flex items-center gap-1.5 text-[13px]">
             <span style={{ color: "var(--c-ink-3)" }}>총</span>
             <Input
@@ -125,6 +126,16 @@ export function WorkLogSection({
             총 {formatMinutes(total)}
           </span>
         )}
+
+        <Button
+          variant={editing ? "default" : "ghost"}
+          size="sm"
+          className="h-7 gap-1 text-xs"
+          onClick={() => setEditing((v) => !v)}
+          data-testid="work-log-edit"
+        >
+          {editing ? "완료" : "수정"}
+        </Button>
 
         {/* 시작/종료 (즉시 동작) */}
         {active ? (
@@ -179,7 +190,7 @@ export function WorkLogSection({
 
             {/* duration */}
             {l.ended_at &&
-              (editable ? (
+              (editing ? (
                 <label className="flex items-center gap-1">
                   <Input
                     type="number"
@@ -204,7 +215,7 @@ export function WorkLogSection({
               ))}
 
             {/* 작업자 */}
-            {editable ? (
+            {editing ? (
               <FilterSelect
                 value={l.member_id ?? ""}
                 onChange={(v) =>
@@ -225,7 +236,7 @@ export function WorkLogSection({
             )}
 
             {/* note */}
-            {editable ? (
+            {editing ? (
               <Input
                 defaultValue={l.note ?? ""}
                 placeholder="메모(선택)"
@@ -245,7 +256,7 @@ export function WorkLogSection({
               )
             )}
 
-            {editable && (
+            {editing && (
               <Button
                 variant="ghost"
                 size="icon"

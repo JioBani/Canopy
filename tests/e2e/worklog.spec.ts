@@ -6,8 +6,6 @@ import {
   addWork,
   cleanupCreatedProjects,
   createProject,
-  enterEdit,
-  saveEdit,
   selectWorkInEmbed,
   signupAndEnter,
 } from "./_helpers"
@@ -48,11 +46,11 @@ test.describe.serial("작업 시간 측정", () => {
     // 종료되면 다시 시작 버튼
     await expect(d.getByTestId("work-log-start")).toBeVisible()
 
-    // 편집 모드: duration 45분 → 총 작업 시간 45분 반영(구성상 일관)
-    await enterEdit(page)
+    // 로그 '수정' → duration 45분 → '완료' → 총 작업 시간 45분 반영(구성상 일관)
+    await d.getByTestId("work-log-edit").click()
     await row.getByTestId("work-log-duration-input").fill("45")
     await row.getByTestId("work-log-duration-input").blur()
-    await saveEdit(page)
+    await d.getByTestId("work-log-edit").click()
     await expect(d.getByTestId("work-log-total")).toContainText("45분")
   })
 
@@ -66,10 +64,10 @@ test.describe.serial("작업 시간 측정", () => {
     await selectWorkInEmbed(page, "작업A")
 
     const d = detail(page)
-    await enterEdit(page)
+    await d.getByTestId("work-log-edit").click()
     await d.getByTestId("work-log-total-input").fill("120")
     await d.getByTestId("work-log-total-input").blur()
-    await saveEdit(page)
+    await d.getByTestId("work-log-edit").click()
     await expect(d.getByTestId("work-log-total")).toContainText("2시간 0분")
   })
 })

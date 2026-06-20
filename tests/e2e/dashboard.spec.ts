@@ -27,9 +27,8 @@ async function build(page: Page) {
   await selectByLabel(page, "detail-domain", "구현")
   await saveEdit(page)
 
-  // 세부기능에 UR 추가(편집 모드, 연결 작업 없음 → 미커버)
+  // 세부기능에 UR 추가(UR 섹션 상시 편집, 연결 작업 없음 → 미커버)
   await rowByTitle(page, "합성세부").click()
-  await enterEdit(page)
   await page.getByTestId("add-ur").first().click()
   await page.getByTestId("ur-text-input").fill("미커버 요구사항")
   await page.getByTestId("ur-text-input").press("Enter")
@@ -95,7 +94,6 @@ test.describe.serial("대시보드", () => {
     // 트리에서 그 UR 을 완료로 변경
     await page.getByTestId("view-tab-tree").click()
     await rowByTitle(page, "합성세부").click()
-    await enterEdit(page)
     const detail = page.getByTestId("node-detail")
     const row = detail
       .getByTestId("ur-row")

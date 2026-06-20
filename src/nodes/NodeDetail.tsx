@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { Pencil } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
 import { Markdown } from "@/components/Markdown"
 import { memberLabel } from "@/lib/members"
@@ -60,42 +61,54 @@ function PropField({
   )
 }
 
-// 읽기 모드(disabled)에서도 평상시처럼 또렷하게(흐려짐 제거). 편집 모드만 하이라이트.
+// 읽기(disabled)에서도 평상시처럼 또렷하게. '수정' 토글 시에만 sakura 하이라이트.
 const triggerClass =
   "h-8 min-w-[7.5rem] gap-1.5 rounded-[9px] bg-card text-[13px] font-medium shadow-xs disabled:cursor-default disabled:opacity-100"
-/** 편집 모드 강조 링/보더 (편집 가능함을 표시). */
 const editRing = "border-[var(--c-sakura)] ring-2 ring-[var(--c-sakura)]/30"
-
-/** 상태/도메인/담당 셀렉트 트리거 클래스(편집 시 하이라이트). */
 function fieldClass(editing: boolean) {
   return cn(triggerClass, editing && editRing)
+}
+
+/** 작은 수정/완료 토글 버튼. */
+function EditToggle({
+  editing,
+  onToggle,
+  testid,
+}: {
+  editing: boolean
+  onToggle: () => void
+  testid: string
+}) {
+  return (
+    <Button
+      type="button"
+      variant={editing ? "default" : "ghost"}
+      size="sm"
+      className="h-7 gap-1 text-xs"
+      onClick={onToggle}
+      data-testid={testid}
+    >
+      {!editing && <Pencil className="size-3" />}
+      {editing ? "완료" : "수정"}
+    </Button>
+  )
 }
 
 export function NodeDetail() {
   const { nodes, selectedId, updateFields, statuses, members } = useNodes()
   const node = nodes.find((n) => n.id === selectedId) ?? null
 
-  // 패널 편집 모드 — 기본 읽기 전용. '수정' 으로만 편집 진입(실수 편집 방지).
-  const [editing, setEditing] = useState(false)
-  // 스칼라 필드 드래프트(저장 시 일괄 커밋, 취소 시 폐기).
   const [title, setTitle] = useState("")
   const [body, setBody] = useState("")
-  const [draftStatus, setDraftStatus] = useState(NONE)
-  const [draftDomain, setDraftDomain] = useState(NONE)
-  const [draftAssignee, setDraftAssignee] = useState(NONE)
+  // 국소 편집 토글: property(상태/도메인/담당), 설명(body). 나머지(제목·하위 섹션)는 상시.
+  const [editProps, setEditProps] = useState(false)
+  const [editBody, setEditBody] = useState(false)
 
-  function resetDrafts(n: typeof node) {
-    setTitle(n?.title ?? "")
-    setBody(n?.body ?? "")
-    setDraftStatus(n?.status_id ?? NONE)
-    setDraftDomain(n?.domain ?? NONE)
-    setDraftAssignee(n?.assignee_id ?? NONE)
-  }
-
-  // node 가 바뀌면 편집 종료 + 드래프트 동기화.
   useEffect(() => {
-    setEditing(false)
-    resetDrafts(node)
+    setTitle(node?.title ?? "")
+    setBody(node?.body ?? "")
+    setEditProps(false)
+    setEditBody(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node?.id])
 
@@ -120,78 +133,31 @@ export function NodeDetail() {
   }
 
   const isTask = node.type === "작업"
+  const set = (patch: Parameters<typeof updateFields>[1]) =>
+    void updateFields(node.id, patch)
 
-  function cancelEdit() {
-    resetDrafts(node)
-    setEditing(false)
-  }
-  function saveEdit() {
-    if (!node) return
-    const patch: Record<string, unknown> = {}
+  function saveTitle() {
     const t = title.trim()
-    if (t && t !== node.title) patch.title = t
-    if (body !== (node.body ?? "")) patch.body = body
-    const status = draftStatus === NONE ? null : draftStatus
-    if (status !== node.status_id) patch.status_id = status
-    if (isTask) {
-      const dom = draftDomain === NONE ? null : draftDomain
-      if (dom !== (node.domain ?? null)) patch.domain = dom
-      const asg = draftAssignee === NONE ? null : draftAssignee
-      if (asg !== (node.assignee_id ?? null)) patch.assignee_id = asg
-    }
-    if (Object.keys(patch).length) void updateFields(node.id, patch)
-    if (!t) setTitle(node.title) // 빈 제목은 되돌림
-    setEditing(false)
+    if (node && t && t !== node.title) void updateFields(node.id, { title: t })
+    else setTitle(node?.title ?? "")
+  }
+  function toggleBody() {
+    if (editBody && node && body !== (node.body ?? ""))
+      void updateFields(node.id, { body })
+    setEditBody((v) => !v)
   }
 
-  // 담당 아바타(현재 드래프트 기준)
-  const assignee =
-    draftAssignee !== NONE
-      ? members.find((m) => m.id === draftAssignee)
-      : undefined
+  const assignee = node.assignee_id
+    ? members.find((m) => m.id === node.assignee_id)
+    : undefined
 
   return (
     <div className="mx-auto w-full max-w-5xl" data-testid="node-detail">
-      {/* 커버 헤더 — 레이어 칩 + 큰 브레드크럼 + 티켓키 (레이어 틴트 밴드) */}
+      {/* 커버 헤더 — 레이어 칩 + 큰 브레드크럼 + 티켓키 */}
       <CoverHeader node={node} />
 
       <div className="flex flex-col gap-6 px-4 py-5 sm:px-8 sm:py-7">
-        {/* 편집 바 — 기본 읽기, '수정' 으로 편집 토글(+저장/취소) */}
-        <div className="flex items-center justify-end gap-2">
-          {editing ? (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={cancelEdit}
-                data-testid="detail-cancel"
-              >
-                취소
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={saveEdit}
-                data-testid="detail-save"
-              >
-                저장
-              </Button>
-            </>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setEditing(true)}
-              data-testid="detail-edit"
-            >
-              수정
-            </Button>
-          )}
-        </div>
-
-        {/* 제목 — 메이플 Bold, 큰 위계. 좌측 얇은 레이어색 액센트 바. 편집 모드에서만 수정. */}
+        {/* 제목 — 인라인 상시 편집(Enter/blur 저장). 좌측 레이어색 액센트 바. */}
         <div className="flex items-stretch gap-2.5">
           <span
             aria-hidden
@@ -201,28 +167,26 @@ export function NodeDetail() {
           <Input
             id="detail-title"
             value={title}
-            readOnly={!editing}
             onChange={(e) => setTitle(e.target.value)}
+            onBlur={saveTitle}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur()
+            }}
             style={{ fontSize: "clamp(28px, 4vw, 32px)", letterSpacing: "-0.01em" }}
-            className={cn(
-              "font-display h-auto flex-1 px-1 py-0.5 leading-[1.2] font-bold shadow-none",
-              editing
-                ? "border-[var(--c-sakura)] bg-[var(--c-pink-bg)]/20 ring-2 ring-[var(--c-sakura)]/20"
-                : "border-transparent bg-transparent read-only:cursor-default read-only:hover:bg-transparent"
-            )}
+            className="font-display h-auto flex-1 border-transparent bg-transparent px-1 py-0.5 leading-[1.2] font-bold shadow-none hover:bg-[#F5F2F4]/60 focus-visible:bg-[var(--c-pink-bg)]/20"
             data-testid="detail-title"
           />
         </div>
 
-        {/* property 행 — 상태는 전 타입, 도메인/담당은 작업만. 편집 모드에서만 활성. */}
+        {/* property 행 — 상태(전 타입) + 도메인/담당(작업). 오른쪽 '수정' 토글로만 변경. */}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <PropField label="상태">
             <Select
-              value={draftStatus}
-              disabled={!editing}
-              onValueChange={setDraftStatus}
+              value={node.status_id ?? NONE}
+              disabled={!editProps}
+              onValueChange={(v) => set({ status_id: v === NONE ? null : v })}
             >
-              <SelectTrigger className={fieldClass(editing)} data-testid="detail-status">
+              <SelectTrigger className={fieldClass(editProps)} data-testid="detail-status">
                 <SelectValue placeholder="상태" />
               </SelectTrigger>
               <SelectContent>
@@ -236,9 +200,7 @@ export function NodeDetail() {
                         <SelectItem key={s.id} value={s.id} textValue={s.name}>
                           <G
                             className="size-[14px]"
-                            style={{
-                              color: s.color ?? CATEGORY_COLOR[s.category],
-                            }}
+                            style={{ color: s.color ?? CATEGORY_COLOR[s.category] }}
                           />
                           {s.name}
                         </SelectItem>
@@ -254,11 +216,13 @@ export function NodeDetail() {
             <>
               <PropField label="도메인">
                 <Select
-                  value={draftDomain}
-                  disabled={!editing}
-                  onValueChange={setDraftDomain}
+                  value={node.domain ?? NONE}
+                  disabled={!editProps}
+                  onValueChange={(v) =>
+                    set({ domain: (v === NONE ? null : v) as NodeDomain | null })
+                  }
                 >
-                  <SelectTrigger className={fieldClass(editing)} data-testid="detail-domain">
+                  <SelectTrigger className={fieldClass(editProps)} data-testid="detail-domain">
                     <SelectValue placeholder="도메인" />
                   </SelectTrigger>
                   <SelectContent>
@@ -274,16 +238,18 @@ export function NodeDetail() {
 
               <PropField label="담당">
                 <Select
-                  value={draftAssignee}
-                  disabled={!editing}
-                  onValueChange={setDraftAssignee}
+                  value={node.assignee_id ?? NONE}
+                  disabled={!editProps}
+                  onValueChange={(v) => set({ assignee_id: v === NONE ? null : v })}
                 >
-                  <SelectTrigger className={fieldClass(editing)} data-testid="detail-assignee">
+                  <SelectTrigger className={fieldClass(editProps)} data-testid="detail-assignee">
                     {assignee && (
                       <span
                         className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-full text-[9.5px] font-bold"
                         style={{
-                          background: "linear-gradient(150deg,#F6CFDD,#EC9EBA)",
+                          background:
+                            assignee.color ??
+                            "linear-gradient(150deg,#F6CFDD,#EC9EBA)",
                           color: "#9b3a5e",
                         }}
                       >
@@ -304,19 +270,31 @@ export function NodeDetail() {
               </PropField>
             </>
           )}
+
+          <div className="ml-auto">
+            <EditToggle
+              editing={editProps}
+              onToggle={() => setEditProps((v) => !v)}
+              testid="detail-edit-props"
+            />
+          </div>
         </div>
 
-        {/* 설명(body) — 읽기=마크다운 렌더, 편집 모드=textarea */}
+        {/* 설명(body) — 읽기=마크다운, '수정' 토글 시 textarea */}
         <div className="flex flex-col gap-2">
-          <span
-            className="text-[11px] font-semibold tracking-wide uppercase"
-            style={{ color: "var(--c-ink-3)" }}
-          >
-            설명
-          </span>
-          {editing ? (
+          <div className="flex items-center justify-between">
+            <span
+              className="text-[11px] font-semibold tracking-wide uppercase"
+              style={{ color: "var(--c-ink-3)" }}
+            >
+              설명
+            </span>
+            <EditToggle editing={editBody} onToggle={toggleBody} testid="body-edit-toggle" />
+          </div>
+          {editBody ? (
             <textarea
               id="detail-body"
+              autoFocus
               className="min-h-32 rounded-[10px] border border-[var(--c-sakura)]/50 bg-[#F5F2F4] p-3.5 text-sm leading-relaxed outline-none ring-2 ring-[var(--c-sakura)]/20 transition-colors focus-visible:border-ring focus-visible:bg-card focus-visible:ring-ring/50 focus-visible:ring-[3px]"
               value={body}
               onChange={(e) => setBody(e.target.value)}
@@ -324,10 +302,7 @@ export function NodeDetail() {
               data-testid="detail-body"
             />
           ) : node.body && node.body.trim() ? (
-            <div
-              className="border-border rounded-[10px] border p-3.5"
-              data-testid="body-preview"
-            >
+            <div className="border-border rounded-[10px] border p-3.5" data-testid="body-preview">
               <Markdown>{node.body}</Markdown>
             </div>
           ) : (
@@ -340,7 +315,7 @@ export function NodeDetail() {
           )}
         </div>
 
-        {/* 컨텐츠/기능: 한 단계 아래 자식 드릴다운 네비(항상 보기/네비) */}
+        {/* 컨텐츠/기능: 한 단계 아래 자식 드릴다운 네비 */}
         {(node.type === "컨텐츠" || node.type === "기능") && (
           <div className="border-border border-t pt-5">
             <h3 className="font-display mb-3 text-[15px] font-bold">
@@ -350,10 +325,10 @@ export function NodeDetail() {
           </div>
         )}
 
-        {/* 세부기능: UR/작업 형제 섹션 — 편집 모드에서만 편집 */}
+        {/* 세부기능: UR/작업 형제 섹션 (상시 편집) */}
         {node.type === "세부기능" && (
           <div className="border-border border-t pt-5">
-            <SubFeatureSections subFeatureId={node.id} editable={editing} />
+            <SubFeatureSections subFeatureId={node.id} editable />
           </div>
         )}
 
@@ -365,28 +340,23 @@ export function NodeDetail() {
           </div>
         )}
 
-        {/* 작업 상세: 작업내용 → 연결 요구사항 → 선제조건 (세로 풀폭 스택) */}
+        {/* 작업 상세: 작업내용 → 연결 요구사항 → 선제조건 → 작업 시간 (세로 스택) */}
         {isTask && (
           <div className="flex flex-col gap-6">
             <div className="border-border border-t pt-6">
-              <TaskChecklist workId={node.id} editable={editing} />
+              <TaskChecklist workId={node.id} editable />
             </div>
             <div className="border-border border-t pt-6">
-              <TaskUrLinks
-                workId={node.id}
-                featureId={node.parent_id}
-                editable={editing}
-              />
+              <TaskUrLinks workId={node.id} featureId={node.parent_id} editable />
             </div>
             <div className="border-border border-t pt-6">
-              <TaskBlocks nodeId={node.id} editable={editing} />
+              <TaskBlocks nodeId={node.id} editable />
             </div>
             <div className="border-border border-t pt-6">
               <WorkLogSection
                 workId={node.id}
                 assigneeId={node.assignee_id}
                 baseMinutes={node.time_spent_minutes}
-                editable={editing}
               />
             </div>
           </div>

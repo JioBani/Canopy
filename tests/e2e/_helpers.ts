@@ -175,11 +175,11 @@ export async function expand(page: Page, title: string) {
   await rowByTitle(page, title).getByTestId("tree-toggle").click()
 }
 
-/** 상세 패널 편집 모드 진입('수정'). 편집 컨트롤(필드/섹션)이 활성화된다. */
+/** property(상태/도메인/담당) 편집 토글 ON('수정'). 변경은 즉시 저장(live). */
 export async function enterEdit(page: Page) {
-  await page.getByTestId("node-detail").getByTestId("detail-edit").click()
+  await page.getByTestId("node-detail").getByTestId("detail-edit-props").click()
 }
-/** 상세 패널 편집 저장('저장'). 스칼라 필드(제목·상태·도메인·담당·설명) 커밋. */
+/** property 편집 토글 OFF('완료'). (변경은 이미 live 저장됨) */
 export async function saveEdit(page: Page) {
-  await page.getByTestId("node-detail").getByTestId("detail-save").click()
+  await page.getByTestId("node-detail").getByTestId("detail-edit-props").click()
 }

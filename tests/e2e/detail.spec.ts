@@ -43,19 +43,24 @@ test.describe.serial("노드 상세 패널", () => {
     await expect(page.getByTestId("detail-type")).toHaveText("작업")
     await expect(page.getByTestId("detail-ticket")).toContainText("Task-")
 
-    // '수정' 진입 → 제목·상태·도메인·설명 편집 → '저장' (패널 단위 편집)
+    // 상태/도메인: property '수정' 토글 후 변경(즉시 저장)
     await enterEdit(page)
     await selectByLabel(page, "detail-status", "완료")
     await selectByLabel(page, "detail-domain", "디자인")
-    await page.getByTestId("detail-title").fill("로직작업-수정")
-    await page.getByTestId("detail-body").fill("# 개요\n**중요** 항목")
     await saveEdit(page)
-
-    // 저장 후: 임베드 작업 행/뱃지 반영 + 설명 마크다운 렌더(읽기 모드)
-    await expect(embedWork(page, "로직작업-수정")).toBeVisible()
     await expect(
-      embedWork(page, "로직작업-수정").getByTestId("status-badge")
+      embedWork(page, "로직작업").getByTestId("status-badge")
     ).toHaveAttribute("data-status", "완료")
+
+    // 제목: 인라인 상시 편집(Enter 저장) → 임베드 행 반영
+    await page.getByTestId("detail-title").fill("로직작업-수정")
+    await page.getByTestId("detail-title").press("Enter")
+    await expect(embedWork(page, "로직작업-수정")).toBeVisible()
+
+    // 설명: '수정' 토글 → 입력 → '완료'(저장) → 마크다운 렌더
+    await page.getByTestId("body-edit-toggle").click()
+    await page.getByTestId("detail-body").fill("# 개요\n**중요** 항목")
+    await page.getByTestId("body-edit-toggle").click()
     await expect(page.getByTestId("body-preview").locator("h1")).toHaveText(
       "개요"
     )
