@@ -80,3 +80,29 @@ export async function deleteNode(id: string): Promise<void> {
   const { error } = await supabase.from("node").delete().eq("id", id)
   if (error) throw new Error(error.message)
 }
+
+export interface NodeProgress {
+  node_id: string
+  total_tasks: number
+  done_tasks: number
+  /** 완료 비율(0~1). 하위 작업 0개면 null. */
+  progress: number | null
+}
+
+/** node_progress 뷰에서 주어진 노드들의 roll-up 진행률을 조회. */
+export async function listNodeProgress(
+  nodeIds: string[]
+): Promise<NodeProgress[]> {
+  if (nodeIds.length === 0) return []
+  const { data, error } = await supabase
+    .from("node_progress")
+    .select("node_id, total_tasks, done_tasks, progress")
+    .in("node_id", nodeIds)
+  if (error) throw new Error(error.message)
+  return (data ?? []).map((r) => ({
+    node_id: r.node_id as string,
+    total_tasks: Number(r.total_tasks),
+    done_tasks: Number(r.done_tasks),
+    progress: r.progress === null ? null : Number(r.progress),
+  }))
+}

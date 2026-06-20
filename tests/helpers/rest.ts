@@ -31,6 +31,18 @@ export async function restDelete(query: string): Promise<void> {
   if (!res.ok) throw new Error(`REST DELETE 실패 ${res.status}: ${await res.text()}`)
 }
 
+export async function restPatch(
+  query: string,
+  body: Record<string, unknown>
+): Promise<void> {
+  const res = await fetch(`${URL}/rest/v1/${query}`, {
+    method: "PATCH",
+    headers: headers(),
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`REST PATCH 실패 ${res.status}: ${await res.text()}`)
+}
+
 /** 모든 프로젝트 삭제 (cascade). E2E 클린 슬레이트용. */
 export async function wipeAllProjects(): Promise<void> {
   await restDelete("project?id=not.is.null")

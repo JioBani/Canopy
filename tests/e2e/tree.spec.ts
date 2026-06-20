@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Locator } from "@playwright/test"
-import { restGet, wipeAllProjects } from "../helpers/rest"
+import { restGet, restPatch, wipeAllProjects } from "../helpers/rest"
 
 /**
  * 노드 트리 CRUD — 단계 1(렌더) + 2(인라인 생성) 검증.
@@ -33,7 +33,12 @@ async function setup(page: Page): Promise<string> {
 }
 
 async function addContentRoot(page: Page, title: string) {
-  await page.getByTestId("add-first-content").click()
+  // 빈 트리면 첫 컨텐츠 버튼, 아니면 하단 root-add 버튼. (로딩 완료까지 대기)
+  const firstBtn = page.getByTestId("add-first-content")
+  const rootBtn = page.getByTestId("root-add")
+  await expect(firstBtn.or(rootBtn)).toBeVisible()
+  if (await firstBtn.count()) await firstBtn.click()
+  else await rootBtn.click()
   const input = page.getByTestId("inline-add-input")
   await input.fill(title)
   await input.press("Enter")
@@ -201,5 +206,70 @@ test.describe.serial("노드 트리", () => {
     await expect(rowByTitle(page, "소환수기능")).toHaveCount(0)
     // 부모(전장)는 유지
     await expect(rowByTitle(page, "전장")).toBeVisible()
+  })
+
+  test("진행바·상태뱃지 렌더 (null/0%/완료) + 작업 상태 뱃지", async ({
+    page,
+  }) => {
+    const projectName = await setup(page)
+
+    // 전장 > 소환수기능 > 합성세부 > 로직작업 (작업 상태 미지정)
+    await addContentRoot(page, "전장")
+    await addChildSingle(page, "전장", "소환수기능")
+    await rowByTitle(page, "소환수기능").getByTestId("node-add").click()
+    await page
+      .getByTestId("add-type-option")
+      .filter({ hasText: "세부기능" })
+      .click()
+    {
+      const input = page.getByTestId("inline-add-input")
+      await input.fill("합성세부")
+      await input.press("Enter")
+      await expect(rowByTitle(page, "합성세부")).toBeVisible()
+      await input.press("Escape")
+      await expect(input).toHaveCount(0)
+    }
+    await addChildSingle(page, "합성세부", "로직작업")
+
+    // 작업: 미지정 뱃지
+    await expect(
+      rowByTitle(page, "로직작업").getByTestId("status-badge")
+    ).toHaveAttribute("data-status", "미지정")
+
+    // 비-잎: 작업 1개·완료 0 → 0%
+    await expect(
+      rowByTitle(page, "합성세부").getByTestId("node-progress")
+    ).toHaveAttribute("data-progress", "0")
+    await expect(
+      rowByTitle(page, "전장").getByTestId("node-progress")
+    ).toHaveAttribute("data-progress", "0")
+
+    // 하위 작업 없는 컨텐츠 → 중립 "—"
+    await addContentRoot(page, "정비")
+    await expect(
+      rowByTitle(page, "정비").getByTestId("node-progress")
+    ).toHaveAttribute("data-progress", "none")
+
+    // 작업 상태를 '완료'로 (REST) 후 새로고침 → 100% + 완료 뱃지
+    const projs = await restGet<{ id: string }>(
+      `project?name=eq.${encodeURIComponent(projectName)}&select=id`
+    )
+    const doneStatus = await restGet<{ id: string }>(
+      `status?project_id=eq.${projs[0].id}&category=eq.${encodeURIComponent("완료")}&select=id`
+    )
+    const tasks = await restGet<{ id: string }>(
+      `node?project_id=eq.${projs[0].id}&type=eq.${encodeURIComponent("작업")}&select=id`
+    )
+    await restPatch(`node?id=eq.${tasks[0].id}`, {
+      status_id: doneStatus[0].id,
+    })
+
+    await page.reload()
+    await expect(
+      rowByTitle(page, "합성세부").getByTestId("node-progress")
+    ).toHaveAttribute("data-progress", "100")
+    await expect(
+      rowByTitle(page, "로직작업").getByTestId("status-badge")
+    ).toHaveAttribute("data-status", "완료")
   })
 })

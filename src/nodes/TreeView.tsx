@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
 import { DeleteNodeDialog } from "@/nodes/DeleteNodeDialog"
+import { ProgressBadge, StatusBadge } from "@/nodes/NodeBadges"
 import {
   allowedChildTypes,
   TYPE_META,
@@ -266,6 +267,13 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
             {node.title}
           </span>
         )}
+
+        {!editing &&
+          (node.type === "작업" ? (
+            <StatusBadge statusId={node.status_id} />
+          ) : (
+            <ProgressBadge nodeId={node.id} />
+          ))}
 
         {!editing && (
           <span className="flex items-center opacity-0 group-hover:opacity-100">

@@ -10,10 +10,13 @@ import {
 import {
   deleteNode,
   insertNode,
+  listNodeProgress,
   listNodes,
   updateNode,
   type AppNode,
+  type NodeProgress,
 } from "@/lib/nodes"
+import { listStatuses, type Status } from "@/lib/statuses"
 import type { NodeType } from "@/nodes/nodeGrammar"
 
 interface NodesContextValue {
@@ -33,6 +36,10 @@ interface NodesContextValue {
   ) => Promise<AppNode>
   renameNode: (id: string, title: string) => Promise<void>
   removeNode: (id: string) => Promise<void>
+  /** node_progress roll-up (없으면 undefined). */
+  getProgress: (nodeId: string) => NodeProgress | undefined
+  /** status_id → 상태 (없으면 undefined). */
+  getStatus: (statusId: string | null) => Status | undefined
 }
 
 const NodesContext = createContext<NodesContextValue | undefined>(undefined)
@@ -49,13 +56,26 @@ export function NodesProvider({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   // 기본은 펼침. collapsed 에 든 id 만 접힘.
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [statuses, setStatuses] = useState<Status[]>([])
+  const [progress, setProgress] = useState<Map<string, NodeProgress>>(new Map())
+
+  /** 주어진(또는 현재) 노드들의 진행률을 뷰에서 다시 가져온다. loading 토글 없음. */
+  const refreshProgress = useCallback(async (ids: string[]) => {
+    const rows = await listNodeProgress(ids)
+    setProgress(new Map(rows.map((r) => [r.node_id, r])))
+  }, [])
 
   const reload = useCallback(async () => {
     setLoading(true)
-    const list = await listNodes(projectId)
+    const [list, statusList] = await Promise.all([
+      listNodes(projectId),
+      listStatuses(projectId),
+    ])
     setNodes(list)
+    setStatuses(statusList)
+    await refreshProgress(list.map((n) => n.id))
     setLoading(false)
-  }, [projectId])
+  }, [projectId, refreshProgress])
 
   useEffect(() => {
     reload().catch((e) => {
@@ -114,7 +134,8 @@ export function NodesProvider({
         title,
         sort_order: sortOrder,
       })
-      setNodes((prev) => [...prev, created])
+      const nextNodes = [...nodes, created]
+      setNodes(nextNodes)
       if (parentId) {
         // 부모를 펼쳐 새 자식이 보이게.
         setCollapsed((prev) => {
@@ -124,15 +145,33 @@ export function NodesProvider({
         })
       }
       setSelectedId(created.id)
+      // 새 노드로 인해 조상 진행률이 바뀌므로 갱신.
+      await refreshProgress(nextNodes.map((n) => n.id))
       return created
     },
-    [nodes, projectId]
+    [nodes, projectId, refreshProgress]
   )
 
   const renameNode = useCallback(async (id: string, title: string) => {
     const updated = await updateNode(id, { title: title.trim() })
     setNodes((prev) => prev.map((n) => (n.id === id ? updated : n)))
   }, [])
+
+  const statusById = useMemo(
+    () => new Map(statuses.map((s) => [s.id, s])),
+    [statuses]
+  )
+
+  const getProgress = useCallback(
+    (nodeId: string) => progress.get(nodeId),
+    [progress]
+  )
+
+  const getStatus = useCallback(
+    (statusId: string | null) =>
+      statusId ? statusById.get(statusId) : undefined,
+    [statusById]
+  )
 
   const removeNode = useCallback(
     async (id: string) => {
@@ -149,10 +188,12 @@ export function NodesProvider({
           }
         }
       }
-      setNodes((prev) => prev.filter((n) => !toRemove.has(n.id)))
+      const remaining = nodes.filter((n) => !toRemove.has(n.id))
+      setNodes(remaining)
       setSelectedId((cur) => (cur && toRemove.has(cur) ? null : cur))
+      await refreshProgress(remaining.map((n) => n.id))
     },
-    [nodes]
+    [nodes, refreshProgress]
   )
 
   const value: NodesContextValue = useMemo(
@@ -169,6 +210,8 @@ export function NodesProvider({
       createChild,
       renameNode,
       removeNode,
+      getProgress,
+      getStatus,
     }),
     [
       nodes,
@@ -182,6 +225,8 @@ export function NodesProvider({
       createChild,
       renameNode,
       removeNode,
+      getProgress,
+      getStatus,
     ]
   )
 
