@@ -49,14 +49,14 @@ async function buildScenario() {
   const group = (
     await admin
       .from("ur_group")
-      .insert({ feature_id: feature.id, name: "그룹" })
+      .insert({ feature_id: sub.id, name: "그룹" })
       .select("id")
       .single()
   ).data!
   const ur = (
     await admin
       .from("ur")
-      .insert({ feature_id: feature.id, ur_group_id: group.id, text: "UR-1" })
+      .insert({ feature_id: sub.id, ur_group_id: group.id, text: "UR-1" })
       .select("id")
       .single()
   ).data!

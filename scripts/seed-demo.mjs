@@ -66,10 +66,18 @@ function parseFile(content) {
   return { feature, tasks: tasks.filter((t) => t.reqs.length > 0) }
 }
 
+// 작업(node)의 작업상태 — 보드/진행바 데모용
 function statusFor(req, statusByCat) {
   if (req.checked) return statusByCat["완료"]
   if (req.reason && req.reason.startsWith("오구현")) return statusByCat["진행중"]
   return statusByCat["할일"] // 미구현/기타
+}
+
+// UR 의 수동 상태 (완료/미구현/오구현) — 완료정의 보존
+function urStatusFor(req) {
+  if (req.checked) return "완료"
+  if (req.reason && req.reason.startsWith("오구현")) return "오구현"
+  return "미구현"
 }
 
 async function main() {
@@ -107,7 +115,7 @@ async function main() {
     .filter((f) => /^\d+ .+\.md$/.test(f))
     .sort()
 
-  let counts = { feature: 0, sub: 0, task: 0, ur: 0, link: 0, group: 0 }
+  let counts = { feature: 0, sub: 0, task: 0, ur: 0, link: 0 }
 
   for (let fi = 0; fi < files.length; fi++) {
     const parsed = parseFile(readFileSync(path.join(SRC_DIR, files[fi]), "utf8"))
@@ -138,20 +146,19 @@ async function main() {
         "id"
       )
       counts.sub++
-      const group = await insOne(
-        "ur_group",
-        { feature_id: feature.id, name: task.name, sort_order: ti },
-        "id"
-      )
-      counts.group++
 
-      // UR 들 (순서 보존)
+      // UR 들 (세부기능 소유, status 매핑) — 순서 보존
       const urRows = await ins(
         "ur",
         task.reqs.map((r, idx) => ({
-          feature_id: feature.id,
-          ur_group_id: group.id,
+          feature_id: sub.id, // 세부기능 소유 (컬럼명은 feature_id 유지)
+          ur_group_id: null,
           text: r.text,
+          status: urStatusFor(r),
+          misimpl_reason:
+            !r.checked && r.reason && r.reason.startsWith("오구현")
+              ? r.reason
+              : null,
           sort_order: idx,
         })),
         "id"

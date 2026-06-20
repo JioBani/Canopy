@@ -160,19 +160,19 @@ describe("타입 문법 강제 — 거부", () => {
 })
 
 describe("UR / 링크 타입 가드", () => {
-  it("ur.feature_id 는 기능 노드여야 한다 — 기능이면 OK", async () => {
+  it("ur.feature_id 는 세부기능 노드여야 한다 — 세부기능이면 OK", async () => {
     const r = await admin
       .from("ur")
-      .insert({ feature_id: featureId, text: "2마리 합성→상위" })
+      .insert({ feature_id: subId, text: "2마리 합성→상위" })
       .select("id")
       .single()
     expect(r.error).toBeNull()
   })
 
-  it("ur.feature_id 가 컨텐츠면 거부", async () => {
+  it("ur.feature_id 가 기능이면 거부 (이제 세부기능 소유)", async () => {
     const r = await admin
       .from("ur")
-      .insert({ feature_id: contentId, text: "잘못된 UR" })
+      .insert({ feature_id: featureId, text: "잘못된 UR" })
     expect(r.error).not.toBeNull()
   })
 
@@ -183,10 +183,20 @@ describe("UR / 링크 타입 가드", () => {
     expect(r.error).not.toBeNull()
   })
 
+  it("ur.status 기본값은 미구현", async () => {
+    const r = await admin
+      .from("ur")
+      .insert({ feature_id: subId, text: "기본상태 확인 UR" })
+      .select("status")
+      .single()
+    expect(r.error).toBeNull()
+    expect(r.data!.status).toBe("미구현")
+  })
+
   it("ur_work_link.work_id 는 작업이어야 한다 — 작업이면 OK", async () => {
     const ur = await admin
       .from("ur")
-      .insert({ feature_id: featureId, text: "링크용 UR" })
+      .insert({ feature_id: subId, text: "링크용 UR" })
       .select("id")
       .single()
     const r = await admin
@@ -198,7 +208,7 @@ describe("UR / 링크 타입 가드", () => {
   it("ur_work_link.work_id 가 세부기능이면 거부", async () => {
     const ur = await admin
       .from("ur")
-      .insert({ feature_id: featureId, text: "링크용 UR2" })
+      .insert({ feature_id: subId, text: "링크용 UR2" })
       .select("id")
       .single()
     const r = await admin

@@ -135,7 +135,7 @@ describe("ur_coverage 뷰 (UR 커버리지/미커버)", () => {
     const ur = (
       await admin
         .from("ur")
-        .insert({ feature_id: featureId, text: "커버된 UR" })
+        .insert({ feature_id: subId, text: "커버된 UR" })
         .select("id")
         .single()
     ).data!
@@ -163,7 +163,7 @@ describe("ur_coverage 뷰 (UR 커버리지/미커버)", () => {
     const ur = (
       await admin
         .from("ur")
-        .insert({ feature_id: featureId, text: "미커버 UR" })
+        .insert({ feature_id: subId, text: "미커버 UR" })
         .select("id")
         .single()
     ).data!

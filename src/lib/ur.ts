@@ -7,11 +7,16 @@ export interface UrGroup {
   sort_order: number
 }
 
+export type UrStatus = "완료" | "미구현" | "오구현"
+
 export interface Ur {
   id: string
+  /** 소유 세부기능 노드 id (컬럼명은 호환상 feature_id 유지). */
   feature_id: string
   ur_group_id: string | null
   text: string
+  status: UrStatus
+  misimpl_reason: string | null
   sort_order: number
 }
 
@@ -64,12 +69,15 @@ export async function deleteUrGroup(id: string): Promise<void> {
 }
 
 // ── ur ──────────────────────────────────────────────────────
-/** 주어진 기능들의 UR (피커용으로 배열 허용). */
+const UR_COLS =
+  "id, feature_id, ur_group_id, text, status, misimpl_reason, sort_order"
+
+/** 주어진 세부기능들의 UR (피커용으로 배열 허용). */
 export async function listUrs(featureIds: string[]): Promise<Ur[]> {
   if (featureIds.length === 0) return []
   const { data, error } = await supabase
     .from("ur")
-    .select("id, feature_id, ur_group_id, text, sort_order")
+    .select(UR_COLS)
     .in("feature_id", featureIds)
     .order("sort_order", { ascending: true })
   if (error) throw new Error(error.message)
@@ -85,7 +93,7 @@ export async function insertUr(input: {
   const { data, error } = await supabase
     .from("ur")
     .insert({ ...input, text: input.text.trim() })
-    .select("id, feature_id, ur_group_id, text, sort_order")
+    .select(UR_COLS)
     .single()
   if (error) throw new Error(error.message)
   return data as Ur
@@ -93,7 +101,9 @@ export async function insertUr(input: {
 
 export async function updateUr(
   id: string,
-  patch: Partial<Pick<Ur, "text" | "ur_group_id" | "sort_order">>
+  patch: Partial<
+    Pick<Ur, "text" | "ur_group_id" | "sort_order" | "status" | "misimpl_reason">
+  >
 ): Promise<void> {
   const { error } = await supabase.from("ur").update(patch).eq("id", id)
   if (error) throw new Error(error.message)
