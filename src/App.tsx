@@ -4,6 +4,7 @@ import { ProjectProvider, useProjects } from "@/projects/ProjectProvider"
 import { ProjectSwitcher } from "@/projects/ProjectSwitcher"
 import { NoProjects } from "@/projects/NoProjects"
 import { useEffect, useRef, useState } from "react"
+import { useMediaQuery } from "@/lib/useMediaQuery"
 import { NodesProvider, useNodes } from "@/nodes/NodesProvider"
 import { TreeView } from "@/nodes/TreeView"
 import { NodeDetail } from "@/nodes/NodeDetail"
@@ -13,7 +14,7 @@ import { SearchButton } from "@/search/SearchDialog"
 import { StatusSettingsButton } from "@/projects/StatusSettingsDialog"
 import { BloomFull } from "@/nodes/bloomGlyph"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { LogOut } from "lucide-react"
+import { ChevronLeft, LogOut } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +30,7 @@ function Brand() {
   return (
     <span className="flex select-none items-center gap-1.5">
       <BloomFull style={{ color: "var(--c-sakura)" }} className="size-[19px]" />
-      <span className="font-display relative top-px text-[17px] font-bold tracking-tight">
+      <span className="font-display relative top-px hidden text-[17px] font-bold tracking-tight sm:inline">
         Canopy
       </span>
     </span>
@@ -79,7 +80,7 @@ function TopBar({
 }) {
   return (
     <header
-      className="border-border flex h-[52px] shrink-0 items-center gap-2 border-b px-3"
+      className="border-border flex h-[52px] shrink-0 items-center gap-1.5 border-b px-2 sm:gap-2 sm:px-3"
       data-testid="app-shell"
     >
       <Brand />
@@ -140,6 +141,8 @@ function ResizableSplit({
   sidebar: React.ReactNode
   main: React.ReactNode
 }) {
+  const isDesktop = useMediaQuery("(min-width: 768px)")
+  const { selectedId, select } = useNodes()
   const [width, setWidth] = useState(() => {
     const saved = Number(localStorage.getItem(SIDEBAR_KEY))
     return saved ? clampWidth(saved) : SIDEBAR_DEFAULT
@@ -168,6 +171,34 @@ function ResizableSplit({
       window.removeEventListener("pointerup", onUp)
     }
   }, [])
+
+  // 모바일/태블릿(<768px): 단일 패널 — 선택 노드 있으면 상세, 없으면 트리.
+  if (!isDesktop) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        {selectedId ? (
+          <section className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => select(null)}
+              data-testid="mobile-back-tree"
+              className="border-border text-muted-foreground hover:text-foreground flex shrink-0 items-center gap-1 border-b px-3 py-2 text-[13px] font-medium"
+            >
+              <ChevronLeft className="size-4" /> 트리로
+            </button>
+            <div className="min-h-0 flex-1 overflow-y-auto">{main}</div>
+          </section>
+        ) : (
+          <aside
+            className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[var(--c-surface)]"
+            data-testid="tree-panel"
+          >
+            {sidebar}
+          </aside>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-0 flex-1">

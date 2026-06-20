@@ -137,7 +137,7 @@ export function NodeDetail() {
       {/* 커버 헤더 — 레이어 칩 + 큰 브레드크럼 + 티켓키 (레이어 틴트 밴드) */}
       <CoverHeader node={node} />
 
-      <div className="flex flex-col gap-6 px-8 py-7">
+      <div className="flex flex-col gap-6 px-4 py-5 sm:px-8 sm:py-7">
         {/* 제목 — 메이플 Bold, 큰 위계. 좌측 얇은 레이어색 액센트 바. */}
         <div className="flex items-stretch gap-2.5">
           <span
