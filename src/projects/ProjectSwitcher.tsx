@@ -29,16 +29,8 @@ export function ProjectSwitcher() {
             data-testid="project-switcher"
           >
             {currentProject ? (
-              <span className="flex items-center gap-2">
-                <span
-                  className="tnum rounded px-1.5 py-0.5 font-mono text-xs font-semibold"
-                  style={{ background: "var(--c-pink-bg)", color: "var(--c-plum)" }}
-                >
-                  {currentProject.key_prefix}
-                </span>
-                <span data-testid="current-project-name">
-                  {currentProject.name}
-                </span>
+              <span data-testid="current-project-name">
+                {currentProject.name}
               </span>
             ) : (
               <span className="text-muted-foreground">프로젝트 선택</span>
@@ -58,12 +50,6 @@ export function ProjectSwitcher() {
               data-testid="project-option"
               className="gap-2"
             >
-              <span
-                className="tnum rounded px-1.5 py-0.5 font-mono text-xs font-semibold"
-                style={{ background: "var(--c-pink-bg)", color: "var(--c-plum)" }}
-              >
-                {p.key_prefix}
-              </span>
               <span className="flex-1 truncate">{p.name}</span>
               <Check
                 className={cn(

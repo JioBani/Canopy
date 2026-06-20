@@ -21,7 +21,7 @@ interface ProjectContextValue {
   currentProjectId: string | null
   loading: boolean
   selectProject: (id: string) => void
-  createProject: (name: string, keyPrefix: string) => Promise<Project>
+  createProject: (name: string) => Promise<Project>
   reload: () => Promise<void>
 }
 
@@ -70,8 +70,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   )
 
   const createProject = useCallback(
-    async (name: string, keyPrefix: string) => {
-      const created = await insertProject(name, keyPrefix)
+    async (name: string) => {
+      const created = await insertProject(name)
       setProjects((prev) => [...prev, created])
       persistCurrent(created.id)
       return created

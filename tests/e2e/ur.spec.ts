@@ -44,6 +44,8 @@ test.describe.serial("UR 서브시스템 (세부기능 소유)", () => {
     await detail(page).getByTestId("ur-text-input").press("Enter")
     const row = urRow(page, "2마리 합성")
     await expect(row).toBeVisible()
+    // 타입 기반 키와 일관: UR 행에 Requirement-N 표시
+    await expect(row.getByTestId("ur-key")).toContainText("Requirement-")
     await expect(row.getByTestId("ur-coverage")).toHaveAttribute(
       "data-uncovered",
       "true"

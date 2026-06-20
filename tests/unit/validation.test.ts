@@ -1,43 +1,6 @@
 import { describe, expect, it } from "vitest"
-import {
-  sanitizeKeyPrefix,
-  validateKeyPrefix,
-  validateProjectName,
-  ticketKey,
-} from "../../src/lib/validation"
-
-describe("sanitizeKeyPrefix", () => {
-  it("소문자를 대문자로 바꾼다", () => {
-    expect(sanitizeKeyPrefix("td")).toBe("TD")
-  })
-  it("공백/기호를 제거한다", () => {
-    expect(sanitizeKeyPrefix("t d-1!")).toBe("TD1")
-  })
-  it("한글 등 비영숫자를 제거한다", () => {
-    expect(sanitizeKeyPrefix("타티카TD")).toBe("TD")
-  })
-  it("최대 10자로 자른다", () => {
-    expect(sanitizeKeyPrefix("ABCDEFGHIJKLMNOP")).toBe("ABCDEFGHIJ")
-  })
-})
-
-describe("validateKeyPrefix", () => {
-  it("정상값은 null", () => {
-    expect(validateKeyPrefix("TD")).toBeNull()
-    expect(validateKeyPrefix("ABC123")).toBeNull()
-  })
-  it("2자 미만은 거부", () => {
-    expect(validateKeyPrefix("T")).not.toBeNull()
-    expect(validateKeyPrefix("")).not.toBeNull()
-  })
-  it("10자 초과는 거부", () => {
-    expect(validateKeyPrefix("ABCDEFGHIJK")).not.toBeNull()
-  })
-  it("비영숫자 포함은 거부", () => {
-    expect(validateKeyPrefix("T D")).not.toBeNull()
-    expect(validateKeyPrefix("td")).not.toBeNull() // 소문자(정규화 전 가정)
-  })
-})
+import { validateProjectName } from "../../src/lib/validation"
+import { ticketKey, urKey, TICKET_PREFIX } from "../../src/nodes/nodeGrammar"
 
 describe("validateProjectName", () => {
   it("정상값은 null", () => {
@@ -49,8 +12,27 @@ describe("validateProjectName", () => {
   })
 })
 
-describe("ticketKey", () => {
-  it("프리픽스-번호로 조합한다", () => {
-    expect(ticketKey("TD", 42)).toBe("TD-42")
+describe("ticketKey (타입 기반)", () => {
+  it("{Type}-{번호} 로 조합한다", () => {
+    expect(ticketKey("작업", 42)).toBe("Task-42")
+    expect(ticketKey("컨텐츠", 1)).toBe("Content-1")
+    expect(ticketKey("기능", 3)).toBe("Feature-3")
+    expect(ticketKey("세부기능", 7)).toBe("SubFeature-7")
+    expect(ticketKey("마스터데이터", 2)).toBe("MasterData-2")
+  })
+  it("모든 노드 타입에 프리픽스가 있다", () => {
+    expect(Object.values(TICKET_PREFIX)).toEqual([
+      "Content",
+      "Feature",
+      "SubFeature",
+      "MasterData",
+      "Task",
+    ])
+  })
+})
+
+describe("urKey (요구사항)", () => {
+  it("Requirement-{번호} 로 조합한다", () => {
+    expect(urKey(3)).toBe("Requirement-3")
   })
 })

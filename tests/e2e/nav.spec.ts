@@ -117,4 +117,30 @@ test.describe.serial("상세 드릴다운 + 작업 독립 생성", () => {
     await expect(detail(page).getByTestId("task-checklist")).toBeVisible()
     await expect(detail(page).getByTestId("task-ur-links")).toBeVisible()
   })
+
+  test("커버 헤더: 레이어 칩 + 티켓키 + 브레드크럼 드릴업", async ({ page }) => {
+    await signupAndEnter(page)
+    await createProject(page, `커버 ${Date.now()}`, "CV")
+
+    await addContentRoot(page, "전장")
+    await addChildSingle(page, "전장", "소환수기능")
+    await addChildTyped(page, "소환수기능", "세부기능", "합성세부")
+
+    await rowByTitle(page, "합성세부").click()
+    const d = detail(page)
+    // 커버: 레이어 = 세부기능, 타입 기반 티켓키
+    await expect(d.getByTestId("cover-header")).toHaveAttribute(
+      "data-layer",
+      "세부기능"
+    )
+    await expect(d.getByTestId("detail-type")).toHaveText("세부기능")
+    await expect(d.getByTestId("detail-ticket")).toContainText("SubFeature-")
+
+    // 브레드크럼 세그먼트 클릭 → 조상으로 드릴업(점프)
+    const seg = d.getByTestId("breadcrumb-seg").filter({ hasText: "소환수기능" })
+    await expect(seg).toBeVisible()
+    await seg.click()
+    await expect(d.getByTestId("detail-title")).toHaveValue("소환수기능")
+    await expect(d.getByTestId("detail-type")).toHaveText("기능")
+  })
 })

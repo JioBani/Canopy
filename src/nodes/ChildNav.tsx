@@ -1,6 +1,7 @@
 import { useNodes } from "@/nodes/NodesProvider"
 import { ProgressBadge, StatusBadge } from "@/nodes/NodeBadges"
 import { PIXEL_ICONS } from "@/nodes/pixelIcons"
+import { LAYER_COLOR } from "@/nodes/layerColors"
 import { TYPE_META } from "@/nodes/nodeGrammar"
 
 /**
@@ -37,10 +38,7 @@ export function ChildNav({ parentId }: { parentId: string }) {
           >
             <Icon
               className="size-4 shrink-0"
-              style={{
-                color:
-                  k.type === "컨텐츠" ? "var(--c-sakura)" : "var(--c-ink-3)",
-              }}
+              style={{ color: LAYER_COLOR[k.type].base }}
             />
             <span className="min-w-0 flex-1 truncate text-[13.5px]">
               {k.title}

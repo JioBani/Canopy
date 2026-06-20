@@ -9,6 +9,7 @@ import {
   listUrGroups,
   listUrs,
   updateUr,
+  urKey,
   type Ur,
   type UrCoverage,
   type UrGroup,
@@ -304,6 +305,14 @@ export function UrSection({ subFeatureId, compact = false }: Props) {
                             testid="ur-state"
                           />
                         )}
+
+                        <code
+                          className="tnum shrink-0 font-mono text-[11px] font-semibold"
+                          style={{ color: "var(--c-plum)" }}
+                          data-testid="ur-key"
+                        >
+                          {urKey(u.ticket_number)}
+                        </code>
 
                         {editingUr === u.id ? (
                           <Input

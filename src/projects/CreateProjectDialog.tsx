@@ -1,10 +1,6 @@
 import { useState, type FormEvent } from "react"
 import { useProjects } from "@/projects/ProjectProvider"
-import {
-  sanitizeKeyPrefix,
-  validateKeyPrefix,
-  validateProjectName,
-} from "@/lib/validation"
+import { validateProjectName } from "@/lib/validation"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -25,13 +21,11 @@ interface Props {
 export function CreateProjectDialog({ open, onOpenChange }: Props) {
   const { createProject } = useProjects()
   const [name, setName] = useState("")
-  const [prefix, setPrefix] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   function reset() {
     setName("")
-    setPrefix("")
     setError(null)
     setSubmitting(false)
   }
@@ -45,13 +39,11 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
     e.preventDefault()
     const nameErr = validateProjectName(name)
     if (nameErr) return setError(nameErr)
-    const prefixErr = validateKeyPrefix(prefix)
-    if (prefixErr) return setError(prefixErr)
 
     setError(null)
     setSubmitting(true)
     try {
-      await createProject(name, prefix)
+      await createProject(name)
       reset()
       onOpenChange(false)
     } catch (err) {
@@ -67,7 +59,8 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
           <DialogHeader>
             <DialogTitle>새 프로젝트</DialogTitle>
             <DialogDescription>
-              프로젝트명과 티켓 키 프리픽스를 입력하세요. 기본 상태(할일/진행중/완료/취소됨)는 자동으로 생성됩니다.
+              프로젝트명을 입력하세요. 티켓키는 타입 기반(예: Task-1)으로 자동 발급되고,
+              기본 상태(할일/진행중/완료/취소됨)도 자동 생성됩니다.
             </DialogDescription>
           </DialogHeader>
 
@@ -83,20 +76,6 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
                 autoFocus
               />
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="project-prefix">키 프리픽스</Label>
-              <Input
-                id="project-prefix"
-                value={prefix}
-                onChange={(e) => setPrefix(sanitizeKeyPrefix(e.target.value))}
-                placeholder="예: TD"
-                data-testid="project-prefix-input"
-              />
-              <p className="text-muted-foreground text-xs">
-                영문 대문자·숫자 2~10자. 티켓키에 사용됩니다 (예: {prefix || "TD"}-1).
-              </p>
-            </div>
-
             {error && (
               <p className="text-destructive text-sm" data-testid="project-form-error">
                 {error}

@@ -23,17 +23,16 @@ test.describe.serial("프로젝트 생성/전환", () => {
   }) => {
     await signupAndEnter(page)
     const name = `생성테스트 ${Date.now()}`
-    // 키 프리픽스는 소문자/기호 입력해도 대문자 영숫자로 정규화돼야 함
-    await createProject(page, name, "td-1")
+    // 티켓키는 타입 기반(Task-1 등)으로 자동 발급 → 프리픽스 입력 없음
+    await createProject(page, name)
 
     await expect(page.getByTestId("empty-state")).toBeVisible()
     await expect(page.getByText("첫 컨텐츠를 추가")).toBeVisible()
 
-    const projs = await restGet<{ id: string; key_prefix: string }>(
-      `project?name=eq.${encodeURIComponent(name)}&select=id,key_prefix`
+    const projs = await restGet<{ id: string }>(
+      `project?name=eq.${encodeURIComponent(name)}&select=id`
     )
     expect(projs).toHaveLength(1)
-    expect(projs[0].key_prefix).toBe("TD1")
     const statuses = await restGet<{ id: string }>(
       `status?project_id=eq.${projs[0].id}&select=id`
     )

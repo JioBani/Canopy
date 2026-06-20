@@ -1,8 +1,7 @@
 import { useMemo, useState, type DragEvent } from "react"
 import { useNodes } from "@/nodes/NodesProvider"
-import { useProjects } from "@/projects/ProjectProvider"
 import { memberLabel } from "@/lib/members"
-import { ticketKey } from "@/lib/validation"
+import { ticketKey } from "@/nodes/nodeGrammar"
 import type { StatusCategory } from "@/lib/statuses"
 import type { AppNode, NodeDomain } from "@/lib/nodes"
 import { BLOOM_GLYPH, CATEGORY_TEXT_COLOR } from "@/nodes/bloomGlyph"
@@ -39,12 +38,9 @@ function ancestorsOf(
 
 function BoardCard({ node }: { node: AppNode }) {
   const { getStatus, getMember, openNode } = useNodes()
-  const { currentProject } = useProjects()
   const status = getStatus(node.status_id)
   const assignee = node.assignee_id ? getMember(node.assignee_id) : undefined
-  const ticket = currentProject
-    ? ticketKey(currentProject.key_prefix, node.ticket_number)
-    : `#${node.ticket_number}`
+  const ticket = ticketKey(node.type, node.ticket_number)
 
   function onDragStart(e: DragEvent<HTMLDivElement>) {
     e.dataTransfer.setData("text/plain", node.id)

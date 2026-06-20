@@ -1,8 +1,7 @@
 import { useState } from "react"
 import { Plus } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
-import { useProjects } from "@/projects/ProjectProvider"
-import { ticketKey } from "@/lib/validation"
+import { ticketKey } from "@/nodes/nodeGrammar"
 import { StatusBadge } from "@/nodes/NodeBadges"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,12 +24,8 @@ export function WorkSection({
   compact?: boolean
 }) {
   const { childrenOf, openNode, createChild } = useNodes()
-  const { currentProject } = useProjects()
   const [adding, setAdding] = useState(false)
   const works = childrenOf(parentId).filter((n) => n.type === "작업")
-
-  const tk = (num: number) =>
-    currentProject ? ticketKey(currentProject.key_prefix, num) : `#${num}`
 
   return (
     <div className="flex flex-col gap-1" data-testid="work-section">
@@ -83,7 +78,7 @@ export function WorkSection({
             className="tnum shrink-0 font-mono text-[11px] font-semibold"
             style={{ color: "var(--c-plum)" }}
           >
-            {tk(w.ticket_number)}
+            {ticketKey(w.type, w.ticket_number)}
           </code>
           <Tooltip>
             <TooltipTrigger asChild>

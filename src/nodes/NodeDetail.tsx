@@ -1,21 +1,18 @@
 import { useEffect, useMemo, useState } from "react"
-import { Copy } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
-import { useProjects } from "@/projects/ProjectProvider"
-import { ticketKey } from "@/lib/validation"
 import { Markdown } from "@/components/Markdown"
 import { memberLabel } from "@/lib/members"
-import { TYPE_META } from "@/nodes/nodeGrammar"
-import { PIXEL_ICONS } from "@/nodes/pixelIcons"
 import { BLOOM_GLYPH } from "@/nodes/bloomGlyph"
 import { CATEGORY_COLOR } from "@/lib/statuses"
+import { CoverHeader } from "@/nodes/CoverHeader"
+import { LAYER_COLOR } from "@/nodes/layerColors"
 import { ChildNav } from "@/nodes/ChildNav"
 import { SubFeatureSections } from "@/ur/SubFeatureSections"
 import { WorkSection } from "@/ur/WorkSection"
 import { TaskChecklist } from "@/ur/TaskChecklist"
 import { TaskUrLinks } from "@/ur/TaskUrLinks"
 import { TaskBlocks } from "@/ur/TaskBlocks"
-import type { AppNode, NodeDomain } from "@/lib/nodes"
+import type { NodeDomain } from "@/lib/nodes"
 import type { StatusCategory } from "@/lib/statuses"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -67,7 +64,6 @@ const triggerClass =
 export function NodeDetail() {
   const { nodes, selectedId, updateFields, statuses, members, getStatus } =
     useNodes()
-  const { currentProject } = useProjects()
   const node = nodes.find((n) => n.id === selectedId) ?? null
 
   const [title, setTitle] = useState("")
@@ -103,9 +99,6 @@ export function NodeDetail() {
   }
 
   const isTask = node.type === "작업"
-  const ticket = currentProject
-    ? ticketKey(currentProject.key_prefix, node.ticket_number)
-    : `#${node.ticket_number}`
 
   function saveTitle() {
     const t = title.trim()
@@ -116,22 +109,6 @@ export function NodeDetail() {
     if (node && body !== (node.body ?? ""))
       void updateFields(node.id, { body })
   }
-
-  // 브레드크럼: 조상 경로(자기 제외, 루트→부모)
-  const breadcrumb: string[] = []
-  {
-    let cur: AppNode | null = node.parent_id
-      ? (nodes.find((n) => n.id === node.parent_id) ?? null)
-      : null
-    while (cur) {
-      breadcrumb.unshift(cur.title)
-      cur = cur.parent_id
-        ? (nodes.find((n) => n.id === cur!.parent_id) ?? null)
-        : null
-    }
-  }
-
-  const TypeIcon = PIXEL_ICONS[node.type]
 
   // 상태 칩 리딩 글리프
   const curStatus = getStatus(node.status_id)
@@ -156,74 +133,31 @@ export function NodeDetail() {
     : undefined
 
   return (
-    <div
-      className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-8 py-7"
-      data-testid="node-detail"
-    >
-      {/* 헤더: 브레드크럼 + 티켓키 + 타입태그 */}
-      <div className="flex flex-col gap-2">
-        {breadcrumb.length > 0 && (
-          <nav
-            className="flex items-center gap-1 text-xs"
-            style={{ color: "var(--c-ink-3)" }}
-          >
-            {breadcrumb.map((b, i) => (
-              <span key={i} className="flex items-center gap-1">
-                {i > 0 && <span className="opacity-50">/</span>}
-                <span className="truncate">{b}</span>
-              </span>
-            ))}
-          </nav>
-        )}
-        <div className="flex items-center gap-1.5">
-          <code
-            className="tnum font-mono text-[11.5px] font-semibold"
-            style={{ color: "var(--c-plum)" }}
-            data-testid="detail-ticket"
-          >
-            {ticket}
-          </code>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6"
-            title="티켓키 복사"
-            data-testid="copy-ticket"
-            onClick={() => void navigator.clipboard?.writeText(ticket)}
-          >
-            <Copy className="size-3.5" />
-          </Button>
-          <span
-            className="ml-auto inline-flex items-center gap-1.5 text-xs font-medium"
-            style={{ color: "var(--c-ink-2)" }}
-            data-testid="detail-type"
-          >
-            <TypeIcon
-              className="size-3.5"
-              style={{
-                color:
-                  node.type === "컨텐츠"
-                    ? "var(--c-sakura)"
-                    : "var(--c-ink-3)",
-              }}
-            />
-            {TYPE_META[node.type].label}
-          </span>
-        </div>
-      </div>
+    <div className="mx-auto w-full max-w-5xl" data-testid="node-detail">
+      {/* 커버 헤더 — 레이어 칩 + 큰 브레드크럼 + 티켓키 (레이어 틴트 밴드) */}
+      <CoverHeader node={node} />
 
-      {/* 제목 — 메이플체 Bold (편집 가능) */}
-      <Input
-        id="detail-title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        onBlur={saveTitle}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") e.currentTarget.blur()
-        }}
-        className="font-display -mx-2 h-auto border-transparent bg-transparent px-2 py-1 text-[22px] leading-snug font-bold shadow-none hover:bg-[#F5F2F4]/60 focus-visible:bg-transparent"
-        data-testid="detail-title"
-      />
+      <div className="flex flex-col gap-6 px-8 py-7">
+        {/* 제목 — 메이플 Bold, 큰 위계. 좌측 얇은 레이어색 액센트 바. */}
+        <div className="flex items-stretch gap-2.5">
+          <span
+            aria-hidden
+            className="mt-1 w-1 shrink-0 rounded-full"
+            style={{ background: LAYER_COLOR[node.type].base }}
+          />
+          <Input
+            id="detail-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={saveTitle}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur()
+            }}
+            style={{ fontSize: "clamp(28px, 4vw, 32px)", letterSpacing: "-0.01em" }}
+            className="font-display h-auto flex-1 border-transparent bg-transparent px-1 py-0.5 leading-[1.2] font-bold shadow-none hover:bg-[#F5F2F4]/60 focus-visible:bg-transparent"
+            data-testid="detail-title"
+          />
+        </div>
 
       {/* 작업 전용 — property 행 (shadcn Select) */}
       {isTask && (
@@ -420,20 +354,21 @@ export function NodeDetail() {
         </div>
       )}
 
-      {/* 작업 상세: 작업내용 → 연결 요구사항 → 선제조건 (세로 풀폭 스택) */}
-      {isTask && (
-        <div className="flex flex-col gap-6">
-          <div className="border-border border-t pt-6">
-            <TaskChecklist workId={node.id} />
+        {/* 작업 상세: 작업내용 → 연결 요구사항 → 선제조건 (세로 풀폭 스택) */}
+        {isTask && (
+          <div className="flex flex-col gap-6">
+            <div className="border-border border-t pt-6">
+              <TaskChecklist workId={node.id} />
+            </div>
+            <div className="border-border border-t pt-6">
+              <TaskUrLinks workId={node.id} featureId={node.parent_id} />
+            </div>
+            <div className="border-border border-t pt-6">
+              <TaskBlocks nodeId={node.id} />
+            </div>
           </div>
-          <div className="border-border border-t pt-6">
-            <TaskUrLinks workId={node.id} featureId={node.parent_id} />
-          </div>
-          <div className="border-border border-t pt-6">
-            <TaskBlocks nodeId={node.id} />
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

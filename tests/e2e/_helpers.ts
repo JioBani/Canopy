@@ -70,7 +70,7 @@ export async function signupAndEnter(page: Page): Promise<string> {
 export async function createProject(
   page: Page,
   name: string,
-  prefix: string
+  _prefix?: string // 레거시 인자(티켓키 타입기반 전환으로 프리픽스 폐기). 무시됨.
 ): Promise<string> {
   const firstBtn = page.getByTestId("create-first-project")
   // 안정 상태까지 대기: NoProjects(첫 프로젝트 버튼) 또는 로드된 현재 프로젝트.
@@ -84,7 +84,6 @@ export async function createProject(
     await page.getByTestId("new-project-button").click()
   }
   await page.getByTestId("project-name-input").fill(name)
-  await page.getByTestId("project-prefix-input").fill(prefix)
   await page.getByTestId("create-project-submit").click()
   await expect(page.getByTestId("current-project-name")).toHaveText(name)
   createdProjects.push(name)

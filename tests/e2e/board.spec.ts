@@ -48,7 +48,7 @@ test.describe.serial("보드 뷰", () => {
     await expect(cardIn(page, "완료", "작업A")).toBeVisible()
     await expect(cardIn(page, "미지정", "작업B")).toBeVisible()
     // 작업A 카드에 티켓키/도메인 표시
-    await expect(cardIn(page, "완료", "작업A")).toContainText("BD-")
+    await expect(cardIn(page, "완료", "작업A")).toContainText("Task-")
     await expect(cardIn(page, "완료", "작업A")).toContainText("디자인")
   })
 

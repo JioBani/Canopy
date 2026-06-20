@@ -16,7 +16,6 @@ const SERVICE_ROLE_KEY =
 
 const SRC_DIR = "C:/Project/tactica-defense-resources/decompose/완료정의-점검"
 const PROJECT_NAME = "Tatica Defense"
-const PROJECT_PREFIX = "TACD"
 
 const db = createClient(URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -94,7 +93,7 @@ async function main() {
 
   const project = await insOne(
     "project",
-    { name: PROJECT_NAME, key_prefix: PROJECT_PREFIX },
+    { name: PROJECT_NAME },
     "id"
   )
   console.log(`프로젝트 생성: ${PROJECT_NAME} (${project.id})`)

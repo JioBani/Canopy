@@ -59,12 +59,11 @@ export async function authedClient(): Promise<{
 /** 프로젝트 생성 (admin). 기본상태 자동시드 트리거가 함께 돈다. */
 export async function createProject(
   admin: SupabaseClient,
-  name = "테스트 프로젝트",
-  keyPrefix = "TP"
+  name = "테스트 프로젝트"
 ): Promise<string> {
   const { data, error } = await admin
     .from("project")
-    .insert({ name, key_prefix: keyPrefix })
+    .insert({ name })
     .select("id")
     .single()
   if (error) throw new Error(`프로젝트 생성 실패: ${error.message}`)

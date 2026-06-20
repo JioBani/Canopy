@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { AlertTriangle } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
 import { useAuth } from "@/auth/AuthProvider"
-import { useProjects } from "@/projects/ProjectProvider"
-import { ticketKey } from "@/lib/validation"
+import { ticketKey } from "@/nodes/nodeGrammar"
 import { listUrCoverageByFeatures } from "@/lib/ur"
 import type { AppNode, NodeDomain } from "@/lib/nodes"
 import { CATEGORY_COLOR } from "@/lib/statuses"
@@ -50,8 +49,6 @@ function Bar({ ratio, color }: { ratio: number; color: string }) {
 export function DashboardView() {
   const { nodes, getProgress, getStatus, openNode } = useNodes()
   const { user } = useAuth()
-  const { currentProject } = useProjects()
-  const prefix = currentProject?.key_prefix ?? ""
 
   const contents = nodes.filter((n) => n.type === "컨텐츠")
   const tasks = useMemo(() => nodes.filter((n) => n.type === "작업"), [nodes])
@@ -122,7 +119,7 @@ export function DashboardView() {
     .slice(0, 8)
 
   function tk(n: AppNode) {
-    return ticketKey(prefix, n.ticket_number)
+    return ticketKey(n.type, n.ticket_number)
   }
 
   return (

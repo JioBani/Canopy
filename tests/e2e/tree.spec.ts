@@ -45,7 +45,7 @@ test.describe.serial("노드 트리", () => {
     await expect(rowByTitle(page, "합성세부")).toBeVisible()
     await addWork(page, "합성세부", "로직작업") // 작업은 트리 행 아님
 
-    // 백엔드 검증: 노드 4개 + 타입 + 티켓 1..4
+    // 백엔드 검증: 노드 4개 + 타입 + 타입별 번호(각 타입 첫 노드라 모두 1)
     const projs = await restGet<{ id: string }>(
       `project?name=eq.${encodeURIComponent(projectName)}&select=id`
     )
@@ -56,9 +56,8 @@ test.describe.serial("노드 트리", () => {
     expect(nodes.map((n) => n.type).sort()).toEqual(
       ["기능", "세부기능", "작업", "컨텐츠"].sort()
     )
-    expect(nodes.map((n) => n.ticket_number).sort((a, b) => a - b)).toEqual([
-      1, 2, 3, 4,
-    ])
+    // 타입 기반 티켓키: 각 타입 1개씩이므로 ticket_number 는 모두 1
+    expect(nodes.map((n) => n.ticket_number)).toEqual([1, 1, 1, 1])
   })
 
   test("세부기능 펼침 = 작업이 트리 행이 아니라 임베드 패널에 표시", async ({

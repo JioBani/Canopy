@@ -50,3 +50,22 @@ export const TYPE_META: Record<NodeType, { label: string; color: string }> = {
   마스터데이터: { label: "마스터데이터", color: "text-emerald-600" },
   작업: { label: "작업", color: "text-muted-foreground" },
 }
+
+/** 티켓 키 프리픽스 — 타입 기반(프로젝트 무관). 사용자 확정 영문명. */
+export const TICKET_PREFIX: Record<NodeType, string> = {
+  컨텐츠: "Content",
+  기능: "Feature",
+  세부기능: "SubFeature",
+  마스터데이터: "MasterData",
+  작업: "Task",
+}
+
+/** 티켓키 조합: `{Type}-{ticket_number}` (예: Task-1, Feature-3). */
+export function ticketKey(type: NodeType, ticketNumber: number): string {
+  return `${TICKET_PREFIX[type]}-${ticketNumber}`
+}
+
+/** UR 티켓키: `Requirement-{번호}` (타입 기반 키와 일관). */
+export function urKey(ticketNumber: number): string {
+  return `Requirement-${ticketNumber}`
+}

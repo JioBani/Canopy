@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from "react"
 import { Search } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
-import { useProjects } from "@/projects/ProjectProvider"
-import { ticketKey } from "@/lib/validation"
 import { memberLabel } from "@/lib/members"
-import { NODE_TYPES, TYPE_META, type NodeType } from "@/nodes/nodeGrammar"
+import {
+  NODE_TYPES,
+  TYPE_META,
+  ticketKey,
+  type NodeType,
+} from "@/nodes/nodeGrammar"
 import type { AppNode, NodeDomain } from "@/lib/nodes"
 import { PIXEL_ICONS } from "@/nodes/pixelIcons"
+import { LAYER_COLOR } from "@/nodes/layerColors"
 import {
   Dialog,
   DialogContent,
@@ -42,7 +46,6 @@ function ancestorsOf(node: AppNode, byId: Map<string, AppNode>) {
 
 function SearchBody({ onClose }: { onClose: () => void }) {
   const { nodes, statuses, members, getStatus, openNode } = useNodes()
-  const { currentProject } = useProjects()
   const [q, setQ] = useState("")
   const [fType, setFType] = useState("")
   const [fStatus, setFStatus] = useState("")
@@ -52,7 +55,6 @@ function SearchBody({ onClose }: { onClose: () => void }) {
 
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
   const contents = nodes.filter((n) => n.type === "컨텐츠")
-  const prefix = currentProject?.key_prefix ?? ""
 
   const results = useMemo(() => {
     const text = q.trim().toLowerCase()
@@ -65,14 +67,14 @@ function SearchBody({ onClose }: { onClose: () => void }) {
         if (fAssignee && n.assignee_id !== fAssignee) return false
         if (fContent && anc.contentId !== fContent) return false
         if (text) {
-          const key = ticketKey(prefix, n.ticket_number).toLowerCase()
+          const key = ticketKey(n.type, n.ticket_number).toLowerCase()
           const hay = `${n.title} ${n.body ?? ""} ${key}`.toLowerCase()
           if (!hay.includes(text)) return false
         }
         return true
       })
       .slice(0, 50)
-  }, [nodes, byId, q, fType, fStatus, fDomain, fAssignee, fContent, prefix])
+  }, [nodes, byId, q, fType, fStatus, fDomain, fAssignee, fContent])
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -150,18 +152,13 @@ function SearchBody({ onClose }: { onClose: () => void }) {
               >
                 <Icon
                   className="size-4 shrink-0"
-                  style={{
-                    color:
-                      n.type === "컨텐츠"
-                        ? "var(--c-sakura)"
-                        : "var(--c-ink-3)",
-                  }}
+                  style={{ color: LAYER_COLOR[n.type as NodeType].base }}
                 />
                 <code
                   className="tnum shrink-0 font-mono text-[11px] font-semibold"
                   style={{ color: "var(--c-plum)" }}
                 >
-                  {ticketKey(prefix, n.ticket_number)}
+                  {ticketKey(n.type, n.ticket_number)}
                 </code>
                 <span className="min-w-0 flex-1 truncate text-[13px]">
                   {n.title}

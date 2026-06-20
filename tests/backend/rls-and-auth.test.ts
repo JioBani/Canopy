@@ -18,7 +18,7 @@ describe("RLS — 비로그인(anon) 거부", () => {
     const anon = anonClient()
     const { error } = await anon
       .from("project")
-      .insert({ name: "anon 침입", key_prefix: "XX" })
+      .insert({ name: "anon 침입" })
     expect(error).not.toBeNull()
   })
 
@@ -26,7 +26,7 @@ describe("RLS — 비로그인(anon) 거부", () => {
     const pid = (
       await admin
         .from("project")
-        .insert({ name: "비공개", key_prefix: "PV" })
+        .insert({ name: "비공개" })
         .select("id")
         .single()
     ).data!.id
@@ -44,7 +44,7 @@ describe("RLS — 로그인(authenticated) 허용", () => {
 
     const ins = await client
       .from("project")
-      .insert({ name: "로그인 생성", key_prefix: "LG" })
+      .insert({ name: "로그인 생성" })
       .select("id")
       .single()
     expect(ins.error).toBeNull()

@@ -6,6 +6,7 @@ import {
   listUrIdsForWork,
   listUrs,
   unlinkUrWork,
+  urKey,
   type Ur,
 } from "@/lib/ur"
 import { UrStateGlyph } from "@/ur/urStateGlyph"
@@ -71,7 +72,10 @@ export function TaskUrLinks({
       label:
         (featureTitle.get(fid) ?? "세부기능") +
         (fid === featureId ? " (현재)" : ""),
-      items: byFeature.get(fid)!.map((u) => ({ value: u.id, label: u.text })),
+      items: byFeature.get(fid)!.map((u) => ({
+        value: u.id,
+        label: `${urKey(u.ticket_number)}  ${u.text}`,
+      })),
     }))
   }, [available, featureId, featureTitle])
 
@@ -96,6 +100,14 @@ export function TaskUrLinks({
                 className="mt-0.5 text-[11px]"
                 style={{ color: "var(--c-ink-3)" }}
               >
+                <code
+                  className="tnum font-mono font-semibold"
+                  style={{ color: "var(--c-plum)" }}
+                  data-testid="ur-key"
+                >
+                  {urKey(u.ticket_number)}
+                </code>
+                {" · "}
                 {featureTitle.get(u.feature_id) ?? ""}
               </p>
             </div>

@@ -14,11 +14,16 @@ export interface Ur {
   /** 소유 세부기능 노드 id (컬럼명은 호환상 feature_id 유지). */
   feature_id: string
   ur_group_id: string | null
+  /** 트리거 발급 번호 (키 = Requirement-{ticket_number}, 프로젝트 단위). */
+  ticket_number: number
   text: string
   status: UrStatus
   misimpl_reason: string | null
   sort_order: number
 }
+
+// urKey 는 순수 포맷 함수라 nodeGrammar 에 두고 재노출(unit 테스트가 supabase 의존 회피).
+export { urKey } from "@/nodes/nodeGrammar"
 
 export interface UrCoverage {
   ur_id: string
@@ -70,7 +75,7 @@ export async function deleteUrGroup(id: string): Promise<void> {
 
 // ── ur ──────────────────────────────────────────────────────
 const UR_COLS =
-  "id, feature_id, ur_group_id, text, status, misimpl_reason, sort_order"
+  "id, feature_id, ur_group_id, ticket_number, text, status, misimpl_reason, sort_order"
 
 /** 주어진 세부기능들의 UR (피커용으로 배열 허용). */
 export async function listUrs(featureIds: string[]): Promise<Ur[]> {

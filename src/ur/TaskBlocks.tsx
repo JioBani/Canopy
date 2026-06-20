@@ -1,20 +1,18 @@
 import { useCallback, useEffect, useState } from "react"
 import { Link2, X } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
-import { useProjects } from "@/projects/ProjectProvider"
 import {
   addNodeLink,
   listLinksFrom,
   removeNodeLink,
   type NodeLink,
 } from "@/lib/nodeLinks"
-import { ticketKey } from "@/lib/validation"
+import { ticketKey } from "@/nodes/nodeGrammar"
 import { Button } from "@/components/ui/button"
 import { Picker, type PickerGroup } from "@/components/ui/picker"
 
 export function TaskBlocks({ nodeId }: { nodeId: string }) {
   const { nodes } = useNodes()
-  const { currentProject } = useProjects()
   const [links, setLinks] = useState<NodeLink[]>([])
 
   const reload = useCallback(async () => {
@@ -29,9 +27,7 @@ export function TaskBlocks({ nodeId }: { nodeId: string }) {
   const tk = (id: string) => {
     const n = nodeById.get(id)
     if (!n) return "#?"
-    return currentProject
-      ? ticketKey(currentProject.key_prefix, n.ticket_number)
-      : `#${n.ticket_number}`
+    return ticketKey(n.type, n.ticket_number)
   }
   const titleOf = (id: string) => nodeById.get(id)?.title ?? id.slice(0, 8)
 

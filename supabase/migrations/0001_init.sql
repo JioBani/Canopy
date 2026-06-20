@@ -38,11 +38,11 @@ $$;
 -- ---------------------------------------------------------------------------
 
 -- project — 프로젝트
+-- 티켓 키는 타입 기반(`{Type}-{N}`)이라 프로젝트별 프리픽스가 없다.
+-- 타입별 번호 카운터는 ticket_counter 테이블이 보관한다.
 create table project (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
-  key_prefix  text not null,                  -- 티켓 키 프리픽스 (예: TD)
-  ticket_seq  int  not null default 1,        -- 다음 발급 티켓 번호 (원자적 증가)
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
@@ -75,7 +75,7 @@ create table node (
   project_id     uuid not null references project(id) on delete cascade,
   parent_id      uuid references node(id) on delete cascade,   -- null = 컨텐츠(최상위)
   type           node_type not null,
-  ticket_number  int,                          -- 트리거가 발급 (티켓키 = key_prefix-ticket_number)
+  ticket_number  int,                          -- 트리거가 타입별로 발급 (티켓키 = {Type}-{ticket_number})
   title          text not null,
   body           text,                         -- 설명(마크다운), 모든 노드 공통
   sort_order     int  not null default 0,
@@ -84,7 +84,16 @@ create table node (
   assignee_id    uuid references member(id) on delete set null,
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now(),
-  unique (project_id, ticket_number)
+  unique (project_id, type, ticket_number)     -- 번호는 프로젝트·타입 단위로 유일
+);
+
+-- ticket_counter — 프로젝트·종류(kind)별 다음 발급 번호 (원자적 증가)
+-- kind = 노드 타입(컨텐츠/기능/…/작업) 또는 'ur'(요구사항). 타입별 독립 카운터.
+create table ticket_counter (
+  project_id  uuid not null references project(id) on delete cascade,
+  kind        text not null,
+  next_seq    int  not null default 1,
+  primary key (project_id, kind)
 );
 
 -- ur_group — UR 묶음 (세부기능 소유, 가독성용)
@@ -104,6 +113,7 @@ create table ur (
   id            uuid primary key default gen_random_uuid(),
   feature_id    uuid not null references node(id) on delete cascade,        -- 세부기능 노드
   ur_group_id   uuid references ur_group(id) on delete set null,            -- 그룹(선택)
+  ticket_number int,                             -- 트리거가 발급 (키 = Requirement-{ticket_number}, 프로젝트 단위)
   text          text not null,                  -- 요구사항 원문
   status        ur_status not null default '미구현',
   misimpl_reason text,                           -- 오구현 사유
@@ -177,9 +187,10 @@ create trigger trg_task_checklist_updated before update on task_checklist for ea
 create trigger trg_node_link_updated      before update on node_link      for each row execute function set_updated_at();
 
 -- ---------------------------------------------------------------------------
--- 5. 핵심 로직 #1 — 티켓 번호 발급 (node insert 시 원자적)
---    project.ticket_seq(다음 발급 번호)를 1 증가시키며 이전 값을 ticket_number 로 할당.
---    같은 project 행을 UPDATE 하므로 동시 insert 가 직렬화되어 번호 중복이 없다.
+-- 5. 핵심 로직 #1 — 티켓 번호 발급 (node insert 시 원자적, 타입별)
+--    ticket_counter(project_id, type) 행을 UPSERT 로 원자적 증가시키며 이전 값을
+--    ticket_number 로 할당. 같은 (project,type) 행을 잠그므로 동시 insert 가
+--    직렬화되어 타입별 번호 중복이 없다 (티켓키 = {Type}-{ticket_number}).
 -- ---------------------------------------------------------------------------
 create or replace function assign_ticket_number()
 returns trigger
@@ -188,13 +199,14 @@ as $$
 declare
   next_no int;
 begin
-  update project
-     set ticket_seq = ticket_seq + 1
-   where id = new.project_id
-  returning ticket_seq - 1 into next_no;   -- 증가 전 값 = 이번에 발급할 번호
+  insert into ticket_counter (project_id, kind, next_seq)
+       values (new.project_id, new.type::text, 2)
+  on conflict (project_id, kind)
+       do update set next_seq = ticket_counter.next_seq + 1
+    returning next_seq - 1 into next_no;   -- 증가 전 값 = 이번에 발급할 번호
 
   if next_no is null then
-    raise exception '티켓 번호 발급 실패: project_id=% 가 존재하지 않습니다.', new.project_id;
+    raise exception '티켓 번호 발급 실패: project_id=% type=%', new.project_id, new.type;
   end if;
 
   new.ticket_number := next_no;
@@ -205,6 +217,36 @@ $$;
 create trigger trg_node_assign_ticket
   before insert on node
   for each row execute function assign_ticket_number();
+
+-- UR 번호 발급 — ur insert 시 (프로젝트 단위 'ur' 카운터). 키 = Requirement-{ticket_number}.
+-- ur 에는 project_id 가 없으므로 소유 세부기능(feature_id)에서 프로젝트를 끌어온다.
+create or replace function assign_ur_number()
+returns trigger
+language plpgsql
+as $$
+declare
+  pid uuid;
+  next_no int;
+begin
+  select project_id into pid from node where id = new.feature_id;
+  if pid is null then
+    raise exception 'UR 번호 발급 실패: feature_id=% 노드가 없습니다.', new.feature_id;
+  end if;
+
+  insert into ticket_counter (project_id, kind, next_seq)
+       values (pid, 'ur', 2)
+  on conflict (project_id, kind)
+       do update set next_seq = ticket_counter.next_seq + 1
+    returning next_seq - 1 into next_no;
+
+  new.ticket_number := next_no;
+  return new;
+end;
+$$;
+
+create trigger trg_ur_assign_number
+  before insert on ur
+  for each row execute function assign_ur_number();
 
 -- ---------------------------------------------------------------------------
 -- 6. 핵심 로직 #2 — 노드 타입 문법 강제 (기획서 §5)
@@ -436,6 +478,7 @@ create trigger on_auth_user_synced
 -- 10. RLS — 전 테이블 enable + authenticated 전부 허용 (내부용)
 -- ---------------------------------------------------------------------------
 alter table project        enable row level security;
+alter table ticket_counter enable row level security;
 alter table member         enable row level security;
 alter table status         enable row level security;
 alter table node           enable row level security;
@@ -446,6 +489,7 @@ alter table task_checklist enable row level security;
 alter table node_link      enable row level security;
 
 create policy "authenticated all" on project        for all to authenticated using (true) with check (true);
+create policy "authenticated all" on ticket_counter for all to authenticated using (true) with check (true);
 create policy "authenticated all" on member         for all to authenticated using (true) with check (true);
 create policy "authenticated all" on status         for all to authenticated using (true) with check (true);
 create policy "authenticated all" on node           for all to authenticated using (true) with check (true);

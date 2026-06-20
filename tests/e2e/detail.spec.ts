@@ -40,7 +40,7 @@ test.describe.serial("노드 상세 패널", () => {
     await selectWorkInEmbed(page, "로직작업")
     await expect(page.getByTestId("node-detail")).toBeVisible()
     await expect(page.getByTestId("detail-type")).toHaveText("작업")
-    await expect(page.getByTestId("detail-ticket")).toContainText("DT-")
+    await expect(page.getByTestId("detail-ticket")).toContainText("Task-")
 
     // 상태 '완료' → 세부기능 진행바 100%(실시간) + 임베드 작업 뱃지
     await selectByLabel(page, "detail-status", "완료")

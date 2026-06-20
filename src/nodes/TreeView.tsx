@@ -11,6 +11,7 @@ import { useNodes } from "@/nodes/NodesProvider"
 import { DeleteNodeDialog } from "@/nodes/DeleteNodeDialog"
 import { ProgressBadge, StatusBadge } from "@/nodes/NodeBadges"
 import { PIXEL_ICONS } from "@/nodes/pixelIcons"
+import { LAYER_COLOR } from "@/nodes/layerColors"
 import { SubFeatureSections } from "@/ur/SubFeatureSections"
 import {
   allowedChildTypes,
@@ -202,12 +203,8 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
   const expanded = isExpanded(node.id)
   const selected = selectedId === node.id
   const Icon = PIXEL_ICONS[node.type]
-  // 타입색 절제: 컨텐츠(나무)만 Sakura 1점 강조, 나머지 muted. 선택 행은 plum.
-  const iconColor = selected
-    ? "var(--c-plum)"
-    : node.type === "컨텐츠"
-      ? "var(--c-sakura)"
-      : "var(--c-ink-3)"
+  // 레이어색 단일화: 타입 아이콘에 레이어 base 색(아이콘만, 텍스트/배경 색칠 금지).
+  const iconColor = LAYER_COLOR[node.type].base
 
   // 시그니처 "꽃핀 가지": 하위 완료율이 오를수록 가지 가이드선이 sakura 로 물듦.
   const np = getProgress(node.id)

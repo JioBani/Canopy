@@ -3,8 +3,6 @@ import { supabase } from "@/lib/supabase"
 export interface Project {
   id: string
   name: string
-  key_prefix: string
-  ticket_seq: number
   created_at: string
   updated_at: string
 }
@@ -21,15 +19,12 @@ export async function listProjects(): Promise<Project[]> {
 
 /**
  * 프로젝트 생성. 기본 상태 4종은 DB 트리거가 시드하므로 프론트에서 추가하지 않는다.
- * 호출 전 name/key_prefix 는 검증/정규화되어 있어야 한다 (lib/validation).
+ * 티켓키는 타입 기반이라 프리픽스 입력이 없다. 호출 전 name 은 검증되어 있어야 한다.
  */
-export async function insertProject(
-  name: string,
-  keyPrefix: string
-): Promise<Project> {
+export async function insertProject(name: string): Promise<Project> {
   const { data, error } = await supabase
     .from("project")
-    .insert({ name: name.trim(), key_prefix: keyPrefix })
+    .insert({ name: name.trim() })
     .select("*")
     .single()
   if (error) throw new Error(error.message)
