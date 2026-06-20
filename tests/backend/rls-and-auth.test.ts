@@ -4,6 +4,8 @@ import {
   anonClient,
   authedClient,
   cleanupProjects,
+  createNode,
+  createProject,
 } from "../helpers/supabase"
 
 const admin = adminClient()
@@ -78,18 +80,75 @@ describe("RLS — 로그인(authenticated) 허용", () => {
   })
 })
 
-describe("member 동기화 (auth.users 트리거)", () => {
-  it("회원가입하면 member 행이 자동 생성된다", async () => {
-    const { userId, email } = await authedClient()
+describe("member 수동 관리 (auth 연동 제거, 0004)", () => {
+  it("멤버를 직접 생성(id 자동)하고 작업에 할당, 멤버 삭제 시 assignee 가 null 된다", async () => {
+    const pid = await createProject(admin, "멤버테스트")
+    created.push(pid)
 
-    const { data, error } = await admin
+    // 멤버 직접 생성 (auth.users 없이 — id 는 DB 발급)
+    const { data: m, error: me } = await admin
       .from("member")
-      .select("id, email")
-      .eq("id", userId)
+      .insert({ display_name: "테스터", color: "#EC9EBA" })
+      .select("id")
       .single()
+    expect(me).toBeNull()
+    expect(m!.id).toBeTruthy()
 
-    expect(error).toBeNull()
-    expect(data!.id).toBe(userId)
-    expect(data!.email).toBe(email)
+    // 작업 트리 생성 후 담당자 할당
+    const c = await createNode(admin, { project_id: pid, type: "컨텐츠", title: "C" })
+    const f = await createNode(admin, {
+      project_id: pid,
+      type: "기능",
+      title: "F",
+      parent_id: c.data!.id,
+    })
+    const s = await createNode(admin, {
+      project_id: pid,
+      type: "세부기능",
+      title: "S",
+      parent_id: f.data!.id,
+    })
+    const t = await createNode(admin, {
+      project_id: pid,
+      type: "작업",
+      title: "T",
+      parent_id: s.data!.id,
+    })
+    await admin.from("node").update({ assignee_id: m!.id }).eq("id", t.data!.id)
+    const before = await admin
+      .from("node")
+      .select("assignee_id")
+      .eq("id", t.data!.id)
+      .single()
+    expect(before.data!.assignee_id).toBe(m!.id)
+
+    // 멤버 삭제 → 담당 작업 assignee 자동 해제(FK ON DELETE SET NULL)
+    await admin.from("member").delete().eq("id", m!.id)
+    const after = await admin
+      .from("node")
+      .select("assignee_id")
+      .eq("id", t.data!.id)
+      .single()
+    expect(after.data!.assignee_id).toBeNull()
+  })
+
+  it("멤버 이름/색을 수정할 수 있다", async () => {
+    const { data: m } = await admin
+      .from("member")
+      .insert({ display_name: "수정전" })
+      .select("id")
+      .single()
+    await admin
+      .from("member")
+      .update({ display_name: "수정후", color: "#7DAEDE" })
+      .eq("id", m!.id)
+    const { data } = await admin
+      .from("member")
+      .select("display_name, color")
+      .eq("id", m!.id)
+      .single()
+    expect(data!.display_name).toBe("수정후")
+    expect(data!.color).toBe("#7DAEDE")
+    await admin.from("member").delete().eq("id", m!.id)
   })
 })

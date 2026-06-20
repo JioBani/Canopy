@@ -12,6 +12,7 @@ import { BoardView } from "@/board/BoardView"
 import { DashboardView } from "@/dashboard/DashboardView"
 import { SearchButton } from "@/search/SearchDialog"
 import { StatusSettingsButton } from "@/projects/StatusSettingsDialog"
+import { MembersButton } from "@/projects/MembersDialog"
 import { BloomFull } from "@/nodes/bloomGlyph"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { ChevronLeft, LogOut } from "lucide-react"
@@ -262,6 +263,7 @@ function WorkspaceInner() {
         tools={
           <>
             <SearchButton />
+            <MembersButton />
             <StatusSettingsButton />
           </>
         }

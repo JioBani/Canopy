@@ -54,6 +54,8 @@ interface NodesContextValue {
   getProgress: (nodeId: string) => NodeProgress | undefined
   /** 진행률 재조회(생략 시 전체). UR 변경 등 외부 요인 반영용. */
   refreshProgress: (ids?: string[]) => Promise<void>
+  /** 멤버 목록 재조회(멤버 수동 관리 후 반영). */
+  refreshMembers: () => Promise<void>
   /** status_id → 상태 (없으면 undefined). */
   getStatus: (statusId: string | null) => Status | undefined
   /** member_id → 멤버 (없으면 undefined). */
@@ -138,6 +140,11 @@ export function NodesProvider({
     const target = ids ?? nodesRef.current.map((n) => n.id)
     const rows = await listNodeProgress(target)
     setProgress(new Map(rows.map((r) => [r.node_id, r])))
+  }, [])
+
+  /** 멤버 목록 재조회(멤버 수동 관리 후 담당자 셀렉트 반영용). */
+  const refreshMembers = useCallback(async () => {
+    setMembers(await listMembers())
   }, [])
 
   const reload = useCallback(async () => {
@@ -321,6 +328,7 @@ export function NodesProvider({
       updateFields,
       getProgress,
       refreshProgress,
+      refreshMembers,
       getStatus,
       getMember,
       statuses,
@@ -343,6 +351,7 @@ export function NodesProvider({
       updateFields,
       getProgress,
       refreshProgress,
+      refreshMembers,
       getStatus,
       getMember,
       statuses,
