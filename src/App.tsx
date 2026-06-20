@@ -7,6 +7,7 @@ import { NodesProvider, useNodes } from "@/nodes/NodesProvider"
 import { TreeView } from "@/nodes/TreeView"
 import { NodeDetail } from "@/nodes/NodeDetail"
 import { BoardView } from "@/board/BoardView"
+import { DashboardView } from "@/dashboard/DashboardView"
 import { SearchButton } from "@/search/SearchDialog"
 import { StatusSettingsButton } from "@/projects/StatusSettingsDialog"
 import { BloomFull } from "@/nodes/bloomGlyph"
@@ -66,12 +67,19 @@ function WorkspaceInner() {
           >
             보드
           </SegmentTab>
+          <SegmentTab
+            active={view === "dashboard"}
+            onClick={() => setView("dashboard")}
+            testid="view-tab-dashboard"
+          >
+            대시보드
+          </SegmentTab>
         </div>
         <SearchButton />
         <StatusSettingsButton />
       </div>
 
-      {view === "tree" ? (
+      {view === "tree" && (
         <div className="flex min-h-0 flex-1">
           <aside
             className="flex w-80 shrink-0 flex-col overflow-y-auto border-r"
@@ -83,9 +91,15 @@ function WorkspaceInner() {
             <NodeDetail />
           </section>
         </div>
-      ) : (
+      )}
+      {view === "board" && (
         <div className="min-h-0 flex-1">
           <BoardView />
+        </div>
+      )}
+      {view === "dashboard" && (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <DashboardView />
         </div>
       )}
     </div>

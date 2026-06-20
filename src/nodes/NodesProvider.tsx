@@ -29,8 +29,8 @@ interface NodesContextValue {
   selectedId: string | null
   select: (id: string | null) => void
   /** 워크스페이스 뷰(트리/보드) — 카드·검색 점프가 트리로 전환할 수 있게 공유. */
-  view: "tree" | "board"
-  setView: (v: "tree" | "board") => void
+  view: "tree" | "board" | "dashboard"
+  setView: (v: "tree" | "board" | "dashboard") => void
   /** 노드로 점프: 선택 + 트리뷰 전환 (보드 카드·검색 결과용). */
   openNode: (id: string) => void
   isExpanded: (id: string) => boolean
@@ -71,7 +71,7 @@ export function NodesProvider({
   const [nodes, setNodes] = useState<AppNode[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [view, setView] = useState<"tree" | "board">("tree")
+  const [view, setView] = useState<"tree" | "board" | "dashboard">("tree")
   // 기본은 펼침. collapsed 에 든 id 만 접힘.
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
 

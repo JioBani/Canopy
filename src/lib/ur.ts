@@ -123,6 +123,35 @@ export async function listUrCoverageByFeature(
   }))
 }
 
+/** 여러 기능의 커버리지를 청크로 조회(대시보드용 — feature 많아도 URL 길이 안전). */
+export async function listUrCoverageByFeatures(
+  featureIds: string[]
+): Promise<UrCoverage[]> {
+  const out: UrCoverage[] = []
+  const CHUNK = 60
+  for (let i = 0; i < featureIds.length; i += CHUNK) {
+    const chunk = featureIds.slice(i, i + CHUNK)
+    const { data, error } = await supabase
+      .from("ur_coverage")
+      .select(
+        "ur_id, feature_id, ur_group_id, linked_work_count, done_work_count, is_uncovered"
+      )
+      .in("feature_id", chunk)
+    if (error) throw new Error(error.message)
+    for (const r of data ?? []) {
+      out.push({
+        ur_id: r.ur_id as string,
+        feature_id: r.feature_id as string,
+        ur_group_id: r.ur_group_id as string | null,
+        linked_work_count: Number(r.linked_work_count),
+        done_work_count: Number(r.done_work_count),
+        is_uncovered: Boolean(r.is_uncovered),
+      })
+    }
+  }
+  return out
+}
+
 // ── ur_work_link (M:N) ──────────────────────────────────────
 export async function listUrIdsForWork(workId: string): Promise<string[]> {
   const { data, error } = await supabase

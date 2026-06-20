@@ -23,14 +23,16 @@ export function rowByTitle(page: Page, title: string): Locator {
   return page.getByTestId("tree-node").filter({ hasText: title })
 }
 
-/** 가입 → 인증 셸 진입. */
-export async function signupAndEnter(page: Page) {
+/** 가입 → 인증 셸 진입. 생성된 이메일 반환(현재 유저 식별용). */
+export async function signupAndEnter(page: Page): Promise<string> {
+  const email = uniqueEmail()
   await page.goto("/")
   await page.getByTestId("toggle-mode").click()
-  await page.getByTestId("email-input").fill(uniqueEmail())
+  await page.getByTestId("email-input").fill(email)
   await page.getByTestId("password-input").fill(PASSWORD)
   await page.getByTestId("submit-button").click()
   await expect(page.getByTestId("app-shell")).toBeVisible()
+  return email
 }
 
 /**
