@@ -184,6 +184,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
   }
   /* Tier1 메이플체: letter-spacing 만 보강(font-family 는 font-display 유틸이 담당) */
   .font-display {
@@ -192,6 +193,33 @@
   /* 숫자 안정(진행률/카운트/티켓) */
   .tnum {
     font-variant-numeric: tabular-nums;
+  }
+  /* 텍스트 선택 — 핑크 틴트 */
+  ::selection {
+    background: var(--c-pink-bg);
+    color: var(--c-plum-d);
+  }
+  /* 얇고 차분한 스크롤바(운영급 디테일) */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--c-line-2) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--c-line-2);
+    border-radius: 99px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--c-ink-3);
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
   }
 }
 
