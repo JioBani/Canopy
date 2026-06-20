@@ -233,11 +233,10 @@ export function SearchButton() {
         type="button"
         onClick={() => setOpen(true)}
         data-testid="search-open"
-        className="text-muted-foreground flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg border bg-[var(--c-bg-sunken)] px-3 text-sm hover:bg-[#EFE7EC]"
-        style={{ maxWidth: 420 }}
+        className="text-muted-foreground border-border flex h-8 w-[200px] items-center gap-2 rounded-lg border bg-[var(--c-bg-sunken)] px-2.5 text-[13px] transition-colors hover:bg-[#EFE7EC]"
       >
-        <Search className="size-4 shrink-0" />
-        <span className="flex-1 text-left">검색…</span>
+        <Search className="size-3.5 shrink-0" />
+        <span className="flex-1 text-left">검색</span>
         <kbd className="tnum rounded bg-card px-1.5 py-0.5 text-[10px] font-medium shadow-xs">
           ⌘K
         </kbd>

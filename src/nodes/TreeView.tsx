@@ -191,6 +191,7 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
     selectedId,
     select,
     renameNode,
+    getProgress,
   } = useNodes()
   const [addingType, setAddingType] = useState<NodeType | null>(null)
   const [editing, setEditing] = useState(false)
@@ -207,8 +208,15 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
       ? "var(--c-sakura)"
       : "var(--c-ink-3)"
 
+  // 시그니처 "꽃핀 가지": 하위 완료율이 오를수록 가지 가이드선이 sakura 로 물듦.
+  const np = getProgress(node.id)
+  const branchColor =
+    np && np.progress != null
+      ? `color-mix(in oklab, var(--c-sakura) ${Math.round(np.progress * 100)}%, var(--c-line-2))`
+      : "var(--c-line-2)"
+
   return (
-    <div>
+    <div className="relative">
       <div
         className={cn(
           "group relative flex cursor-pointer items-center gap-1.5 rounded-lg py-1 pr-1 transition-colors",
@@ -321,10 +329,19 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
         />
       )}
 
-      {expanded &&
-        kids.map((child) => (
-          <TreeNodeRow key={child.id} node={child} depth={depth + 1} />
-        ))}
+      {expanded && hasKids && (
+        <>
+          {/* 가지 가이드선 — 완료율 따라 sakura 로 물듦(꽃핀 가지) */}
+          <span
+            aria-hidden
+            className="absolute bottom-1.5 top-7 w-px"
+            style={{ left: depth * INDENT + 12, background: branchColor }}
+          />
+          {kids.map((child) => (
+            <TreeNodeRow key={child.id} node={child} depth={depth + 1} />
+          ))}
+        </>
+      )}
 
       <DeleteNodeDialog
         node={node}
