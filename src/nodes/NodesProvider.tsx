@@ -48,6 +48,8 @@ interface NodesContextValue {
   getProgress: (nodeId: string) => NodeProgress | undefined
   /** status_id → 상태 (없으면 undefined). */
   getStatus: (statusId: string | null) => Status | undefined
+  /** member_id → 멤버 (없으면 undefined). */
+  getMember: (memberId: string | null) => Member | undefined
   statuses: Status[]
   members: Member[]
 }
@@ -199,6 +201,16 @@ export function NodesProvider({
     [statusById]
   )
 
+  const memberById = useMemo(
+    () => new Map(members.map((m) => [m.id, m])),
+    [members]
+  )
+  const getMember = useCallback(
+    (memberId: string | null) =>
+      memberId ? memberById.get(memberId) : undefined,
+    [memberById]
+  )
+
   const removeNode = useCallback(
     async (id: string) => {
       await deleteNode(id)
@@ -239,6 +251,7 @@ export function NodesProvider({
       updateFields,
       getProgress,
       getStatus,
+      getMember,
       statuses,
       members,
     }),
@@ -257,6 +270,7 @@ export function NodesProvider({
       updateFields,
       getProgress,
       getStatus,
+      getMember,
       statuses,
       members,
     ]
