@@ -57,7 +57,7 @@ function Workspace() {
     <div className="min-h-svh" data-testid="app-shell">
       <header className="flex items-center justify-between border-b px-6 py-3">
         <div className="flex items-center gap-3">
-          <span className="text-lg font-semibold">Canopy</span>
+          <span className="font-display text-lg font-bold">Canopy</span>
           <ProjectSwitcher />
         </div>
         <div className="flex items-center gap-3">

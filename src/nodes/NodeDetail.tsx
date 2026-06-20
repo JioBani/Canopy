@@ -133,6 +133,7 @@ export function NodeDetail() {
           onKeyDown={(e) => {
             if (e.key === "Enter") e.currentTarget.blur()
           }}
+          className="font-display h-auto py-1.5 text-lg font-bold"
           data-testid="detail-title"
         />
       </div>

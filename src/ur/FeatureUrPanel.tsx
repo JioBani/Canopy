@@ -148,7 +148,7 @@ export function FeatureUrPanel({ featureId }: { featureId: string }) {
   return (
     <div className="flex flex-col gap-4" data-testid="feature-ur-panel">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">사용자 요구사항 (UR)</h3>
+        <h3 className="font-display text-base font-bold">사용자 요구사항 (UR)</h3>
         {addingGroup ? (
           <div className="w-48">
             <InlineText

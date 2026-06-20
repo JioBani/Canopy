@@ -74,7 +74,7 @@ export function TaskUrLinks({
 
   return (
     <div className="flex flex-col gap-2" data-testid="task-ur-links">
-      <h3 className="text-sm font-semibold">만족시키는 UR</h3>
+      <h3 className="font-display text-base font-bold">만족시키는 UR</h3>
 
       {linked.map((u) => (
         <div

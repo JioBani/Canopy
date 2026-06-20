@@ -41,10 +41,10 @@ export function TaskChecklist({ workId }: { workId: string }) {
 
   return (
     <div className="flex flex-col gap-2" data-testid="task-checklist">
-      <h3 className="text-sm font-semibold">
+      <h3 className="font-display text-base font-bold">
         작업내용{" "}
         {items.length > 0 && (
-          <span className="text-muted-foreground text-xs font-normal">
+          <span className="text-muted-foreground font-sans text-xs font-normal tabular-nums">
             ({doneCount}/{items.length})
           </span>
         )}

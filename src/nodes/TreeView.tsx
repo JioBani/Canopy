@@ -358,7 +358,7 @@ export function TreeView() {
         className="flex flex-col items-center gap-3 p-6 text-center"
         data-testid="empty-state"
       >
-        <p className="text-muted-foreground text-sm">
+        <p className="font-display text-base">
           아직 컨텐츠가 없습니다. 첫 컨텐츠를 추가해 시작하세요.
         </p>
         {addingRoot ? (

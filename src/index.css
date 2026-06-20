@@ -3,6 +3,37 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── 폰트 (셀프호스트, woff2, swap) ──────────────────────────
+   Tier2 본문/밀집 = Pretendard(가변), Tier1 제목/브랜드 = 메이플스토리체.
+   메이플체는 둥근 디스플레이체라 16px+ 제목에만, 밀집/숫자는 Pretendard. */
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/PretendardVariable.woff2") format("woff2-variations");
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Maplestory";
+  src: url("/fonts/Maplestory-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Maplestory";
+  src: url("/fonts/Maplestory-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: "Pretendard", system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-display: "Maplestory", var(--font-sans);
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);

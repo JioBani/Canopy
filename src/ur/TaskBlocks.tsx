@@ -42,7 +42,7 @@ export function TaskBlocks({ nodeId }: { nodeId: string }) {
 
   return (
     <div className="flex flex-col gap-2" data-testid="task-blocks">
-      <h3 className="text-sm font-semibold">선제조건 (blocks)</h3>
+      <h3 className="font-display text-base font-bold">선제조건 (blocks)</h3>
 
       {links.map((l) => (
         <div
