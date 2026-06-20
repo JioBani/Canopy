@@ -93,6 +93,46 @@ export function NodesProvider({
     nodesRef.current = nodes
   }, [nodes])
 
+  // ── 브라우저 히스토리 연동 ───────────────────────────────────────────
+  // 뷰/선택 노드를 history 에 쌓아 "뒤로가기"가 앱을 벗어나지 않고 이전 화면으로
+  // 돌아가게 한다. popstate 로 인한 상태 복원 중엔 새 항목을 push 하지 않는다.
+  const poppingRef = useRef(false)
+  const firstNavRef = useRef(true)
+
+  useEffect(() => {
+    history.replaceState({ canopy: { view, selectedId } }, "")
+    const onPop = (e: PopStateEvent) => {
+      const s = (
+        e.state as {
+          canopy?: {
+            view: "tree" | "board" | "dashboard"
+            selectedId: string | null
+          }
+        } | null
+      )?.canopy
+      poppingRef.current = true
+      setView(s?.view ?? "tree")
+      setSelectedId(s?.selectedId ?? null)
+      // 상태 반영(및 push 스킵) 후 플래그 해제(매크로태스크).
+      setTimeout(() => {
+        poppingRef.current = false
+      }, 0)
+    }
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+    // 마운트 1회만 (초기 항목 태깅 + 리스너 등록).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (firstNavRef.current) {
+      firstNavRef.current = false
+      return
+    }
+    if (poppingRef.current) return // 뒤로/앞으로 복원 중엔 push 안 함
+    history.pushState({ canopy: { view, selectedId } }, "")
+  }, [view, selectedId])
+
   /** 주어진(생략 시 현재 전체) 노드들의 진행률을 뷰에서 다시 가져온다. loading 토글 없음. */
   const refreshProgress = useCallback(async (ids?: string[]) => {
     const target = ids ?? nodesRef.current.map((n) => n.id)

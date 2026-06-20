@@ -143,4 +143,34 @@ test.describe.serial("상세 드릴다운 + 작업 독립 생성", () => {
     await expect(d.getByTestId("detail-title")).toHaveValue("소환수기능")
     await expect(d.getByTestId("detail-type")).toHaveText("기능")
   })
+
+  test("브라우저 뒤로가기 = 이전 화면 복원(앱 안 벗어남)", async ({ page }) => {
+    await signupAndEnter(page)
+    await createProject(page, `히스토리 ${Date.now()}`)
+
+    await addContentRoot(page, "전장")
+    await addChildSingle(page, "전장", "소환수기능")
+
+    // 전장 선택 → 드릴다운으로 소환수기능
+    await rowByTitle(page, "전장").click()
+    await expect(detail(page).getByTestId("detail-title")).toHaveValue("전장")
+    await detail(page)
+      .getByTestId("child-nav-row")
+      .filter({ hasText: "소환수기능" })
+      .click()
+    await expect(detail(page).getByTestId("detail-title")).toHaveValue(
+      "소환수기능"
+    )
+
+    // 뒤로가기 → 전장 (앱 유지)
+    await page.goBack()
+    await expect(detail(page).getByTestId("detail-title")).toHaveValue("전장")
+    await expect(page.getByTestId("app-shell")).toBeVisible()
+
+    // 뷰 전환(보드)도 히스토리에 — 뒤로가기로 트리 복귀
+    await page.getByTestId("view-tab-board").click()
+    await expect(page.getByTestId("board-view")).toBeVisible()
+    await page.goBack()
+    await expect(page.getByTestId("tree-panel")).toBeVisible()
+  })
 })
