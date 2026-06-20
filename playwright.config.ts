@@ -11,7 +11,10 @@ const BASE_URL = `http://localhost:${PORT}`
  */
 export default defineConfig({
   testDir: "./tests/e2e",
-  fullyParallel: true,
+  // 공유 로컬 Supabase 를 대상으로 하고 일부 스펙이 전역 데이터를 wipe 하므로
+  // 단일 워커로 직렬 실행해 스펙 간 간섭을 막는다.
+  fullyParallel: false,
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: 0,
   reporter: [["list"]],

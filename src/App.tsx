@@ -3,26 +3,28 @@ import { RequireAuth } from "@/auth/RequireAuth"
 import { ProjectProvider, useProjects } from "@/projects/ProjectProvider"
 import { ProjectSwitcher } from "@/projects/ProjectSwitcher"
 import { NoProjects } from "@/projects/NoProjects"
+import { NodesProvider } from "@/nodes/NodesProvider"
+import { TreeView } from "@/nodes/TreeView"
 import { Button } from "@/components/ui/button"
 
-/** 프로젝트는 있으나 노드가 0개일 때 (트리 CRUD 는 다음 단계). */
-function ProjectEmptyState() {
+/** 트리(좌) + 상세(우) 분할. 상세 패널은 다음 단계에서 채운다. */
+function ProjectWorkspace({ projectId }: { projectId: string }) {
   return (
-    <div
-      className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-center"
-      data-testid="empty-state"
-    >
-      <div className="flex flex-col gap-1">
-        <h2 className="text-base font-semibold">아직 컨텐츠가 없습니다</h2>
-        <p className="text-muted-foreground text-sm">
-          첫 컨텐츠를 추가해 기획 트리를 시작하세요.
-        </p>
+    <NodesProvider projectId={projectId}>
+      <div className="flex min-h-[calc(100svh-57px)]">
+        <aside
+          className="w-80 shrink-0 overflow-y-auto border-r"
+          data-testid="tree-panel"
+        >
+          <TreeView />
+        </aside>
+        <section className="flex-1 p-6">
+          <p className="text-muted-foreground text-sm">
+            노드를 선택하면 상세가 표시됩니다. (상세 패널은 다음 단계)
+          </p>
+        </section>
       </div>
-      <Button disabled data-testid="add-first-content">
-        + 첫 컨텐츠 추가
-      </Button>
-      <p className="text-muted-foreground text-xs">(트리 편집은 다음 단계에서 제공됩니다)</p>
-    </div>
+    </NodesProvider>
   )
 }
 
@@ -37,7 +39,7 @@ function WorkspaceBody() {
     )
   }
   if (projects.length === 0) return <NoProjects />
-  if (currentProject) return <ProjectEmptyState />
+  if (currentProject) return <ProjectWorkspace projectId={currentProject.id} />
   return (
     <div className="text-muted-foreground p-6 text-sm">
       프로젝트를 선택하세요.
