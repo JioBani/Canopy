@@ -12,7 +12,8 @@
     "test:backend": "vitest run",
     "test:e2e": "playwright test",
     "predemo": "supabase start",
-    "demo": "vite --mode e2e"
+    "demo": "vite --mode e2e --port 5173 --strictPort",
+    "demo:stop": "supabase stop"
   },
   "keywords": [],
   "author": "",

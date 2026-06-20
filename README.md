@@ -63,7 +63,17 @@ npm run demo
    상위(세부기능·기능·컨텐츠)의 **진행바가 새로고침 없이 즉시 차오릅니다.** 작업 행 상태 뱃지 색도 바뀝니다.
 5. 그 외: 노드 이름변경(더블클릭)·삭제(하위 cascade 확인), 작업의 도메인·작업자 지정, 설명 마크다운 미리보기.
 
-> 데모를 멈추려면 서버 종료 후 `npx supabase stop` (데이터 보존) 또는 그대로 두면 됩니다.
+> 데모를 멈추려면 서버 종료(Ctrl+C) 후 `npm run demo:stop`(=`supabase stop`, 데이터 보존) 또는 그대로 두면 됩니다.
+
+### "사이트에 연결할 수 없음"(localhost:5173 접속 안 됨)일 때
+
+거의 항상 **vite 가 아직/전혀 안 뜬 것**입니다. 터미널을 먼저 확인하세요.
+
+1. **vite 가 떴는지** — 터미널에 `➜  Local:   http://localhost:5173/` 줄이 보여야 접속 가능합니다. 안 보이면 아직 준비 중이거나 실패한 것.
+2. **첫 실행은 수 분** — `npx supabase start` 가 최초 1회 Docker 이미지를 내려받아 오래 걸립니다. `supabase local development setup is running` 메시지(또는 표)가 나온 뒤에야 `npm run demo` 의 vite 가 뜹니다. 그 줄이 나올 때까지 기다리세요.
+3. **Docker Desktop 이 완전히 켜졌는지** — 트레이 아이콘이 "Running" 이어야 함. 초기화 중이면 `supabase start` 가 실패하고, 그러면 vite 도 안 뜹니다. Docker 준비 후 `npm run demo` 다시.
+4. **포트 5173 점유** — 다른 vite/앱이 5173 을 쓰면 `Port 5173 is already in use` 로 실패합니다(자동으로 다른 포트로 옮기지 않도록 고정해 둠). 기존 dev 서버를 끄고 다시 실행하세요.
+5. 위가 다 정상인데도 안 되면 `npx supabase status` 로 API 가 `http://127.0.0.1:54621` 에 떠 있는지 확인하세요.
 
 ## 1. 로컬 실행
 
