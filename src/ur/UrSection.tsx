@@ -96,11 +96,17 @@ function TruncTooltip({ text }: { text: string }) {
 
 interface Props {
   subFeatureId: string
-  /** true = 사이드바 컴팩트(보기 전용·그룹 접힘), false = 상세 풀 편집. */
+  /** true = 사이드바 컴팩트(보기 전용·그룹 접힘), false = 상세 풀 레이아웃. */
   compact?: boolean
+  /** true = 편집 컨트롤(추가/상태변경/수정/삭제) 노출. false = 읽기 전용. */
+  editable?: boolean
 }
 
-export function UrSection({ subFeatureId, compact = false }: Props) {
+export function UrSection({
+  subFeatureId,
+  compact = false,
+  editable = false,
+}: Props) {
   const { refreshProgress } = useNodes()
   const [groups, setGroups] = useState<UrGroup[]>([])
   const [urs, setUrs] = useState<Ur[]>([])
@@ -190,7 +196,7 @@ export function UrSection({ subFeatureId, compact = false }: Props) {
 
   return (
     <div className="flex flex-col gap-1.5" data-testid="ur-section">
-      {!compact && (
+      {editable && (
         <div className="flex items-center justify-end">
           {addingGroup ? (
             <div className="w-44">
@@ -229,8 +235,8 @@ export function UrSection({ subFeatureId, compact = false }: Props) {
 
       {sections.map((sec) => {
         const list = ursOf(sec.id)
-        // 미분류: 컴팩트는 비면 숨김. 풀 편집은 항상 노출(첫 UR 추가 진입점).
-        if (sec.id === null && list.length === 0 && compact) return null
+        // 미분류: 비면 숨김(편집 모드에서만 첫 UR 추가 진입점으로 노출).
+        if (sec.id === null && list.length === 0 && !editable) return null
         const key = sec.id ?? "none"
         const open = isOpen(key)
         return (
@@ -257,7 +263,7 @@ export function UrSection({ subFeatureId, compact = false }: Props) {
                 </span>
                 <StatusRollup urs={list} />
               </button>
-              {!compact && (
+              {editable && (
                 <>
                   <Button
                     variant="ghost"
@@ -302,16 +308,16 @@ export function UrSection({ subFeatureId, compact = false }: Props) {
                       data-testid="ur-row"
                     >
                       <div className="flex items-center gap-1.5 py-1">
-                        {compact ? (
-                          <UrStateGlyph
-                            status={u.status}
-                            className="size-[15px] shrink-0"
-                          />
-                        ) : (
+                        {editable ? (
                           <UrStateMenu
                             status={u.status}
                             onChange={(s) => void setStatus(u, s)}
                             testid="ur-state"
+                          />
+                        ) : (
+                          <UrStateGlyph
+                            status={u.status}
+                            className="size-[15px] shrink-0"
                           />
                         )}
 
@@ -392,38 +398,51 @@ export function UrSection({ subFeatureId, compact = false }: Props) {
                               >
                                 ⚠ 오구현 사유
                               </span>
-                              <textarea
-                                defaultValue={u.misimpl_reason ?? ""}
-                                placeholder="무엇이 어떻게 잘못 구현됐는지…"
-                                className="min-h-14 rounded border bg-transparent p-2 text-[12.5px] outline-none focus-visible:ring-ring/50 focus-visible:ring-2"
-                                data-testid="misimpl-reason"
-                                onBlur={(e) => {
-                                  if (e.target.value !== (u.misimpl_reason ?? ""))
-                                    void saveReason(u, e.target.value)
-                                }}
-                              />
+                              {editable ? (
+                                <textarea
+                                  defaultValue={u.misimpl_reason ?? ""}
+                                  placeholder="무엇이 어떻게 잘못 구현됐는지…"
+                                  className="min-h-14 rounded border bg-transparent p-2 text-[12.5px] outline-none focus-visible:ring-ring/50 focus-visible:ring-2"
+                                  data-testid="misimpl-reason"
+                                  onBlur={(e) => {
+                                    if (
+                                      e.target.value !== (u.misimpl_reason ?? "")
+                                    )
+                                      void saveReason(u, e.target.value)
+                                  }}
+                                />
+                              ) : (
+                                <p
+                                  className="text-[12.5px] whitespace-normal"
+                                  data-testid="misimpl-reason"
+                                >
+                                  {u.misimpl_reason || "—"}
+                                </p>
+                              )}
                             </div>
                           )}
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 gap-1 px-1.5 text-[11px]"
-                              onClick={() => setEditingUr(u.id)}
-                              data-testid="ur-edit"
-                            >
-                              <Pencil className="size-3" />수정
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive size-6"
-                              onClick={() => void removeUr(u.id)}
-                              data-testid="ur-delete"
-                            >
-                              <Trash2 className="size-3" />
-                            </Button>
-                          </div>
+                          {editable && (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 gap-1 px-1.5 text-[11px]"
+                                onClick={() => setEditingUr(u.id)}
+                                data-testid="ur-edit"
+                              >
+                                <Pencil className="size-3" />수정
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive size-6"
+                                onClick={() => void removeUr(u.id)}
+                                data-testid="ur-delete"
+                              >
+                                <Trash2 className="size-3" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

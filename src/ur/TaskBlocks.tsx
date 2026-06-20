@@ -11,7 +11,13 @@ import { ticketKey } from "@/nodes/nodeGrammar"
 import { Button } from "@/components/ui/button"
 import { Picker, type PickerGroup } from "@/components/ui/picker"
 
-export function TaskBlocks({ nodeId }: { nodeId: string }) {
+export function TaskBlocks({
+  nodeId,
+  editable = false,
+}: {
+  nodeId: string
+  editable?: boolean
+}) {
   const { nodes } = useNodes()
   const [links, setLinks] = useState<NodeLink[]>([])
 
@@ -65,19 +71,21 @@ export function TaskBlocks({ nodeId }: { nodeId: string }) {
               {tk(l.to_node_id)}
             </code>
             <span className="flex-1 truncate">{titleOf(l.to_node_id)}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-destructive size-6 shrink-0 opacity-0 group-hover/bl:opacity-100"
-              onClick={async () => {
-                await removeNodeLink(l.id)
-                await reload()
-              }}
-              data-testid="block-remove"
-              title="제거"
-            >
-              <X className="size-3.5" />
-            </Button>
+            {editable && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-destructive size-6 shrink-0 opacity-0 group-hover/bl:opacity-100"
+                onClick={async () => {
+                  await removeNodeLink(l.id)
+                  await reload()
+                }}
+                data-testid="block-remove"
+                title="제거"
+              >
+                <X className="size-3.5" />
+              </Button>
+            )}
           </div>
         ))}
         {links.length === 0 && (
@@ -85,17 +93,19 @@ export function TaskBlocks({ nodeId }: { nodeId: string }) {
         )}
       </div>
 
-      <Picker
-        triggerLabel="선제조건 추가"
-        placeholder="티켓·제목 검색…"
-        empty="추가할 노드가 없습니다."
-        groups={groups}
-        onPick={async (toId) => {
-          await addNodeLink(nodeId, toId, "blocks")
-          await reload()
-        }}
-        testid="block-picker"
-      />
+      {editable && (
+        <Picker
+          triggerLabel="선제조건 추가"
+          placeholder="티켓·제목 검색…"
+          empty="추가할 노드가 없습니다."
+          groups={groups}
+          onPick={async (toId) => {
+            await addNodeLink(nodeId, toId, "blocks")
+            await reload()
+          }}
+          testid="block-picker"
+        />
+      )}
     </section>
   )
 }

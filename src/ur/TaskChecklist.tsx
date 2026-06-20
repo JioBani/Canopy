@@ -11,7 +11,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 
-export function TaskChecklist({ workId }: { workId: string }) {
+export function TaskChecklist({
+  workId,
+  editable = false,
+}: {
+  workId: string
+  editable?: boolean
+}) {
   const [items, setItems] = useState<ChecklistItem[]>([])
   const [text, setText] = useState("")
 
@@ -63,6 +69,7 @@ export function TaskChecklist({ workId }: { workId: string }) {
           >
             <Checkbox
               checked={it.done}
+              disabled={!editable}
               onCheckedChange={(c) => {
                 const done = c === true
                 setItems((prev) =>
@@ -80,31 +87,40 @@ export function TaskChecklist({ workId }: { workId: string }) {
             >
               {it.text}
             </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-destructive size-6 opacity-0 group-hover/ci:opacity-100"
-              onClick={(e) => {
-                e.preventDefault()
-                setItems((prev) => prev.filter((x) => x.id !== it.id))
-                void deleteChecklistItem(it.id)
-              }}
-              data-testid="checklist-delete"
-            >
-              <Trash2 className="size-3.5" />
-            </Button>
+            {editable && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-destructive size-6 opacity-0 group-hover/ci:opacity-100"
+                onClick={(e) => {
+                  e.preventDefault()
+                  setItems((prev) => prev.filter((x) => x.id !== it.id))
+                  void deleteChecklistItem(it.id)
+                }}
+                data-testid="checklist-delete"
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            )}
           </label>
         ))}
+        {items.length === 0 && !editable && (
+          <p className="text-muted-foreground py-1 text-[13px]">
+            작업내용이 없습니다.
+          </p>
+        )}
       </div>
 
-      <Input
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={onKey}
-        placeholder="할 일 추가 후 Enter"
-        className="h-8"
-        data-testid="checklist-input"
-      />
+      {editable && (
+        <Input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={onKey}
+          placeholder="할 일 추가 후 Enter"
+          className="h-8"
+          data-testid="checklist-input"
+        />
+      )}
     </section>
   )
 }

@@ -19,9 +19,12 @@ import {
 export function WorkSection({
   parentId,
   compact = false,
+  editable = false,
 }: {
   parentId: string
   compact?: boolean
+  /** 상세 편집 모드에서만 true → 작업 추가 노출. */
+  editable?: boolean
 }) {
   const { childrenOf, openNode, createChild } = useNodes()
   const [adding, setAdding] = useState(false)
@@ -29,8 +32,8 @@ export function WorkSection({
 
   return (
     <div className="flex flex-col gap-1" data-testid="work-section">
-      {/* 작업은 세부기능/마스터데이터 직속 생성(UR 무관). 풀 편집에서만 추가. */}
-      {!compact && (
+      {/* 작업은 세부기능/마스터데이터 직속 생성(UR 무관). 편집 모드에서만 추가. */}
+      {editable && (
         <div className="flex items-center justify-end pb-0.5">
           {adding ? (
             <Input

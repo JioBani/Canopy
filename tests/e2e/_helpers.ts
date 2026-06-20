@@ -174,3 +174,12 @@ export async function addChildTyped(
 export async function expand(page: Page, title: string) {
   await rowByTitle(page, title).getByTestId("tree-toggle").click()
 }
+
+/** 상세 패널 편집 모드 진입('수정'). 편집 컨트롤(필드/섹션)이 활성화된다. */
+export async function enterEdit(page: Page) {
+  await page.getByTestId("node-detail").getByTestId("detail-edit").click()
+}
+/** 상세 패널 편집 저장('저장'). 스칼라 필드(제목·상태·도메인·담당·설명) 커밋. */
+export async function saveEdit(page: Page) {
+  await page.getByTestId("node-detail").getByTestId("detail-save").click()
+}

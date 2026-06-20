@@ -16,10 +16,12 @@ import { Picker, type PickerGroup } from "@/components/ui/picker"
 export function TaskUrLinks({
   workId,
   featureId,
+  editable = false,
 }: {
   workId: string
   /** 강조할 소유 세부기능 id (작업의 부모). */
   featureId: string | null
+  editable?: boolean
 }) {
   const { nodes } = useNodes()
   const [urs, setUrs] = useState<Ur[]>([])
@@ -111,19 +113,21 @@ export function TaskUrLinks({
                 {featureTitle.get(u.feature_id) ?? ""}
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-destructive size-6 shrink-0 opacity-0 group-hover/lu:opacity-100"
-              onClick={async () => {
-                await unlinkUrWork(u.id, workId)
-                await reload()
-              }}
-              data-testid="unlink-ur"
-              title="연결 해제"
-            >
-              <X className="size-3.5" />
-            </Button>
+            {editable && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-destructive size-6 shrink-0 opacity-0 group-hover/lu:opacity-100"
+                onClick={async () => {
+                  await unlinkUrWork(u.id, workId)
+                  await reload()
+                }}
+                data-testid="unlink-ur"
+                title="연결 해제"
+              >
+                <X className="size-3.5" />
+              </Button>
+            )}
           </div>
         ))}
         {linked.length === 0 && (
@@ -133,17 +137,19 @@ export function TaskUrLinks({
         )}
       </div>
 
-      <Picker
-        triggerLabel="UR 연결"
-        placeholder="UR 검색…"
-        empty="연결할 UR 이 없습니다."
-        groups={groups}
-        onPick={async (urId) => {
-          await linkUrWork(urId, workId)
-          await reload()
-        }}
-        testid="ur-link-picker"
-      />
+      {editable && (
+        <Picker
+          triggerLabel="UR 연결"
+          placeholder="UR 검색…"
+          empty="연결할 UR 이 없습니다."
+          groups={groups}
+          onPick={async (urId) => {
+            await linkUrWork(urId, workId)
+            await reload()
+          }}
+          testid="ur-link-picker"
+        />
+      )}
     </section>
   )
 }

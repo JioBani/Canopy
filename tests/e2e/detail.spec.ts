@@ -7,8 +7,9 @@ import {
   addWork,
   cleanupCreatedProjects,
   createProject,
+  enterEdit,
   rowByTitle,
-  selectByIndex,
+  saveEdit,
   selectByLabel,
   selectWorkInEmbed,
   signupAndEnter,
@@ -42,25 +43,19 @@ test.describe.serial("노드 상세 패널", () => {
     await expect(page.getByTestId("detail-type")).toHaveText("작업")
     await expect(page.getByTestId("detail-ticket")).toContainText("Task-")
 
-    // 상태 '완료' → 임베드 작업 뱃지 반영 (진행도는 UR 기준이라 작업 상태와 별개)
+    // '수정' 진입 → 제목·상태·도메인·설명 편집 → '저장' (패널 단위 편집)
+    await enterEdit(page)
     await selectByLabel(page, "detail-status", "완료")
-    await expect(embedWork(page, "로직작업").getByTestId("status-badge")).toHaveAttribute(
-      "data-status",
-      "완료"
-    )
-
-    // 도메인 (작업자=담당자는 로그인 없어 멤버 없음 → 생략)
     await selectByLabel(page, "detail-domain", "디자인")
-
-    // 제목 편집 (Enter 저장) → 임베드 작업 행에 반영
     await page.getByTestId("detail-title").fill("로직작업-수정")
-    await page.getByTestId("detail-title").press("Enter")
-    await expect(embedWork(page, "로직작업-수정")).toBeVisible()
-
-    // body: 수정 모드 진입 → 입력 → 완료 → 기본 마크다운 렌더 확인
-    await page.getByTestId("body-edit").click()
     await page.getByTestId("detail-body").fill("# 개요\n**중요** 항목")
-    await page.getByTestId("body-save").click()
+    await saveEdit(page)
+
+    // 저장 후: 임베드 작업 행/뱃지 반영 + 설명 마크다운 렌더(읽기 모드)
+    await expect(embedWork(page, "로직작업-수정")).toBeVisible()
+    await expect(
+      embedWork(page, "로직작업-수정").getByTestId("status-badge")
+    ).toHaveAttribute("data-status", "완료")
     await expect(page.getByTestId("body-preview").locator("h1")).toHaveText(
       "개요"
     )

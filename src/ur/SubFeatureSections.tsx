@@ -14,9 +14,12 @@ type Tab = "ur" | "work"
 export function SubFeatureSections({
   subFeatureId,
   compact = false,
+  editable = false,
 }: {
   subFeatureId: string
   compact?: boolean
+  /** 상세 편집 모드에서만 true → UR/작업 편집 컨트롤 노출. */
+  editable?: boolean
 }) {
   const { childrenOf } = useNodes()
   const [tab, setTab] = useState<Tab>("ur")
@@ -38,8 +41,8 @@ export function SubFeatureSections({
   const seg = (
     <div
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-lg bg-[var(--c-bg-sunken)] p-0.5",
-        compact ? "text-[11px]" : "text-[13px]"
+        "inline-flex items-center gap-1 rounded-lg bg-[var(--c-bg-sunken)] p-1",
+        compact ? "gap-0.5 p-0.5 text-[11px]" : "text-[14px]"
       )}
       role="tablist"
     >
@@ -52,7 +55,7 @@ export function SubFeatureSections({
           data-testid={t === "ur" ? "ur-tab" : "work-tab"}
           className={cn(
             "rounded-md font-semibold transition-colors",
-            compact ? "px-2 py-0.5" : "px-2.5 py-1",
+            compact ? "px-2 py-0.5" : "px-4 py-1.5",
             tab === t
               ? "bg-card text-foreground shadow-[0_1px_2px_rgba(90,40,60,.10),0_0_0_1px_var(--c-line)]"
               : "text-muted-foreground hover:text-foreground"
@@ -73,9 +76,17 @@ export function SubFeatureSections({
     >
       {seg}
       {tab === "ur" ? (
-        <UrSection subFeatureId={subFeatureId} compact={compact} />
+        <UrSection
+          subFeatureId={subFeatureId}
+          compact={compact}
+          editable={editable}
+        />
       ) : (
-        <WorkSection parentId={subFeatureId} compact={compact} />
+        <WorkSection
+          parentId={subFeatureId}
+          compact={compact}
+          editable={editable}
+        />
       )}
     </div>
   )

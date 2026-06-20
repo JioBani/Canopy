@@ -6,6 +6,8 @@ import {
   addWork,
   cleanupCreatedProjects,
   createProject,
+  enterEdit,
+  saveEdit,
   selectByLabel,
   selectWorkInEmbed,
   signupAndEnter,
@@ -27,10 +29,12 @@ async function buildBoardData(page: Page) {
   await addWork(page, "합성세부", "작업A")
   await addWork(page, "합성세부", "작업B")
 
-  // 작업A → 완료 + 도메인 디자인 (임베드에서 선택)
+  // 작업A → 완료 + 도메인 디자인 (임베드 선택 → 상세 '수정' → 저장)
   await selectWorkInEmbed(page, "작업A")
+  await enterEdit(page)
   await selectByLabel(page, "detail-status", "완료")
   await selectByLabel(page, "detail-domain", "디자인")
+  await saveEdit(page)
   // 작업B 는 기본 상태(할일)로 둠
 }
 

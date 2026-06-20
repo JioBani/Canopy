@@ -92,26 +92,17 @@ test.describe.serial("노드 트리", () => {
     await expect(rowByTitle(page, "소환수기능")).toBeVisible()
   })
 
-  test("이름 변경 — 더블클릭 인라인 편집", async ({ page }) => {
+  test("사이드바는 이름 인라인 편집 불가 (편집은 상세에서)", async ({ page }) => {
     await setup(page)
     await addContentRoot(page, "전장")
+    // 더블클릭해도 인라인 rename 입력 없음
     await rowByTitle(page, "전장").getByTestId("node-title").dblclick()
-    const input = page.getByTestId("rename-input")
-    await input.fill("정비")
-    await input.press("Enter")
-    await expect(rowByTitle(page, "정비")).toBeVisible()
-    await expect(rowByTitle(page, "전장")).toHaveCount(0)
-  })
-
-  test("이름 변경 — Esc 로 취소하면 원래 제목 유지", async ({ page }) => {
-    await setup(page)
-    await addContentRoot(page, "전장")
-    await rowByTitle(page, "전장").getByTestId("node-title").dblclick()
-    const input = page.getByTestId("rename-input")
-    await input.fill("버려질이름")
-    await input.press("Escape")
-    await expect(rowByTitle(page, "전장")).toBeVisible()
-    await expect(rowByTitle(page, "버려질이름")).toHaveCount(0)
+    await expect(page.getByTestId("rename-input")).toHaveCount(0)
+    // 더보기 메뉴에 '이름 변경' 없음(삭제만 유지)
+    await rowByTitle(page, "전장").getByTestId("node-more").click()
+    await expect(page.getByTestId("rename-action")).toHaveCount(0)
+    await expect(page.getByTestId("delete-action")).toBeVisible()
+    await page.keyboard.press("Escape")
   })
 
   test("삭제 — 하위 cascade confirm 후 트리 갱신", async ({ page }) => {
