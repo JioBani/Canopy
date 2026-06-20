@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "test:backend": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "predemo": "supabase start",
+    "demo": "vite --mode e2e"
   },
   "keywords": [],
   "author": "",
