@@ -3,7 +3,7 @@ import { Copy } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
 import { useProjects } from "@/projects/ProjectProvider"
 import { ticketKey } from "@/lib/validation"
-import { renderMarkdown } from "@/lib/markdown"
+import { Markdown } from "@/components/Markdown"
 import { memberLabel } from "@/lib/members"
 import { TYPE_META } from "@/nodes/nodeGrammar"
 import { PIXEL_ICONS } from "@/nodes/pixelIcons"
@@ -70,12 +70,12 @@ export function NodeDetail() {
 
   const [title, setTitle] = useState("")
   const [body, setBody] = useState("")
-  const [preview, setPreview] = useState(false)
+  const [editingBody, setEditingBody] = useState(false)
 
   useEffect(() => {
     setTitle(node?.title ?? "")
     setBody(node?.body ?? "")
-    setPreview(false)
+    setEditingBody(false)
     // node 가 바뀔 때만 로컬 입력 동기화
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node?.id])
@@ -341,7 +341,7 @@ export function NodeDetail() {
         </div>
       )}
 
-      {/* 설명(body) */}
+      {/* 설명(body) — 기본 마크다운 렌더, '수정' 클릭 시 편집 */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <span
@@ -350,36 +350,58 @@ export function NodeDetail() {
           >
             설명
           </span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs"
-            onClick={() => {
-              if (!preview) saveBody()
-              setPreview((p) => !p)
-            }}
-            data-testid="body-preview-toggle"
-          >
-            {preview ? "편집" : "미리보기"}
-          </Button>
+          {editingBody ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => {
+                saveBody()
+                setEditingBody(false)
+              }}
+              data-testid="body-save"
+            >
+              완료
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => setEditingBody(true)}
+              data-testid="body-edit"
+            >
+              수정
+            </Button>
+          )}
         </div>
-        {preview ? (
-          <div
-            className="prose-sm border-border min-h-24 rounded-[10px] border p-3.5 text-sm [&_a]:underline [&_code]:bg-muted [&_code]:rounded [&_code]:px-1 [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:font-semibold [&_ul]:list-disc [&_ul]:pl-5"
-            data-testid="body-preview"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(body) }}
-          />
-        ) : (
+        {editingBody ? (
           <textarea
             id="detail-body"
-            className="min-h-24 rounded-[10px] border border-transparent bg-[#F5F2F4] p-3.5 text-sm leading-relaxed outline-none transition-colors hover:bg-[#EFE7EC] focus-visible:border-ring focus-visible:bg-card focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+            autoFocus
+            className="min-h-32 rounded-[10px] border border-transparent bg-[#F5F2F4] p-3.5 text-sm leading-relaxed outline-none transition-colors hover:bg-[#EFE7EC] focus-visible:border-ring focus-visible:bg-card focus-visible:ring-ring/50 focus-visible:ring-[3px]"
             value={body}
             onChange={(e) => setBody(e.target.value)}
             onBlur={saveBody}
-            placeholder="마크다운으로 설명을 작성하세요 (#, **굵게**, - 목록 …)"
+            placeholder="마크다운으로 설명을 작성하세요 (#, **굵게**, - 목록, | 표 | …)"
             data-testid="detail-body"
           />
+        ) : body.trim() ? (
+          <div
+            className="border-border rounded-[10px] border p-3.5"
+            data-testid="body-preview"
+          >
+            <Markdown>{body}</Markdown>
+          </div>
+        ) : (
+          <div
+            className="text-muted-foreground border-border rounded-[10px] border border-dashed p-3.5 text-sm"
+            data-testid="body-empty"
+          >
+            설명이 없습니다. ‘수정’으로 추가하세요.
+          </div>
         )}
       </div>
 

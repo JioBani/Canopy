@@ -50,9 +50,10 @@ test.describe.serial("노드 상세 패널", () => {
     await page.getByTestId("detail-title").press("Enter")
     await expect(rowByTitle(page, "로직작업-수정")).toBeVisible()
 
-    // body 편집 + 미리보기 렌더
+    // body: 수정 모드 진입 → 입력 → 완료 → 기본 마크다운 렌더 확인
+    await page.getByTestId("body-edit").click()
     await page.getByTestId("detail-body").fill("# 개요\n**중요** 항목")
-    await page.getByTestId("body-preview-toggle").click()
+    await page.getByTestId("body-save").click()
     await expect(page.getByTestId("body-preview").locator("h1")).toHaveText(
       "개요"
     )

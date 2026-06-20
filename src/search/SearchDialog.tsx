@@ -75,13 +75,13 @@ function SearchBody({ onClose }: { onClose: () => void }) {
   }, [nodes, byId, q, fType, fStatus, fDomain, fAssignee, fContent, prefix])
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex min-w-0 flex-col gap-3">
       <input
         autoFocus
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="제목·설명·티켓키 검색…"
-        className="h-10 rounded-[10px] border bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+        className="border-border h-10 w-full rounded-[10px] border bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
         data-testid="search-input"
       />
       <div className="flex flex-wrap gap-2">
@@ -126,7 +126,7 @@ function SearchBody({ onClose }: { onClose: () => void }) {
       </div>
 
       <div
-        className="flex max-h-[50vh] flex-col gap-0.5 overflow-y-auto"
+        className="flex max-h-[50vh] min-w-0 flex-col gap-0.5 overflow-x-hidden overflow-y-auto"
         data-testid="search-results"
       >
         {results.length === 0 ? (
@@ -146,7 +146,7 @@ function SearchBody({ onClose }: { onClose: () => void }) {
                   onClose()
                 }}
                 data-testid="search-result"
-                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-[var(--c-pink-bg)]"
+                className="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-[var(--c-pink-bg)]"
               >
                 <Icon
                   className="size-4 shrink-0"
@@ -163,14 +163,16 @@ function SearchBody({ onClose }: { onClose: () => void }) {
                 >
                   {ticketKey(prefix, n.ticket_number)}
                 </code>
-                <span className="flex-1 truncate text-[13px]">{n.title}</span>
+                <span className="min-w-0 flex-1 truncate text-[13px]">
+                  {n.title}
+                </span>
                 {anc.path.length > 0 && (
-                  <span className="text-muted-foreground hidden truncate text-[11px] sm:block">
+                  <span className="text-muted-foreground hidden max-w-[35%] shrink-0 truncate text-[11px] sm:block">
                     {anc.path.join(" / ")}
                   </span>
                 )}
                 <span
-                  className="text-muted-foreground shrink-0 text-[10.5px]"
+                  className="shrink-0 text-[10.5px] whitespace-nowrap"
                   style={{ color: "var(--c-ink-3)" }}
                 >
                   {TYPE_META[n.type as NodeType].label}
