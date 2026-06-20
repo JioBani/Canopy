@@ -72,8 +72,8 @@ export function NodesProvider({
   const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [view, setView] = useState<"tree" | "board" | "dashboard">("tree")
-  // 기본은 펼침. collapsed 에 든 id 만 접힘.
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  // 기본은 접힘(컴팩트). expanded 에 든 id 만 펼침.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   const openNode = useCallback((id: string) => {
     setSelectedId(id)
@@ -135,12 +135,12 @@ export function NodesProvider({
   )
 
   const isExpanded = useCallback(
-    (id: string) => !collapsed.has(id),
-    [collapsed]
+    (id: string) => expanded.has(id),
+    [expanded]
   )
 
   const toggleCollapse = useCallback((id: string) => {
-    setCollapsed((prev) => {
+    setExpanded((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
@@ -164,9 +164,9 @@ export function NodesProvider({
       setNodes(nextNodes)
       if (parentId) {
         // 부모를 펼쳐 새 자식이 보이게.
-        setCollapsed((prev) => {
+        setExpanded((prev) => {
           const next = new Set(prev)
-          next.delete(parentId)
+          next.add(parentId)
           return next
         })
       }

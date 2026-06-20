@@ -173,3 +173,8 @@ export async function addChildTyped(
   await expect(rowByTitle(page, title)).toBeVisible()
   await closeInlineAdd(page)
 }
+
+/** 트리 노드를 펼친다(자식 보이게). 기본이 접힘이라 깊은 노드 접근 시 사용. */
+export async function expand(page: Page, title: string) {
+  await rowByTitle(page, title).getByTestId("tree-toggle").click()
+}

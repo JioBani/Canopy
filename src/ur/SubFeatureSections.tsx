@@ -75,11 +75,7 @@ export function SubFeatureSections({
       {tab === "ur" ? (
         <UrSection subFeatureId={subFeatureId} compact={compact} />
       ) : (
-        <WorkSection
-          parentId={subFeatureId}
-          featureId={subFeatureId}
-          compact={compact}
-        />
+        <WorkSection parentId={subFeatureId} compact={compact} />
       )}
     </div>
   )

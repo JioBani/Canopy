@@ -7,6 +7,7 @@ import {
   addWork,
   cleanupCreatedProjects,
   createProject,
+  expand,
   rowByTitle,
   signupAndEnter,
 } from "./_helpers"
@@ -183,9 +184,13 @@ test.describe.serial("노드 트리", () => {
     await restPatch(`node?id=eq.${tasks[0].id}`, { status_id: doneStatus[0].id })
 
     await page.reload()
+    // 기본 접힘 → 경로 펼치기(전장 > 소환수기능 > 합성세부)
+    await expand(page, "전장")
+    await expand(page, "소환수기능")
     await expect(
       rowByTitle(page, "합성세부").getByTestId("node-progress")
     ).toHaveAttribute("data-progress", "100")
+    await expand(page, "합성세부")
     await expect(await embedWorkBadge(page, "로직작업")).toHaveAttribute(
       "data-status",
       "완료"

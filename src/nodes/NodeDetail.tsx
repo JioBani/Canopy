@@ -416,21 +416,23 @@ export function NodeDetail() {
       {node.type === "마스터데이터" && (
         <div className="border-border border-t pt-5">
           <h3 className="font-display mb-3 text-[15px] font-bold">작업</h3>
-          <WorkSection parentId={node.id} featureId={node.id} />
+          <WorkSection parentId={node.id} />
         </div>
       )}
 
-      {/* 작업: 작업내용 + 만족 UR (나란히) + 선제조건 */}
+      {/* 작업 상세: 작업내용 → 연결 요구사항 → 선제조건 (세로 풀폭 스택) */}
       {isTask && (
-        <>
-          <div className="border-border grid grid-cols-1 gap-x-8 gap-y-6 border-t pt-6 lg:grid-cols-2">
+        <div className="flex flex-col gap-6">
+          <div className="border-border border-t pt-6">
             <TaskChecklist workId={node.id} />
+          </div>
+          <div className="border-border border-t pt-6">
             <TaskUrLinks workId={node.id} featureId={node.parent_id} />
           </div>
           <div className="border-border border-t pt-6">
             <TaskBlocks nodeId={node.id} />
           </div>
-        </>
+        </div>
       )}
     </div>
   )

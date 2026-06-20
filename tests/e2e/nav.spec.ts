@@ -4,6 +4,7 @@ import {
   addChildSingle,
   addChildTyped,
   addContentRoot,
+  addWork,
   cleanupCreatedProjects,
   createProject,
   rowByTitle,
@@ -86,5 +87,34 @@ test.describe.serial("상세 드릴다운 + 작업 독립 생성", () => {
       `ur_work_link?work_id=eq.${works[0].id}&select=id`
     )
     expect(links).toHaveLength(0)
+  })
+
+  test("세부기능 작업 리스트 행 클릭 → 작업 상세 페이지(세로 구성)", async ({
+    page,
+  }) => {
+    await signupAndEnter(page)
+    await createProject(page, `작업드릴 ${Date.now()}`, "WD")
+
+    await addContentRoot(page, "전장")
+    await addChildSingle(page, "전장", "소환수기능")
+    await addChildTyped(page, "소환수기능", "세부기능", "합성세부")
+    await addWork(page, "합성세부", "합성로직") // 생성 → 작업 선택됨
+
+    // 세부기능으로 돌아가 작업 탭의 리스트(컴팩트) 확인
+    await rowByTitle(page, "합성세부").click()
+    await detail(page).getByTestId("work-tab").click()
+    const workRow = detail(page)
+      .getByTestId("work-row")
+      .filter({ hasText: "합성로직" })
+    await expect(workRow).toBeVisible()
+
+    // 행 클릭 → 작업 상세 페이지 진입(드릴다운)
+    await workRow.click()
+    await expect(detail(page).getByTestId("detail-type")).toHaveText("작업")
+    await expect(detail(page).getByTestId("detail-title")).toHaveValue("합성로직")
+
+    // 작업 상세 = 작업내용 + 연결 요구사항 (세로 스택, 둘 다 노출)
+    await expect(detail(page).getByTestId("task-checklist")).toBeVisible()
+    await expect(detail(page).getByTestId("task-ur-links")).toBeVisible()
   })
 })
