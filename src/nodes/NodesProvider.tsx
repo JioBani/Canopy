@@ -165,8 +165,10 @@ export function NodesProvider({
     setNodes(list)
     setStatuses(statusList)
     setMembers(memberList)
-    await refreshProgress(list.map((n) => n.id))
-    setLoading(false)
+    setLoading(false) // 트리 즉시 렌더 — 진행도(재귀 뷰)는 비차단으로 뒤따라 채운다
+    void refreshProgress(list.map((n) => n.id)).catch((e) =>
+      console.error("[nodes] 진행도 로드 실패:", e)
+    )
   }, [projectId, refreshProgress])
 
   useEffect(() => {
@@ -176,10 +178,21 @@ export function NodesProvider({
     })
   }, [reload])
 
+  // parent_id → 자식 목록 맵(한 번 계산) — childrenOf/descendantCount 가 매 호출 전체
+  // 필터링하던 O(n²) 트리 렌더 비용을 제거.
+  const childrenMap = useMemo(() => {
+    const m = new Map<string | null, AppNode[]>()
+    for (const n of nodes) {
+      const arr = m.get(n.parent_id)
+      if (arr) arr.push(n)
+      else m.set(n.parent_id, [n])
+    }
+    return m
+  }, [nodes])
+
   const childrenOf = useCallback(
-    (parentId: string | null) =>
-      nodes.filter((n) => n.parent_id === parentId),
-    [nodes]
+    (parentId: string | null) => childrenMap.get(parentId) ?? [],
+    [childrenMap]
   )
 
   const descendantCount = useCallback(
@@ -187,17 +200,14 @@ export function NodesProvider({
       let count = 0
       const stack = [id]
       while (stack.length) {
-        const cur = stack.pop()!
-        for (const n of nodes) {
-          if (n.parent_id === cur) {
-            count += 1
-            stack.push(n.id)
-          }
-        }
+        const kids = childrenMap.get(stack.pop()!)
+        if (!kids) continue
+        count += kids.length
+        for (const k of kids) stack.push(k.id)
       }
       return count
     },
-    [nodes]
+    [childrenMap]
   )
 
   const isExpanded = useCallback(
