@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 type Mode = "login" | "signup"
 
 export function LoginPage() {
-  const { signInWithPassword, signUpWithPassword } = useAuth()
+  const { signInWithPassword, signUpWithPassword, signInWithGoogle } = useAuth()
   const [mode, setMode] = useState<Mode>("login")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -97,16 +97,21 @@ export function LoginPage() {
       </form>
 
       {/*
-        배포용 구글 로그인 — 배포 직전 활성화.
-        구글 OAuth 클라이언트/리디렉트 설정 후 아래 주석을 해제하면 된다.
-
-        <div className="flex w-full max-w-sm flex-col gap-2">
-          <div className="text-muted-foreground text-center text-xs">또는</div>
-          <Button variant="outline" onClick={signInWithGoogle}>
-            Google 계정으로 로그인
-          </Button>
-        </div>
+        구글 로그인 — 프로덕션(live Supabase)에서 Google OAuth provider 가 설정돼 있어야 동작.
+        로컬 데모(supabase start)에는 provider 가 없어 클릭 시 에러 — 데모는 이메일 로그인 사용.
+        설정 절차는 DEPLOY.md 참고.
       */}
+      <div className="flex w-full max-w-sm flex-col gap-2">
+        <div className="text-muted-foreground text-center text-xs">또는</div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={signInWithGoogle}
+          data-testid="google-login"
+        >
+          Google 계정으로 로그인
+        </Button>
+      </div>
     </div>
   )
 }
