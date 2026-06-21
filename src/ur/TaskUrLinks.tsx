@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { X } from "lucide-react"
+import { Link2, X } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
 import {
-  linkUrWork,
   listUrIdsForWork,
   listUrs,
   unlinkUrWork,
@@ -10,8 +9,8 @@ import {
   type Ur,
 } from "@/lib/ur"
 import { UrStateGlyph } from "@/ur/urStateGlyph"
+import { UrLinkDialog } from "@/ur/UrLinkDialog"
 import { Button } from "@/components/ui/button"
-import { Picker, type PickerGroup } from "@/components/ui/picker"
 
 export function TaskUrLinks({
   workId,
@@ -26,6 +25,11 @@ export function TaskUrLinks({
   const { nodes } = useNodes()
   const [urs, setUrs] = useState<Ur[]>([])
   const [linkedIds, setLinkedIds] = useState<string[]>([])
+  const [dialogOpen, setDialogOpen] = useState(false)
+
+  // 작업의 부모가 세부기능이면 그 id, (마스터데이터 밑이면) null
+  const parentSub =
+    nodes.find((n) => n.id === featureId)?.type === "세부기능" ? featureId : null
 
   // UR 은 세부기능 소유 → 세부기능 제목으로 그룹/표시
   const featureTitle = useMemo(() => {
@@ -54,32 +58,6 @@ export function TaskUrLinks({
 
   const linkedSet = new Set(linkedIds)
   const linked = urs.filter((u) => linkedSet.has(u.id))
-  const available = urs.filter((u) => !linkedSet.has(u.id))
-
-  // 피커: 현재 기능 먼저, 그 외 기능 순. 그룹화.
-  const groups: PickerGroup[] = useMemo(() => {
-    const byFeature = new Map<string, Ur[]>()
-    for (const u of available) {
-      const arr = byFeature.get(u.feature_id) ?? []
-      arr.push(u)
-      byFeature.set(u.feature_id, arr)
-    }
-    const featureIds = [...byFeature.keys()].sort((a, b) => {
-      if (a === featureId) return -1
-      if (b === featureId) return 1
-      return (featureTitle.get(a) ?? "").localeCompare(featureTitle.get(b) ?? "")
-    })
-    return featureIds.map((fid) => ({
-      key: fid,
-      label:
-        (featureTitle.get(fid) ?? "세부기능") +
-        (fid === featureId ? " (현재)" : ""),
-      items: byFeature.get(fid)!.map((u) => ({
-        value: u.id,
-        label: `${urKey(u.ticket_number)}  ${u.text}`,
-      })),
-    }))
-  }, [available, featureId, featureTitle])
 
   return (
     <section className="flex flex-col gap-2.5" data-testid="task-ur-links">
@@ -138,17 +116,24 @@ export function TaskUrLinks({
       </div>
 
       {editable && (
-        <Picker
-          triggerLabel="UR 연결"
-          placeholder="UR 검색…"
-          empty="연결할 UR 이 없습니다."
-          groups={groups}
-          onPick={async (urId) => {
-            await linkUrWork(urId, workId)
-            await reload()
-          }}
-          testid="ur-link-picker"
-        />
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-fit gap-1.5"
+            onClick={() => setDialogOpen(true)}
+            data-testid="ur-link-open"
+          >
+            <Link2 className="size-3.5" />UR 연결
+          </Button>
+          <UrLinkDialog
+            workId={workId}
+            subFeatureId={parentSub}
+            open={dialogOpen}
+            onOpenChange={setDialogOpen}
+            onChanged={() => void reload()}
+          />
+        </>
       )}
     </section>
   )

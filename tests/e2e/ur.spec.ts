@@ -111,8 +111,21 @@ test.describe.serial("UR 서브시스템 (세부기능 소유)", () => {
     await item.getByTestId("checklist-toggle").click()
     await expect(item.getByTestId("checklist-toggle")).toBeChecked()
 
-    // 만족 UR 연결 (콤보박스)
-    await pickCombobox(page, "ur-link-picker", "링크대상 UR")
+    // 만족 UR 연결 (다이얼로그: 현재 세부기능 섹션에서 선택)
+    await page.getByTestId("ur-link-open").click()
+    const urDialog = page.getByTestId("ur-link-dialog")
+    await expect(urDialog).toBeVisible()
+    await expect(urDialog.getByTestId("ur-link-current")).toBeVisible()
+    // 다른 요구사항은 계층 트리(컨텐츠 노드부터, 기본 접힘)로 제공
+    await expect(urDialog.getByTestId("ur-link-tree")).toBeVisible()
+    await expect(
+      urDialog.getByTestId("ur-tree-node").filter({ hasText: "전장" })
+    ).toBeVisible()
+    await urDialog
+      .getByTestId("ur-link-row")
+      .filter({ hasText: "링크대상 UR" })
+      .click()
+    await page.keyboard.press("Escape")
     await expect(
       page.getByTestId("linked-ur").filter({ hasText: "링크대상 UR" })
     ).toBeVisible()
