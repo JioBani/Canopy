@@ -182,7 +182,16 @@ export function UrLinkDialog({
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
 
-  const subName = (id: string) => nodes.find((n) => n.id === id)?.title ?? "세부기능"
+  /** 루트→해당 노드 경로(컨텐츠 > 기능 > 세부기능). */
+  function ancestorPath(id: string) {
+    const path = []
+    let cur = nodes.find((n) => n.id === id) ?? null
+    while (cur) {
+      path.unshift(cur)
+      cur = cur.parent_id ? (nodes.find((n) => n.id === cur!.parent_id) ?? null) : null
+    }
+    return path
+  }
 
   const loadSub = useCallback(async (subId: string) => {
     const [u, groups] = await Promise.all([
@@ -323,27 +332,35 @@ export function UrLinkDialog({
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
-          {/* 현재 세부기능 — 강조 카드, 기본 펼침 */}
+          {/* 현재 세부기능 — 계층 브레드크럼(아이콘+텍스트)로 위치 표시. 과한 하이라이트 X */}
           {subFeatureId && (
-            <div
-              className="flex flex-col gap-1.5 rounded-[12px] border-2 p-3"
-              style={{
-                borderColor: "var(--c-sakura)",
-                background: "var(--c-pink-bg)",
-              }}
-              data-testid="ur-link-current"
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className="rounded-md px-1.5 py-0.5 text-[10.5px] font-bold text-white"
-                  style={{ background: "var(--c-sakura)" }}
-                >
-                  현재 세부기능
-                </span>
-                <span className="font-display text-[14px] font-bold">
-                  {subName(subFeatureId)}
-                </span>
-              </div>
+            <div className="flex flex-col gap-2" data-testid="ur-link-current">
+              <nav className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                {ancestorPath(subFeatureId).map((n, i, arr) => {
+                  const Icon = PIXEL_ICONS[n.type]
+                  const last = i === arr.length - 1
+                  return (
+                    <span key={n.id} className="flex items-center gap-1.5">
+                      {i > 0 && (
+                        <span style={{ color: "var(--c-ink-3)" }}>/</span>
+                      )}
+                      <Icon
+                        className="size-4 shrink-0"
+                        style={{ color: LAYER_COLOR[n.type].base }}
+                      />
+                      <span
+                        className={cn(
+                          "text-[15px]",
+                          last ? "font-display font-bold" : "font-medium"
+                        )}
+                        style={last ? undefined : { color: "var(--c-ink-2)" }}
+                      >
+                        {n.title}
+                      </span>
+                    </span>
+                  )
+                })}
+              </nav>
               <SubUrList
                 urs={ursBySub.get(subFeatureId) ?? []}
                 groupName={(g) => groupNames.get(g) ?? "그룹"}
