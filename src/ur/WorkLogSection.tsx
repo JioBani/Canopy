@@ -175,11 +175,18 @@ export function WorkLogSection({
         )}
         {ordered.map((l) => {
           const editing = editingLogId === l.id
+          const running = !l.ended_at
           return (
             <div
               key={l.id}
-              className="border-border bg-card flex flex-col gap-2 rounded-[10px] border px-3 py-2.5 text-[13px]"
+              className={
+                "flex flex-col gap-2 rounded-[10px] border px-3 py-2.5 text-[13px] " +
+                (running
+                  ? "border-[var(--c-ember)] bg-[rgba(216,95,110,0.06)] ring-1 ring-[var(--c-ember)]/30"
+                  : "border-border bg-card")
+              }
               data-testid="work-log-row"
+              data-running={running ? "true" : "false"}
             >
               {/* 헤더 줄: 시간 · duration · 작업자 · 수정/삭제 */}
               <div className="flex flex-wrap items-center gap-2">
@@ -242,7 +249,8 @@ export function WorkLogSection({
                     {!editing && <Pencil className="size-3" />}
                     {editing ? "완료" : "수정"}
                   </Button>
-                  {editing && (
+                  {/* 진행 중(미종료) 로그는 삭제 숨김 — 종료된 로그만 삭제 가능 */}
+                  {editing && l.ended_at && (
                     <Button
                       variant="ghost"
                       size="icon"

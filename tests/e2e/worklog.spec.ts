@@ -39,6 +39,9 @@ test.describe.serial("작업 시간 측정", () => {
 
     // 시작 즉시 새 로그가 편집 상태로 열림 → 행에서 내용 입력(시간X·작업자O·내용O)
     const row = d.getByTestId("work-log-row").first()
+    // 진행 중 로그: 하이라이트 + 삭제 아이콘 숨김
+    await expect(row).toHaveAttribute("data-running", "true")
+    await expect(row.getByTestId("work-log-delete")).toHaveCount(0)
     await row.getByTestId("work-log-note-input").fill("코딩 세션")
     await row.getByTestId("work-log-note-input").blur()
 
