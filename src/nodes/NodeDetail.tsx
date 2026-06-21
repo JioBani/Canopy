@@ -312,7 +312,7 @@ export function NodeDetail() {
             <textarea
               id="detail-body"
               autoFocus
-              className="min-h-32 rounded-[10px] border border-[var(--c-sakura)]/50 bg-[#F5F2F4] p-3.5 text-sm leading-relaxed outline-none ring-2 ring-[var(--c-sakura)]/20 transition-colors focus-visible:border-ring focus-visible:bg-card focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+              className="min-h-32 rounded-[10px] border border-[var(--c-sakura)]/50 bg-card p-3.5 text-sm leading-relaxed outline-none ring-2 ring-[var(--c-sakura)]/20 transition-colors focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="마크다운으로 설명을 작성하세요 (#, **굵게**, - 목록, | 표 | …)"

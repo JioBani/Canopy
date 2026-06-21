@@ -270,7 +270,7 @@ export function WorkLogSection({
                 <textarea
                   defaultValue={l.note ?? ""}
                   placeholder="무슨 작업을 했는지 (마크다운, 선택)"
-                  className="min-h-20 rounded-[8px] border border-[var(--c-sakura)]/50 bg-[#F5F2F4] p-2.5 text-[13px] leading-relaxed outline-none ring-2 ring-[var(--c-sakura)]/20 focus-visible:ring-ring/50"
+                  className="min-h-20 rounded-[8px] border border-[var(--c-sakura)]/50 bg-card p-2.5 text-[13px] leading-relaxed outline-none ring-2 ring-[var(--c-sakura)]/20 focus-visible:ring-ring/50"
                   data-testid="work-log-note-input"
                   onBlur={(e) => {
                     const v = e.target.value
