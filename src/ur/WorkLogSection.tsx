@@ -58,7 +58,6 @@ export function WorkLogSection({
 }) {
   const { members, updateFields } = useNodes()
   const [logs, setLogs] = useState<WorkLog[]>([])
-  const [stopNote, setStopNote] = useState("")
   const [editingTotal, setEditingTotal] = useState(false)
   const [editingLogId, setEditingLogId] = useState<string | null>(null)
 
@@ -75,6 +74,10 @@ export function WorkLogSection({
   const now = useNowTick(!!active)
   const logged = loggedMinutes(logs)
   const total = baseMinutes + logged
+  // 최근순(시작 시각 내림차순) 표시
+  const ordered = [...logs].sort(
+    (a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
+  )
 
   const memberItems = members.map((m) => ({ value: m.id, label: memberLabel(m) }))
   const nameOf = (id: string | null) => {
@@ -84,14 +87,15 @@ export function WorkLogSection({
   }
 
   async function start() {
-    await startWorkLog(workId, assigneeId ?? null)
+    const created = await startWorkLog(workId, assigneeId ?? null)
     await reload()
+    setEditingLogId(created.id) // 새 로그를 바로 편집(내용 입력) 상태로
   }
   async function stop() {
     if (!active) return
-    await stopWorkLog(active.id, active.started_at, stopNote || null)
-    setStopNote("")
+    await stopWorkLog(active.id, active.started_at)
     await reload()
+    setEditingLogId(null)
   }
 
   return (
@@ -147,13 +151,6 @@ export function WorkLogSection({
             >
               ● {clock((now - new Date(active.started_at).getTime()) / 1000)}
             </span>
-            <Input
-              value={stopNote}
-              onChange={(e) => setStopNote(e.target.value)}
-              placeholder="무슨 작업? (선택)"
-              className="h-8 w-44"
-              data-testid="work-log-stop-note"
-            />
             <Button size="sm" onClick={() => void stop()} data-testid="work-log-stop">
               <Pause className="size-3.5" />종료
             </Button>
@@ -173,10 +170,10 @@ export function WorkLogSection({
 
       {/* 로그 목록 — 내용은 댓글처럼 아래에(마크다운) */}
       <div className="flex flex-col gap-2">
-        {logs.length === 0 && (
+        {ordered.length === 0 && (
           <p className="text-muted-foreground text-[13px]">작업 로그가 없습니다.</p>
         )}
-        {logs.map((l) => {
+        {ordered.map((l) => {
           const editing = editingLogId === l.id
           return (
             <div

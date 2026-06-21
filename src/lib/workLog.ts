@@ -46,19 +46,14 @@ export function elapsedMinutes(startedAt: string, endedMs: number): number {
   return Math.max(0, Math.round(ms / 60000))
 }
 
-/** 세션 종료 — ended_at=now, duration 계산, note(선택). */
-export async function stopWorkLog(
-  id: string,
-  startedAt: string,
-  note?: string | null
-): Promise<void> {
+/** 세션 종료 — ended_at=now, duration 계산. note 는 건드리지 않음(행에서 편집). */
+export async function stopWorkLog(id: string, startedAt: string): Promise<void> {
   const now = Date.now()
   const { error } = await supabase
     .from("work_log")
     .update({
       ended_at: new Date(now).toISOString(),
       duration_minutes: elapsedMinutes(startedAt, now),
-      note: note ?? null,
     })
     .eq("id", id)
   if (error) throw new Error(error.message)

@@ -37,13 +37,14 @@ test.describe.serial("작업 시간 측정", () => {
     await expect(d.getByTestId("work-log-active")).toBeVisible()
     await expect(d.getByTestId("work-log-start")).toHaveCount(0)
 
-    // 종료 + 노트(선택)
-    await d.getByTestId("work-log-stop-note").fill("코딩 세션")
-    await d.getByTestId("work-log-stop").click()
+    // 시작 즉시 새 로그가 편집 상태로 열림 → 행에서 내용 입력(시간X·작업자O·내용O)
     const row = d.getByTestId("work-log-row").first()
-    await expect(row).toBeVisible()
+    await row.getByTestId("work-log-note-input").fill("코딩 세션")
+    await row.getByTestId("work-log-note-input").blur()
+
+    // 종료 → 내용은 보존되어 댓글(마크다운)로 표시
+    await d.getByTestId("work-log-stop").click()
     await expect(row).toContainText("코딩 세션")
-    // 종료되면 다시 시작 버튼
     await expect(d.getByTestId("work-log-start")).toBeVisible()
 
     // 로그 '수정' → duration 45분 → '완료' → 총 작업 시간 45분 반영(구성상 일관)
