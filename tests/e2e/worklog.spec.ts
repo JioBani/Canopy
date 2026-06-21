@@ -50,10 +50,11 @@ test.describe.serial("작업 시간 측정", () => {
     await expect(row).toContainText("코딩 세션")
     await expect(d.getByTestId("work-log-start")).toBeVisible()
 
-    // 로그 '수정' → duration 45분 → '완료' → 총 작업 시간 45분 반영(구성상 일관)
+    // 로그 '수정' → 시작/종료 시각 직접 편집(45분 차) → duration 자동 45 → 총 45분
     await d.getByTestId("work-log-edit").click()
-    await row.getByTestId("work-log-duration-input").fill("45")
-    await row.getByTestId("work-log-duration-input").blur()
+    await row.getByTestId("work-log-start-input").fill("2024-01-01T10:00")
+    await row.getByTestId("work-log-end-input").fill("2024-01-01T10:45")
+    await row.getByTestId("work-log-end-input").blur()
     await d.getByTestId("work-log-edit").click()
     await expect(d.getByTestId("work-log-total")).toContainText("45분")
   })

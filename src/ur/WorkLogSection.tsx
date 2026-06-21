@@ -5,6 +5,7 @@ import { Markdown } from "@/components/Markdown"
 import { memberLabel } from "@/lib/members"
 import {
   deleteWorkLog,
+  elapsedMinutes,
   formatMinutes,
   listWorkLogs,
   loggedMinutes,
@@ -47,6 +48,20 @@ function timeLabel(iso: string): string {
   })
 }
 
+/** ISO → datetime-local 입력값(로컬 시간 "YYYY-MM-DDTHH:mm"). */
+function toLocalInput(iso: string | null): string {
+  if (!iso) return ""
+  const d = new Date(iso)
+  const p = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
+}
+/** datetime-local 입력값 → ISO. 빈/잘못된 값이면 null. */
+function fromLocalInput(v: string): string | null {
+  if (!v) return null
+  const d = new Date(v)
+  return isNaN(d.getTime()) ? null : d.toISOString()
+}
+
 export function WorkLogSection({
   workId,
   assigneeId,
@@ -60,6 +75,33 @@ export function WorkLogSection({
   const [logs, setLogs] = useState<WorkLog[]>([])
   const [editingTotal, setEditingTotal] = useState(false)
   const [editingLogId, setEditingLogId] = useState<string | null>(null)
+  // 편집 중 로그의 시작/종료 시각(datetime-local 문자열)
+  const [editStart, setEditStart] = useState("")
+  const [editEnd, setEditEnd] = useState("")
+
+  function openLogEdit(l: WorkLog) {
+    setEditingLogId(l.id)
+    setEditStart(toLocalInput(l.started_at))
+    setEditEnd(toLocalInput(l.ended_at))
+  }
+  /** 시작/종료 변경 저장 — duration 은 (종료−시작)으로 재계산. */
+  async function saveTimes(l: WorkLog) {
+    const startedIso = fromLocalInput(editStart) ?? l.started_at
+    const endedIso = fromLocalInput(editEnd)
+    const patch: {
+      started_at: string
+      ended_at?: string | null
+      duration_minutes?: number
+    } = { started_at: startedIso }
+    if (l.ended_at) {
+      patch.ended_at = endedIso
+      patch.duration_minutes = endedIso
+        ? elapsedMinutes(startedIso, new Date(endedIso).getTime())
+        : 0
+    }
+    await updateWorkLog(l.id, patch)
+    await reload()
+  }
 
   const reload = useCallback(async () => {
     setLogs(await listWorkLogs(workId))
@@ -190,33 +232,45 @@ export function WorkLogSection({
             >
               {/* 헤더 줄: 시간 · duration · 작업자 · 수정/삭제 */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="tnum shrink-0" style={{ color: "var(--c-ink-3)" }}>
-                  {timeLabel(l.started_at)}
-                  {" → "}
-                  {l.ended_at ? timeLabel(l.ended_at) : "진행 중"}
-                </span>
-
-                {l.ended_at &&
-                  (editing ? (
-                    <label className="flex items-center gap-1">
-                      <Input
-                        type="number"
-                        defaultValue={l.duration_minutes ?? 0}
-                        className="h-7 w-16"
-                        data-testid="work-log-duration-input"
-                        onBlur={(e) => {
-                          const v = Math.max(0, Math.round(Number(e.target.value) || 0))
-                          if (v !== (l.duration_minutes ?? 0))
-                            void updateWorkLog(l.id, { duration_minutes: v }).then(reload)
-                        }}
-                      />
-                      <span style={{ color: "var(--c-ink-3)" }}>분</span>
-                    </label>
-                  ) : (
-                    <span className="tnum font-semibold" data-testid="work-log-duration">
-                      {formatMinutes(l.duration_minutes ?? 0)}
+                {editing ? (
+                  /* 시작/종료 시각 직접 편집 — duration 은 자동 계산 */
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    <input
+                      type="datetime-local"
+                      value={editStart}
+                      onChange={(e) => setEditStart(e.target.value)}
+                      onBlur={() => void saveTimes(l)}
+                      data-testid="work-log-start-input"
+                      className="border-input h-7 rounded-md border bg-card px-2 text-[12.5px]"
+                    />
+                    {l.ended_at && (
+                      <>
+                        <span style={{ color: "var(--c-ink-3)" }}>→</span>
+                        <input
+                          type="datetime-local"
+                          value={editEnd}
+                          onChange={(e) => setEditEnd(e.target.value)}
+                          onBlur={() => void saveTimes(l)}
+                          data-testid="work-log-end-input"
+                          className="border-input h-7 rounded-md border bg-card px-2 text-[12.5px]"
+                        />
+                      </>
+                    )}
+                  </span>
+                ) : (
+                  <>
+                    <span className="tnum shrink-0" style={{ color: "var(--c-ink-3)" }}>
+                      {timeLabel(l.started_at)}
+                      {" → "}
+                      {l.ended_at ? timeLabel(l.ended_at) : "진행 중"}
                     </span>
-                  ))}
+                    {l.ended_at && (
+                      <span className="tnum font-semibold" data-testid="work-log-duration">
+                        {formatMinutes(l.duration_minutes ?? 0)}
+                      </span>
+                    )}
+                  </>
+                )}
 
                 {editing ? (
                   <FilterSelect
@@ -243,7 +297,7 @@ export function WorkLogSection({
                     variant={editing ? "default" : "ghost"}
                     size="sm"
                     className="h-7 gap-1 text-xs"
-                    onClick={() => setEditingLogId(editing ? null : l.id)}
+                    onClick={() => (editing ? setEditingLogId(null) : openLogEdit(l))}
                     data-testid="work-log-edit"
                   >
                     {!editing && <Pencil className="size-3" />}

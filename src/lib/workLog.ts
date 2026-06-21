@@ -59,10 +59,12 @@ export async function stopWorkLog(id: string, startedAt: string): Promise<void> 
   if (error) throw new Error(error.message)
 }
 
-/** 로그 수정 — duration/note/작업자. */
+/** 로그 수정 — 시작/종료 시각·duration·note·작업자. */
 export async function updateWorkLog(
   id: string,
   patch: {
+    started_at?: string
+    ended_at?: string | null
     duration_minutes?: number
     note?: string | null
     member_id?: string | null
