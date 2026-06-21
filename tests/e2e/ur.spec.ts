@@ -125,7 +125,11 @@ test.describe.serial("UR 서브시스템 (세부기능 소유)", () => {
       .getByTestId("ur-link-row")
       .filter({ hasText: "링크대상 UR" })
       .click()
-    await page.keyboard.press("Escape")
+    // 체크만으론 미반영(스테이징) — 완료 전엔 연결 없음
+    await expect(
+      page.getByTestId("linked-ur").filter({ hasText: "링크대상 UR" })
+    ).toHaveCount(0)
+    await urDialog.getByTestId("ur-link-save").click()
     await expect(
       page.getByTestId("linked-ur").filter({ hasText: "링크대상 UR" })
     ).toBeVisible()
