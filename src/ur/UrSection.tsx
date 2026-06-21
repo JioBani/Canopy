@@ -396,12 +396,12 @@ export function UrSection({
                                 className="text-[11px] font-semibold"
                                 style={{ color: "var(--c-ember)" }}
                               >
-                                ⚠ 오구현 사유
+                                ⚠ 오작업 사유
                               </span>
                               {editable ? (
                                 <textarea
                                   defaultValue={u.misimpl_reason ?? ""}
-                                  placeholder="무엇이 어떻게 잘못 구현됐는지…"
+                                  placeholder="무엇이 어떻게 잘못 작업됐는지…"
                                   className="min-h-14 rounded border bg-transparent p-2 text-[12.5px] outline-none focus-visible:ring-ring/50 focus-visible:ring-2"
                                   data-testid="misimpl-reason"
                                   onBlur={(e) => {

@@ -6,9 +6,9 @@ export const UR_STATE_META: Record<
   UrStatus,
   { color: string; label: string }
 > = {
-  미구현: { color: "var(--c-mist)", label: "미구현" },
+  미구현: { color: "var(--c-mist)", label: "미작업" },
   완료: { color: "var(--c-sakura)", label: "완료" },
-  오구현: { color: "var(--c-ember)", label: "오구현" },
+  오구현: { color: "var(--c-ember)", label: "오작업" },
 }
 
 export const UR_STATES: UrStatus[] = ["미구현", "완료", "오구현"]

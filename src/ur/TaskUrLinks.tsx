@@ -5,10 +5,12 @@ import {
   listUrIdsForWork,
   listUrs,
   unlinkUrWork,
+  updateUr,
   urKey,
   type Ur,
+  type UrStatus,
 } from "@/lib/ur"
-import { UrStateGlyph } from "@/ur/urStateGlyph"
+import { UrStateMenu } from "@/ur/UrStateMenu"
 import { UrLinkDialog } from "@/ur/UrLinkDialog"
 import { Button } from "@/components/ui/button"
 
@@ -22,7 +24,7 @@ export function TaskUrLinks({
   featureId: string | null
   editable?: boolean
 }) {
-  const { nodes } = useNodes()
+  const { nodes, refreshProgress } = useNodes()
   const [urs, setUrs] = useState<Ur[]>([])
   const [linkedIds, setLinkedIds] = useState<string[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -59,6 +61,15 @@ export function TaskUrLinks({
   const linkedSet = new Set(linkedIds)
   const linked = urs.filter((u) => linkedSet.has(u.id))
 
+  const changeStatus = useCallback(
+    async (urId: string, status: UrStatus) => {
+      await updateUr(urId, { status })
+      await reload()
+      await refreshProgress()
+    },
+    [reload, refreshProgress]
+  )
+
   return (
     <section className="flex flex-col gap-2.5" data-testid="task-ur-links">
       <h3 className="font-display text-[15px] font-bold">만족시키는 UR</h3>
@@ -70,10 +81,13 @@ export function TaskUrLinks({
             className="group/lu border-border bg-card flex items-start gap-2 rounded-[10px] border px-3 py-2.5"
             data-testid="linked-ur"
           >
-            <UrStateGlyph
-              status={u.status}
-              className="mt-0.5 size-[15px] shrink-0"
-            />
+            <div className="mt-px shrink-0">
+              <UrStateMenu
+                status={u.status}
+                testid="linked-ur-state"
+                onChange={(s) => void changeStatus(u.id, s)}
+              />
+            </div>
             <div className="flex-1">
               <p className="text-[13.5px] leading-relaxed">{u.text}</p>
               <p
