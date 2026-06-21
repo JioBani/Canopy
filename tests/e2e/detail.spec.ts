@@ -7,9 +7,7 @@ import {
   addWork,
   cleanupCreatedProjects,
   createProject,
-  enterEdit,
   rowByTitle,
-  saveEdit,
   selectByLabel,
   selectWorkInEmbed,
   signupAndEnter,
@@ -44,10 +42,8 @@ test.describe.serial("노드 상세 패널", () => {
     await expect(page.getByTestId("detail-ticket")).toContainText("Task-")
 
     // 상태/도메인: property '수정' 토글 후 변경(즉시 저장)
-    await enterEdit(page)
     await selectByLabel(page, "detail-status", "완료")
     await selectByLabel(page, "detail-domain", "디자인")
-    await saveEdit(page)
     await expect(
       embedWork(page, "로직작업").getByTestId("status-badge")
     ).toHaveAttribute("data-status", "완료")

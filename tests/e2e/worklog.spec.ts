@@ -64,10 +64,10 @@ test.describe.serial("작업 시간 측정", () => {
     await selectWorkInEmbed(page, "작업A")
 
     const d = detail(page)
-    await d.getByTestId("work-log-edit").click()
+    await d.getByTestId("work-log-total-edit").click()
     await d.getByTestId("work-log-total-input").fill("120")
     await d.getByTestId("work-log-total-input").blur()
-    await d.getByTestId("work-log-edit").click()
+    await d.getByTestId("work-log-total-edit").click()
     await expect(d.getByTestId("work-log-total")).toContainText("2시간 0분")
   })
 })

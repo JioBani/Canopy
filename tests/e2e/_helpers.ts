@@ -25,9 +25,13 @@ export function rowByTitle(page: Page, title: string): Locator {
 
 // ── shadcn 컴포넌트 상호작용 헬퍼 (native select → Select/Combobox 마이그레이션) ──
 
-/** shadcn Select: 트리거(testid) 클릭 → 보이는 텍스트로 옵션 선택. */
+/**
+ * shadcn Select 선택. 가드 셀렉트(화살표로만 열림)면 `{testid}-arrow` 를, 아니면 트리거를 클릭.
+ */
 export async function selectByLabel(page: Page, testid: string, label: string) {
-  await page.getByTestId(testid).click()
+  const arrow = page.getByTestId(`${testid}-arrow`)
+  if (await arrow.count()) await arrow.click()
+  else await page.getByTestId(testid).click()
   await page.getByRole("option", { name: label }).first().click()
 }
 
@@ -175,11 +179,3 @@ export async function expand(page: Page, title: string) {
   await rowByTitle(page, title).getByTestId("tree-toggle").click()
 }
 
-/** property(상태/도메인/담당) 편집 토글 ON('수정'). 변경은 즉시 저장(live). */
-export async function enterEdit(page: Page) {
-  await page.getByTestId("node-detail").getByTestId("detail-edit-props").click()
-}
-/** property 편집 토글 OFF('완료'). (변경은 이미 live 저장됨) */
-export async function saveEdit(page: Page) {
-  await page.getByTestId("node-detail").getByTestId("detail-edit-props").click()
-}

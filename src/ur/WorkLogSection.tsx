@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
-import { Pause, Play, Trash2 } from "lucide-react"
+import { Pause, Pencil, Play, Trash2 } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
+import { Markdown } from "@/components/Markdown"
 import { memberLabel } from "@/lib/members"
 import {
   deleteWorkLog,
@@ -38,8 +39,7 @@ function clock(seconds: number): string {
 }
 
 function timeLabel(iso: string): string {
-  const d = new Date(iso)
-  return d.toLocaleString(undefined, {
+  return new Date(iso).toLocaleString(undefined, {
     month: "numeric",
     day: "numeric",
     hour: "2-digit",
@@ -59,15 +59,16 @@ export function WorkLogSection({
   const { members, updateFields } = useNodes()
   const [logs, setLogs] = useState<WorkLog[]>([])
   const [stopNote, setStopNote] = useState("")
-  // 로그 상세(총시간 보정·duration·작업자·note·삭제) 편집 토글. 시작/종료는 즉시.
-  const [editing, setEditing] = useState(false)
+  const [editingTotal, setEditingTotal] = useState(false)
+  const [editingLogId, setEditingLogId] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
     setLogs(await listWorkLogs(workId))
   }, [workId])
   useEffect(() => {
     reload().catch((e) => console.error("[worklog] 로드 실패:", e))
-    setEditing(false)
+    setEditingTotal(false)
+    setEditingLogId(null)
   }, [reload])
 
   const active = logs.find((l) => !l.ended_at)
@@ -95,24 +96,23 @@ export function WorkLogSection({
 
   return (
     <section className="flex flex-col gap-3" data-testid="work-log-section">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         <h3 className="font-display text-[15px] font-bold">작업 시간</h3>
 
-        {/* 총 작업 시간 (편집 모드에서 직접 보정) */}
-        {editing ? (
+        {/* 총 작업 시간 — 텍스트 + 작은 수정 토글 */}
+        {editingTotal ? (
           <label className="flex items-center gap-1.5 text-[13px]">
             <span style={{ color: "var(--c-ink-3)" }}>총</span>
             <Input
               type="number"
+              autoFocus
               defaultValue={total}
               className="h-7 w-20"
               data-testid="work-log-total-input"
               onBlur={(e) => {
                 const v = Math.max(0, Math.round(Number(e.target.value) || 0))
                 if (v !== total)
-                  void updateFields(workId, {
-                    time_spent_minutes: v - logged, // 표시 총합 = v 가 되도록 보정
-                  })
+                  void updateFields(workId, { time_spent_minutes: v - logged })
               }}
             />
             <span style={{ color: "var(--c-ink-3)" }}>분</span>
@@ -126,15 +126,15 @@ export function WorkLogSection({
             총 {formatMinutes(total)}
           </span>
         )}
-
         <Button
-          variant={editing ? "default" : "ghost"}
-          size="sm"
-          className="h-7 gap-1 text-xs"
-          onClick={() => setEditing((v) => !v)}
-          data-testid="work-log-edit"
+          variant={editingTotal ? "default" : "ghost"}
+          size="icon"
+          className="size-7"
+          onClick={() => setEditingTotal((v) => !v)}
+          data-testid="work-log-total-edit"
+          title="총 작업 시간 보정"
         >
-          {editing ? "완료" : "수정"}
+          <Pencil className="size-3.5" />
         </Button>
 
         {/* 시작/종료 (즉시 동작) */}
@@ -171,105 +171,121 @@ export function WorkLogSection({
         )}
       </div>
 
-      {/* 로그 목록 */}
-      <div className="flex flex-col gap-1.5">
+      {/* 로그 목록 — 내용은 댓글처럼 아래에(마크다운) */}
+      <div className="flex flex-col gap-2">
         {logs.length === 0 && (
           <p className="text-muted-foreground text-[13px]">작업 로그가 없습니다.</p>
         )}
-        {logs.map((l) => (
-          <div
-            key={l.id}
-            className="border-border bg-card flex flex-wrap items-center gap-2 rounded-[10px] border px-3 py-2 text-[13px]"
-            data-testid="work-log-row"
-          >
-            <span className="tnum shrink-0" style={{ color: "var(--c-ink-3)" }}>
-              {timeLabel(l.started_at)}
-              {" → "}
-              {l.ended_at ? timeLabel(l.ended_at) : "진행 중"}
-            </span>
+        {logs.map((l) => {
+          const editing = editingLogId === l.id
+          return (
+            <div
+              key={l.id}
+              className="border-border bg-card flex flex-col gap-2 rounded-[10px] border px-3 py-2.5 text-[13px]"
+              data-testid="work-log-row"
+            >
+              {/* 헤더 줄: 시간 · duration · 작업자 · 수정/삭제 */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="tnum shrink-0" style={{ color: "var(--c-ink-3)" }}>
+                  {timeLabel(l.started_at)}
+                  {" → "}
+                  {l.ended_at ? timeLabel(l.ended_at) : "진행 중"}
+                </span>
 
-            {/* duration */}
-            {l.ended_at &&
-              (editing ? (
-                <label className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    defaultValue={l.duration_minutes ?? 0}
-                    className="h-7 w-16"
-                    data-testid="work-log-duration-input"
-                    onBlur={(e) => {
-                      const v = Math.max(0, Math.round(Number(e.target.value) || 0))
-                      if (v !== (l.duration_minutes ?? 0))
-                        void updateWorkLog(l.id, { duration_minutes: v }).then(reload)
-                    }}
+                {l.ended_at &&
+                  (editing ? (
+                    <label className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        defaultValue={l.duration_minutes ?? 0}
+                        className="h-7 w-16"
+                        data-testid="work-log-duration-input"
+                        onBlur={(e) => {
+                          const v = Math.max(0, Math.round(Number(e.target.value) || 0))
+                          if (v !== (l.duration_minutes ?? 0))
+                            void updateWorkLog(l.id, { duration_minutes: v }).then(reload)
+                        }}
+                      />
+                      <span style={{ color: "var(--c-ink-3)" }}>분</span>
+                    </label>
+                  ) : (
+                    <span className="tnum font-semibold" data-testid="work-log-duration">
+                      {formatMinutes(l.duration_minutes ?? 0)}
+                    </span>
+                  ))}
+
+                {editing ? (
+                  <FilterSelect
+                    value={l.member_id ?? ""}
+                    onChange={(v) =>
+                      void updateWorkLog(l.id, { member_id: v || null }).then(reload)
+                    }
+                    allLabel="미지정"
+                    items={memberItems}
+                    testid="work-log-member"
                   />
-                  <span style={{ color: "var(--c-ink-3)" }}>분</span>
-                </label>
+                ) : (
+                  <span
+                    className="rounded-md px-1.5 py-0.5 text-[11.5px]"
+                    style={{ background: "var(--c-pink-bg)", color: "var(--c-plum)" }}
+                    data-testid="work-log-member"
+                  >
+                    {nameOf(l.member_id)}
+                  </span>
+                )}
+
+                <span className="ml-auto flex items-center gap-1">
+                  <Button
+                    variant={editing ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 gap-1 text-xs"
+                    onClick={() => setEditingLogId(editing ? null : l.id)}
+                    data-testid="work-log-edit"
+                  >
+                    {!editing && <Pencil className="size-3" />}
+                    {editing ? "완료" : "수정"}
+                  </Button>
+                  {editing && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive size-7"
+                      onClick={() => void deleteWorkLog(l.id).then(reload)}
+                      data-testid="work-log-delete"
+                      title="로그 삭제"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  )}
+                </span>
+              </div>
+
+              {/* 내용(댓글) — 아래에, 읽기=마크다운 / 편집=textarea */}
+              {editing ? (
+                <textarea
+                  defaultValue={l.note ?? ""}
+                  placeholder="무슨 작업을 했는지 (마크다운, 선택)"
+                  className="min-h-20 rounded-[8px] border border-[var(--c-sakura)]/50 bg-[#F5F2F4] p-2.5 text-[13px] leading-relaxed outline-none ring-2 ring-[var(--c-sakura)]/20 focus-visible:ring-ring/50"
+                  data-testid="work-log-note-input"
+                  onBlur={(e) => {
+                    const v = e.target.value
+                    if (v !== (l.note ?? ""))
+                      void updateWorkLog(l.id, { note: v || null }).then(reload)
+                  }}
+                />
               ) : (
-                <span
-                  className="tnum font-semibold"
-                  data-testid="work-log-duration"
-                >
-                  {formatMinutes(l.duration_minutes ?? 0)}
-                </span>
-              ))}
-
-            {/* 작업자 */}
-            {editing ? (
-              <FilterSelect
-                value={l.member_id ?? ""}
-                onChange={(v) =>
-                  void updateWorkLog(l.id, { member_id: v || null }).then(reload)
-                }
-                allLabel="미지정"
-                items={memberItems}
-                testid="work-log-member"
-              />
-            ) : (
-              <span
-                className="rounded-md px-1.5 py-0.5 text-[11.5px]"
-                style={{ background: "var(--c-pink-bg)", color: "var(--c-plum)" }}
-                data-testid="work-log-member"
-              >
-                {nameOf(l.member_id)}
-              </span>
-            )}
-
-            {/* note */}
-            {editing ? (
-              <Input
-                defaultValue={l.note ?? ""}
-                placeholder="메모(선택)"
-                className="h-7 min-w-0 flex-1"
-                data-testid="work-log-note-input"
-                onBlur={(e) => {
-                  const v = e.target.value
-                  if (v !== (l.note ?? ""))
-                    void updateWorkLog(l.id, { note: v || null }).then(reload)
-                }}
-              />
-            ) : (
-              l.note && (
-                <span className="min-w-0 flex-1 truncate" data-testid="work-log-note">
-                  {l.note}
-                </span>
-              )
-            )}
-
-            {editing && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-destructive ml-auto size-7 shrink-0"
-                onClick={() => void deleteWorkLog(l.id).then(reload)}
-                data-testid="work-log-delete"
-                title="로그 삭제"
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
-            )}
-          </div>
-        ))}
+                l.note && (
+                  <div
+                    className="border-border rounded-[8px] border-l-2 bg-[var(--c-bg-sunken)]/40 px-3 py-1.5"
+                    data-testid="work-log-note"
+                  >
+                    <Markdown>{l.note}</Markdown>
+                  </div>
+                )
+              )}
+            </div>
+          )
+        })}
       </div>
     </section>
   )

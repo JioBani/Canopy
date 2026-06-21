@@ -6,9 +6,7 @@ import {
   addWork,
   cleanupCreatedProjects,
   createProject,
-  enterEdit,
   rowByTitle,
-  saveEdit,
   selectByLabel,
   selectWorkInEmbed,
   signupAndEnter,
@@ -22,10 +20,8 @@ async function build(page: Page) {
 
   // 작업: 완료 + 도메인 구현 (상세 '수정' → 저장)
   await selectWorkInEmbed(page, "로직작업")
-  await enterEdit(page)
   await selectByLabel(page, "detail-status", "완료")
   await selectByLabel(page, "detail-domain", "구현")
-  await saveEdit(page)
 
   // 세부기능에 UR 추가(UR 섹션 상시 편집, 연결 작업 없음 → 미커버)
   await rowByTitle(page, "합성세부").click()

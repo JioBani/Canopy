@@ -6,8 +6,6 @@ import {
   addWork,
   cleanupCreatedProjects,
   createProject,
-  enterEdit,
-  saveEdit,
   selectByLabel,
   selectWorkInEmbed,
   signupAndEnter,
@@ -48,9 +46,7 @@ test.describe.serial("멤버 수동 관리", () => {
     await addChildTyped(page, "소환수기능", "세부기능", "합성세부")
     await addWork(page, "합성세부", "작업A")
     await selectWorkInEmbed(page, "작업A")
-    await enterEdit(page)
     await selectByLabel(page, "detail-assignee", renamed) // 선택=할당 가능 확인
-    await saveEdit(page)
 
     // 삭제
     await page.getByTestId("members-open").click()

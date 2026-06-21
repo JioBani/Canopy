@@ -18,7 +18,6 @@ import type { NodeDomain } from "@/lib/nodes"
 import type { StatusCategory } from "@/lib/statuses"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
 import {
   Select,
   SelectContent,
@@ -61,15 +60,54 @@ function PropField({
   )
 }
 
-// 읽기(disabled)에서도 평상시처럼 또렷하게. '수정' 토글 시에만 sakura 하이라이트.
 const triggerClass =
-  "h-8 min-w-[7.5rem] gap-1.5 rounded-[9px] bg-card text-[13px] font-medium shadow-xs disabled:cursor-default disabled:opacity-100"
-const editRing = "border-[var(--c-sakura)] ring-2 ring-[var(--c-sakura)]/30"
-function fieldClass(editing: boolean) {
-  return cn(triggerClass, editing && editRing)
+  "h-8 min-w-[7.5rem] gap-1.5 rounded-[9px] bg-card text-[13px] font-medium shadow-xs"
+
+/**
+ * 실수 편집 방지 셀렉트 — 본문 클릭으론 안 열리고, 우측 화살표를 눌러야만 열린다.
+ * (wrapper 의 pointerdown 캡처에서 전파를 끊어 Radix 트리거 자동 열림을 차단,
+ *  화살표 버튼의 onClick 으로만 open 제어.)
+ */
+function GuardedSelect({
+  value,
+  onValueChange,
+  placeholder,
+  testid,
+  leading,
+  children,
+}: {
+  value: string
+  onValueChange: (v: string) => void
+  placeholder: string
+  testid: string
+  leading?: React.ReactNode
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <Select value={value} onValueChange={onValueChange} open={open} onOpenChange={setOpen}>
+      <div
+        className="relative inline-flex"
+        onPointerDownCapture={(e) => e.stopPropagation()}
+      >
+        <SelectTrigger className={triggerClass} data-testid={testid} tabIndex={-1}>
+          {leading}
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <button
+          type="button"
+          aria-label="열기"
+          data-testid={`${testid}-arrow`}
+          onClick={() => setOpen((o) => !o)}
+          className="absolute inset-y-0 right-0 w-9 cursor-pointer rounded-r-[9px]"
+        />
+      </div>
+      <SelectContent>{children}</SelectContent>
+    </Select>
+  )
 }
 
-/** 작은 수정/완료 토글 버튼. */
+/** 작은 수정/완료 토글 버튼(설명 등). */
 function EditToggle({
   editing,
   onToggle,
@@ -100,14 +138,11 @@ export function NodeDetail() {
 
   const [title, setTitle] = useState("")
   const [body, setBody] = useState("")
-  // 국소 편집 토글: property(상태/도메인/담당), 설명(body). 나머지(제목·하위 섹션)는 상시.
-  const [editProps, setEditProps] = useState(false)
-  const [editBody, setEditBody] = useState(false)
+  const [editBody, setEditBody] = useState(false) // 설명만 토글, 나머지는 상시/가드 셀렉트
 
   useEffect(() => {
     setTitle(node?.title ?? "")
     setBody(node?.body ?? "")
-    setEditProps(false)
     setEditBody(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node?.id])
@@ -178,72 +213,64 @@ export function NodeDetail() {
           />
         </div>
 
-        {/* property 행 — 상태(전 타입) + 도메인/담당(작업). 오른쪽 '수정' 토글로만 변경. */}
+        {/* property 행 — 상태(전 타입) + 도메인/담당(작업). 본문 클릭 X, 우측 화살표로만 열림. */}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <PropField label="상태">
-            <Select
+            <GuardedSelect
               value={node.status_id ?? NONE}
-              disabled={!editProps}
               onValueChange={(v) => set({ status_id: v === NONE ? null : v })}
+              placeholder="상태"
+              testid="detail-status"
             >
-              <SelectTrigger className={fieldClass(editProps)} data-testid="detail-status">
-                <SelectValue placeholder="상태" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE}>미지정</SelectItem>
-                {statusGroups.map((g) => (
-                  <SelectGroup key={g.cat}>
-                    <SelectLabel>{g.cat}</SelectLabel>
-                    {g.items.map((s) => {
-                      const G = BLOOM_GLYPH[s.category]
-                      return (
-                        <SelectItem key={s.id} value={s.id} textValue={s.name}>
-                          <G
-                            className="size-[14px]"
-                            style={{ color: s.color ?? CATEGORY_COLOR[s.category] }}
-                          />
-                          {s.name}
-                        </SelectItem>
-                      )
-                    })}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
+              <SelectItem value={NONE}>미지정</SelectItem>
+              {statusGroups.map((g) => (
+                <SelectGroup key={g.cat}>
+                  <SelectLabel>{g.cat}</SelectLabel>
+                  {g.items.map((s) => {
+                    const G = BLOOM_GLYPH[s.category]
+                    return (
+                      <SelectItem key={s.id} value={s.id} textValue={s.name}>
+                        <G
+                          className="size-[14px]"
+                          style={{ color: s.color ?? CATEGORY_COLOR[s.category] }}
+                        />
+                        {s.name}
+                      </SelectItem>
+                    )
+                  })}
+                </SelectGroup>
+              ))}
+            </GuardedSelect>
           </PropField>
 
           {isTask && (
             <>
               <PropField label="도메인">
-                <Select
+                <GuardedSelect
                   value={node.domain ?? NONE}
-                  disabled={!editProps}
                   onValueChange={(v) =>
                     set({ domain: (v === NONE ? null : v) as NodeDomain | null })
                   }
+                  placeholder="도메인"
+                  testid="detail-domain"
                 >
-                  <SelectTrigger className={fieldClass(editProps)} data-testid="detail-domain">
-                    <SelectValue placeholder="도메인" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE}>미지정</SelectItem>
-                    {DOMAINS.map((d) => (
-                      <SelectItem key={d} value={d}>
-                        {d}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <SelectItem value={NONE}>미지정</SelectItem>
+                  {DOMAINS.map((d) => (
+                    <SelectItem key={d} value={d}>
+                      {d}
+                    </SelectItem>
+                  ))}
+                </GuardedSelect>
               </PropField>
 
               <PropField label="담당">
-                <Select
+                <GuardedSelect
                   value={node.assignee_id ?? NONE}
-                  disabled={!editProps}
                   onValueChange={(v) => set({ assignee_id: v === NONE ? null : v })}
-                >
-                  <SelectTrigger className={fieldClass(editProps)} data-testid="detail-assignee">
-                    {assignee && (
+                  placeholder="담당"
+                  testid="detail-assignee"
+                  leading={
+                    assignee ? (
                       <span
                         className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-full text-[9.5px] font-bold"
                         style={{
@@ -255,29 +282,19 @@ export function NodeDetail() {
                       >
                         {memberLabel(assignee).slice(0, 1).toUpperCase()}
                       </span>
-                    )}
-                    <SelectValue placeholder="담당" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE}>없음</SelectItem>
-                    {members.map((m) => (
-                      <SelectItem key={m.id} value={m.id} textValue={memberLabel(m)}>
-                        {memberLabel(m)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    ) : undefined
+                  }
+                >
+                  <SelectItem value={NONE}>없음</SelectItem>
+                  {members.map((m) => (
+                    <SelectItem key={m.id} value={m.id} textValue={memberLabel(m)}>
+                      {memberLabel(m)}
+                    </SelectItem>
+                  ))}
+                </GuardedSelect>
               </PropField>
             </>
           )}
-
-          <div className="ml-auto">
-            <EditToggle
-              editing={editProps}
-              onToggle={() => setEditProps((v) => !v)}
-              testid="detail-edit-props"
-            />
-          </div>
         </div>
 
         {/* 설명(body) — 읽기=마크다운, '수정' 토글 시 textarea */}

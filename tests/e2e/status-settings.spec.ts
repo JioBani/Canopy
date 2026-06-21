@@ -6,8 +6,6 @@ import {
   addWork,
   cleanupCreatedProjects,
   createProject,
-  enterEdit,
-  saveEdit,
   selectByLabel,
   selectWorkInEmbed,
   signupAndEnter,
@@ -52,9 +50,7 @@ test.describe.serial("커스텀 상태 설정", () => {
     await page.keyboard.press("Escape")
     await expect(page.getByTestId("status-settings")).toHaveCount(0)
     await selectWorkInEmbed(page, "로직작업")
-    await enterEdit(page)
     await selectByLabel(page, "detail-status", "개발중")
-    await saveEdit(page)
     await expect(await workBadge(page, "로직작업")).toHaveAttribute(
       "data-status",
       "진행중"
@@ -85,9 +81,7 @@ test.describe.serial("커스텀 상태 설정", () => {
 
     // 작업을 완료 상태로
     await selectWorkInEmbed(page, "로직작업")
-    await enterEdit(page)
     await selectByLabel(page, "detail-status", "완료")
-    await saveEdit(page)
 
     // 완료 상태 이름을 "릴리스"로 변경
     await page.getByTestId("project-settings").click()
