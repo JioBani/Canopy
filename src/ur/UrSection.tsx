@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { AlertTriangle, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
+import {
+  AlertTriangle,
+  ChevronRight,
+  ChevronUp,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react"
 import {
   deleteUr,
   deleteUrGroup,
@@ -8,6 +15,7 @@ import {
   listUrCoverageByFeature,
   listUrGroups,
   listUrs,
+  listWorkLinksBySubFeature,
   updateUr,
   urKey,
   type Ur,
@@ -16,15 +24,11 @@ import {
   type UrStatus,
 } from "@/lib/ur"
 import { useNodes } from "@/nodes/NodesProvider"
+import { ticketKey } from "@/nodes/nodeGrammar"
 import { UR_STATE_META, UrStateGlyph } from "@/ur/urStateGlyph"
 import { UrStateMenu } from "@/ur/UrStateMenu"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 function nextOrder<T extends { sort_order: number }>(items: T[]): number {
@@ -44,13 +48,22 @@ function CoverageText({ cov }: { cov: UrCoverage | undefined }) {
       </span>
     )
   }
+  const doneOn = cov.done_work_count > 0
   return (
     <span
-      className="text-muted-foreground tnum shrink-0 text-[11px]"
+      className="tnum shrink-0 text-[12px]"
+      style={{ color: "#9AA4B2" }}
       data-testid="ur-coverage"
       data-uncovered="false"
     >
-      작업 {cov.linked_work_count} / 완료 {cov.done_work_count}
+      작업{" "}
+      <b style={{ color: "#6B7684", fontWeight: 700 }}>
+        {cov.linked_work_count}
+      </b>{" "}
+      / 완료{" "}
+      <b style={{ color: doneOn ? "#D6398E" : "#6B7684", fontWeight: 700 }}>
+        {cov.done_work_count}
+      </b>
     </span>
   )
 }
@@ -80,17 +93,137 @@ function StatusRollup({ urs }: { urs: Ur[] }) {
   )
 }
 
-/** 길면 truncate + hover tooltip. */
-function TruncTooltip({ text }: { text: string }) {
+/** 완료 체크(채움) / 미완료 체크(빈칸) / 완료 별 — 디자인 스펙 인라인 SVG. */
+function DoneCheck() {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="min-w-0 flex-1 truncate text-left text-[13px]">
-          {text}
-        </span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-[360px]">{text}</TooltipContent>
-    </Tooltip>
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="#D6398E"
+      stroke="#fff"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="mt-px shrink-0"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="5" stroke="none" />
+      <path d="M7 12.4l3 3 6.5-7" />
+    </svg>
+  )
+}
+function EmptyCheck() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#BAC2CE"
+      strokeWidth="2"
+      className="mt-px shrink-0"
+    >
+      <rect x="4" y="4" width="16" height="16" rx="4" />
+    </svg>
+  )
+}
+function StarIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="#D6398E">
+      <path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.7 5.9 20.4l1.5-6.8L2.2 9l6.9-.7z" />
+    </svg>
+  )
+}
+
+/** "만족시키는 작업" 라벨 + 개수 pill (본문과 다른 블루-그레이 액센트). */
+function WorksLabel({ count }: { count: number }) {
+  return (
+    <div className="mt-5 mb-2.5 flex items-center gap-[7px]">
+      <span
+        className="size-[5px] rounded-full"
+        style={{ background: "#8AA0C4" }}
+      />
+      <span
+        className="text-[11.5px] font-bold tracking-[.04em]"
+        style={{ color: "#7C8AA0" }}
+      >
+        만족시키는 작업
+      </span>
+      <span
+        className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[9px] px-[5px] text-[11px] font-bold"
+        style={{ background: "#EDF1F7", color: "#7C8AA0" }}
+      >
+        {count}
+      </span>
+    </div>
+  )
+}
+
+/**
+ * UR 을 만족시키는 작업 목록 — 링크 id 는 UrSection 진입 시 프리페치(한 방 쿼리)해서
+ * prop 으로 받는다. 펼침 시 네트워크 왕복 없이 즉시 렌더(작업 상세는 nodes 컨텍스트에서).
+ * 흰색 작업 카드(본문 로즈 카드와 배경/보더로 구분). 카드 클릭 → 작업으로 이동.
+ * 체크 표식은 작업의 상태 카테고리(완료 여부) 반영(읽기 전용 — 실제 상태변경은 작업 상세에서).
+ */
+function UrLinkedWorks({ workIds }: { workIds: string[] }) {
+  const { nodes, openNode, getStatus } = useNodes()
+
+  const works = workIds
+    .map((id) => nodes.find((n) => n.id === id))
+    .filter((n): n is NonNullable<typeof n> => Boolean(n))
+
+  return (
+    <>
+      <WorksLabel count={works.length} />
+      {works.length === 0 ? (
+        <div
+          className="rounded-[9px] border border-dashed p-4 text-center text-[13px]"
+          style={{ borderColor: "#DCE2EB", color: "#9AA4B2" }}
+          data-testid="ur-works-empty"
+        >
+          아직 등록된 작업이 없습니다.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2" data-testid="ur-works">
+          {works.map((w) => {
+            const done = getStatus(w.status_id)?.category === "완료"
+            return (
+              <button
+                key={w.id}
+                type="button"
+                onClick={() => openNode(w.id)}
+                className="flex items-start gap-[11px] rounded-[9px] border bg-white px-[13px] py-[11px] text-left transition-colors hover:bg-[#F7F9FC]"
+                style={{ borderColor: "#E7ECF3" }}
+                data-testid="ur-work-row"
+              >
+                {done ? <DoneCheck /> : <EmptyCheck />}
+                <span
+                  className="mt-px shrink-0 rounded-[5px] px-[7px] py-0.5 font-mono text-[12px] font-semibold"
+                  style={{ color: "#5B6B7C", background: "#EEF1F6" }}
+                >
+                  {ticketKey(w.type, w.ticket_number)}
+                </span>
+                <span
+                  className="min-w-0 flex-1 text-[13.5px] leading-[1.6]"
+                  style={{ color: "#3C4653" }}
+                >
+                  {w.title}
+                </span>
+                {done && (
+                  <span
+                    className="mt-px inline-flex shrink-0 items-center gap-1 text-[12px] font-bold"
+                    style={{ color: "#D6398E" }}
+                  >
+                    <StarIcon />
+                    완료
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </>
   )
 }
 
@@ -111,6 +244,8 @@ export function UrSection({
   const [groups, setGroups] = useState<UrGroup[]>([])
   const [urs, setUrs] = useState<Ur[]>([])
   const [cov, setCov] = useState<Map<string, UrCoverage>>(new Map())
+  // ur_id → 연결 작업 id[]. 진입 시 프리페치해 UR 펼침을 즉시 렌더(N+1 제거).
+  const [worksByUr, setWorksByUr] = useState<Map<string, string[]>>(new Map())
   const [loading, setLoading] = useState(true)
   // compact: 그룹 접힘 기본. full: 펼침 기본.
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set())
@@ -121,14 +256,22 @@ export function UrSection({
 
   const reload = useCallback(async () => {
     setLoading(true)
-    const [g, u, c] = await Promise.all([
+    const [g, u, c, links] = await Promise.all([
       listUrGroups(subFeatureId),
       listUrs([subFeatureId]),
       listUrCoverageByFeature(subFeatureId),
+      listWorkLinksBySubFeature(subFeatureId),
     ])
     setGroups(g)
     setUrs(u)
     setCov(new Map(c.map((x) => [x.ur_id, x])))
+    const wm = new Map<string, string[]>()
+    for (const { ur_id, work_id } of links) {
+      const arr = wm.get(ur_id)
+      if (arr) arr.push(work_id)
+      else wm.set(ur_id, [work_id])
+    }
+    setWorksByUr(wm)
     setLoading(false)
   }, [subFeatureId])
 
@@ -297,6 +440,11 @@ export function UrSection({
               <div className="flex flex-col gap-0.5 pl-4">
                 {list.map((u) => {
                   const expanded = !compact && expandedUr === u.id
+                  const editing = editingUr === u.id
+                  const toggleExpand = () => {
+                    if (!compact && !editing)
+                      setExpandedUr(expanded ? null : u.id)
+                  }
                   return (
                     <div
                       key={u.id}
@@ -307,13 +455,26 @@ export function UrSection({
                       )}
                       data-testid="ur-row"
                     >
-                      <div className="flex items-center gap-1.5 py-1">
+                      {/* 헤더 행 — 전체 클릭으로 펼침/접힘(편집 컨트롤은 전파 차단) */}
+                      <div
+                        className={cn(
+                          "flex items-center gap-2.5 py-1.5",
+                          !compact && !editing && "cursor-pointer"
+                        )}
+                        onClick={toggleExpand}
+                        data-testid="ur-row-header"
+                      >
                         {editable ? (
-                          <UrStateMenu
-                            status={u.status}
-                            onChange={(s) => void setStatus(u, s)}
-                            testid="ur-state"
-                          />
+                          <span
+                            className="inline-flex shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <UrStateMenu
+                              status={u.status}
+                              onChange={(s) => void setStatus(u, s)}
+                              testid="ur-state"
+                            />
+                          </span>
                         ) : (
                           <UrStateGlyph
                             status={u.status}
@@ -322,35 +483,58 @@ export function UrSection({
                         )}
 
                         <code
-                          className="tnum shrink-0 font-mono text-[11px] font-semibold"
-                          style={{ color: "var(--c-plum)" }}
+                          className="tnum shrink-0 rounded-md px-2 py-0.5 font-mono text-[12px] font-semibold"
+                          style={{ color: "#5B6B7C", background: "#EEF1F6" }}
                           data-testid="ur-key"
                         >
                           {urKey(u.ticket_number)}
                         </code>
 
-                        {editingUr === u.id ? (
-                          <Input
-                            autoFocus
-                            defaultValue={u.text}
-                            className="h-7"
-                            data-testid="ur-text-input"
-                            onKeyDown={(e) => {
-                              const v = (
-                                e.target as HTMLInputElement
-                              ).value.trim()
-                              if (e.key === "Enter" && v) {
-                                void updateUr(u.id, { text: v }).then(() => {
+                        {editing ? (
+                          <span
+                            className="flex-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Input
+                              autoFocus
+                              defaultValue={u.text}
+                              className="h-7"
+                              data-testid="ur-text-input"
+                              onKeyDown={(e) => {
+                                const v = (
+                                  e.target as HTMLInputElement
+                                ).value.trim()
+                                if (e.key === "Enter" && v) {
+                                  void updateUr(u.id, { text: v }).then(() => {
+                                    setEditingUr(null)
+                                    void reload()
+                                  })
+                                } else if (e.key === "Escape")
                                   setEditingUr(null)
-                                  void reload()
-                                })
-                              } else if (e.key === "Escape") setEditingUr(null)
-                            }}
-                            onBlur={() => setEditingUr(null)}
-                          />
+                              }}
+                              onBlur={() => setEditingUr(null)}
+                            />
+                          </span>
+                        ) : expanded ? (
+                          <>
+                            <span
+                              className="min-w-0 flex-1 text-[12px] font-semibold tracking-[.02em]"
+                              style={{ color: "#AAB3C0" }}
+                            >
+                              요구사항 상세
+                            </span>
+                            <span data-testid="ur-text" className="sr-only">
+                              {u.text}
+                            </span>
+                          </>
                         ) : (
                           <>
-                            <TruncTooltip text={u.text} />
+                            <span
+                              className="min-w-0 flex-1 truncate text-[14px]"
+                              style={{ color: "#3C4653" }}
+                            >
+                              {u.text}
+                            </span>
                             <span data-testid="ur-text" className="sr-only">
                               {u.text}
                             </span>
@@ -359,90 +543,122 @@ export function UrSection({
 
                         <CoverageText cov={cov.get(u.id)} />
 
-                        {!compact && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-6"
-                              onClick={() =>
-                                setExpandedUr(expanded ? null : u.id)
-                              }
-                              data-testid="ur-expand"
-                              title="펼치기"
-                            >
-                              <ChevronRight
-                                className={cn(
-                                  "size-3.5 transition-transform",
-                                  expanded && "rotate-90"
-                                )}
-                              />
-                            </Button>
-                          </>
-                        )}
+                        {!compact &&
+                          (expanded ? (
+                            <ChevronUp
+                              className="size-4 shrink-0"
+                              style={{ color: "#98A2B0" }}
+                            />
+                          ) : (
+                            <ChevronRight
+                              className="size-4 shrink-0"
+                              style={{ color: "#98A2B0" }}
+                            />
+                          ))}
                       </div>
 
                       {expanded && (
-                        <div className="flex flex-col gap-2 px-1.5 pb-2 pl-7">
-                          <p className="text-[13px] leading-relaxed whitespace-normal">
-                            {u.text}
-                          </p>
-                          {u.status === "오구현" && (
-                            <div
-                              className="flex flex-col gap-1 rounded-md border border-[var(--c-ember)]/40 bg-[rgba(216,95,110,0.05)] p-2"
-                              data-testid="misimpl-box"
-                            >
+                        <div
+                          className="px-1.5 pb-4 pl-7"
+                          data-testid="ur-detail"
+                        >
+                          {/* 커넥터 라인 — 이 내용이 해당 요구사항에 속함을 시각화 */}
+                          <div
+                            className="border-l-2 pt-1.5 pl-[22px]"
+                            style={{ borderColor: "#EDE1E9" }}
+                          >
+                            {/* 요구사항 본문 */}
+                            <div className="mb-2 flex items-center gap-[7px]">
                               <span
-                                className="text-[11px] font-semibold"
-                                style={{ color: "var(--c-ember)" }}
+                                className="size-[5px] rounded-full"
+                                style={{ background: "#E36BA6" }}
+                              />
+                              <span
+                                className="text-[11.5px] font-bold tracking-[.04em]"
+                                style={{ color: "#B0788F" }}
                               >
-                                ⚠ 오작업 사유
+                                요구사항 본문
                               </span>
-                              {editable ? (
-                                <textarea
-                                  defaultValue={u.misimpl_reason ?? ""}
-                                  placeholder="무엇이 어떻게 잘못 작업됐는지…"
-                                  className="min-h-14 rounded border bg-transparent p-2 text-[12.5px] outline-none focus-visible:ring-ring/50 focus-visible:ring-2"
-                                  data-testid="misimpl-reason"
-                                  onBlur={(e) => {
-                                    if (
-                                      e.target.value !== (u.misimpl_reason ?? "")
-                                    )
-                                      void saveReason(u, e.target.value)
-                                  }}
-                                />
-                              ) : (
-                                <p
-                                  className="text-[12.5px] whitespace-normal"
-                                  data-testid="misimpl-reason"
+                            </div>
+                            <div
+                              className="rounded-lg border px-[15px] py-[13px] text-[14.5px] leading-[1.75] whitespace-normal"
+                              style={{
+                                background: "#FDF3F8",
+                                borderColor: "#F6DDEB",
+                                color: "#38424E",
+                              }}
+                            >
+                              {u.text}
+                            </div>
+
+                            {u.status === "오구현" && (
+                              <div
+                                className="mt-3 flex flex-col gap-1 rounded-md border border-[var(--c-ember)]/40 bg-[rgba(216,95,110,0.05)] p-2"
+                                data-testid="misimpl-box"
+                              >
+                                <span
+                                  className="text-[11px] font-semibold"
+                                  style={{ color: "var(--c-ember)" }}
                                 >
-                                  {u.misimpl_reason || "—"}
-                                </p>
-                              )}
-                            </div>
-                          )}
-                          {editable && (
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 gap-1 px-1.5 text-[11px]"
-                                onClick={() => setEditingUr(u.id)}
-                                data-testid="ur-edit"
-                              >
-                                <Pencil className="size-3" />수정
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive size-6"
-                                onClick={() => void removeUr(u.id)}
-                                data-testid="ur-delete"
-                              >
-                                <Trash2 className="size-3" />
-                              </Button>
-                            </div>
-                          )}
+                                  ⚠ 오작업 사유
+                                </span>
+                                {editable ? (
+                                  <textarea
+                                    defaultValue={u.misimpl_reason ?? ""}
+                                    placeholder="무엇이 어떻게 잘못 작업됐는지…"
+                                    className="min-h-14 rounded border bg-transparent p-2 text-[12.5px] outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                                    data-testid="misimpl-reason"
+                                    onBlur={(e) => {
+                                      if (
+                                        e.target.value !==
+                                        (u.misimpl_reason ?? "")
+                                      )
+                                        void saveReason(u, e.target.value)
+                                    }}
+                                  />
+                                ) : (
+                                  <p
+                                    className="text-[12.5px] whitespace-normal"
+                                    data-testid="misimpl-reason"
+                                  >
+                                    {u.misimpl_reason || "—"}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+
+                            {/* 만족시키는 작업 */}
+                            <UrLinkedWorks workIds={worksByUr.get(u.id) ?? []} />
+
+                            {editable && (
+                              <div className="mt-3.5 flex gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingUr(u.id)}
+                                  className="inline-flex items-center gap-1.5 rounded-[7px] border bg-white px-[11px] py-1.5 text-[12.5px] font-semibold transition-colors hover:bg-[#F5F7FA]"
+                                  style={{
+                                    borderColor: "#E3E8EF",
+                                    color: "#6B7684",
+                                  }}
+                                  data-testid="ur-edit"
+                                >
+                                  <Pencil className="size-3.5" />수정
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void removeUr(u.id)}
+                                  className="inline-flex items-center gap-1.5 rounded-[7px] border bg-white px-[11px] py-1.5 text-[12.5px] font-semibold transition-colors hover:bg-[#FCF3F5]"
+                                  style={{
+                                    borderColor: "#E3E8EF",
+                                    color: "#B9707E",
+                                  }}
+                                  data-testid="ur-delete"
+                                >
+                                  <Trash2 className="size-3.5" />삭제
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>

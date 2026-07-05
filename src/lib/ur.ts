@@ -177,6 +177,35 @@ export async function listUrIdsForWork(workId: string): Promise<string[]> {
   return (data ?? []).map((r) => r.ur_id as string)
 }
 
+/** 주어진 UR 을 만족시키는(연결된) 작업 노드 id 목록. */
+export async function listWorkIdsForUr(urId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("ur_work_link")
+    .select("work_id")
+    .eq("ur_id", urId)
+  if (error) throw new Error(error.message)
+  return (data ?? []).map((r) => r.work_id as string)
+}
+
+/**
+ * 한 세부기능이 소유한 모든 UR 의 링크(ur_id→work_id)를 한 번의 쿼리로.
+ * 임베디드 리소스(ur!inner)로 feature_id 필터 → UR 펼침 시 개별 조회(N+1) 제거,
+ * 진입 시 프리페치해 펼침을 즉시 렌더하게 한다.
+ */
+export async function listWorkLinksBySubFeature(
+  subFeatureId: string
+): Promise<{ ur_id: string; work_id: string }[]> {
+  const { data, error } = await supabase
+    .from("ur_work_link")
+    .select("ur_id, work_id, ur!inner(feature_id)")
+    .eq("ur.feature_id", subFeatureId)
+  if (error) throw new Error(error.message)
+  return (data ?? []).map((r) => ({
+    ur_id: r.ur_id as string,
+    work_id: r.work_id as string,
+  }))
+}
+
 export async function linkUrWork(urId: string, workId: string): Promise<void> {
   const { error } = await supabase
     .from("ur_work_link")

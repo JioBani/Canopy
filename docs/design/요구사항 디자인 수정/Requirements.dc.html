@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+  body { margin:0; background:#F4F6F9; }
+  * { box-sizing:border-box; }
+</style>
+</helmet>
+<div style="font-family:'Pretendard','Malgun Gothic',system-ui,sans-serif; color:#2B333D; max-width:1000px; margin:0 auto; padding:28px 20px 80px;">
+
+  <div style="background:#fff; border:1px solid #E6EAF0; border-radius:14px; box-shadow:0 1px 2px rgba(20,30,50,.04); overflow:hidden;">
+
+    <sc-for list="{{ sections }}" as="sec" hint-placeholder-count="3">
+      <div style="border-top:1px solid #EEF1F6;">
+
+        <!-- Section header -->
+        <div onClick="{{ sec.toggle }}" style="display:flex; align-items:center; gap:8px; padding:14px 20px; cursor:pointer; user-select:none;">
+          <sc-if value="{{ sec.open }}" hint-placeholder-val="{{ true }}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5A6675" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </sc-if>
+          <sc-if value="{{ sec.closed }}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5A6675" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </sc-if>
+          <span style="font-size:15px; font-weight:700; color:#1B2430;">{{ sec.title }}</span>
+          <span style="display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:#F0F2F6; color:#7A8698; font-size:12px; font-weight:600;">{{ sec.count }}</span>
+        </div>
+
+        <!-- Requirements -->
+        <sc-if value="{{ sec.open }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <sc-for list="{{ sec.requirements }}" as="req" hint-placeholder-count="3">
+              <div style="border-top:1px solid #F1F3F7;">
+
+                <!-- Requirement header row -->
+                <div onClick="{{ req.toggle }}" style="display:flex; align-items:center; gap:12px; padding:11px 20px 11px 40px; cursor:pointer;" style-hover="{{ req.rowHoverStyle }}">
+                  <span style="flex:none; display:inline-flex;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D65A9A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6 5-5.6"/></svg>
+                  </span>
+                  <span style="flex:none; font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace; font-size:12.5px; font-weight:600; color:#5B6B7C; padding:2px 8px; background:#EEF1F6; border-radius:6px;">{{ req.label }}</span>
+
+                  <sc-if value="{{ req.closed }}">
+                    <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px; color:#3C4653;">{{ req.text }}</span>
+                  </sc-if>
+                  <sc-if value="{{ req.open }}">
+                    <span style="flex:1; min-width:0; font-size:12px; font-weight:600; letter-spacing:.02em; color:#AAB3C0;">요구사항 상세</span>
+                  </sc-if>
+
+                  <span style="flex:none; display:inline-flex; align-items:center; gap:6px;">
+                    <span style="font-size:12px; color:#9AA4B2;">작업 <b style="color:#6B7684; font-weight:700;">{{ req.taskCount }}</b> / 완료 <b style="{{ req.doneStyle }}">{{ req.doneCount }}</b></span>
+                    <sc-if value="{{ req.open }}">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#98A2B0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>
+                    </sc-if>
+                    <sc-if value="{{ req.closed }}">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#98A2B0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                    </sc-if>
+                  </span>
+                </div>
+
+                <!-- Expanded detail -->
+                <sc-if value="{{ req.open }}">
+                  <div style="padding:2px 20px 20px 40px; background:#FBFCFE;">
+                    <div style="border-left:2px solid #EDE1E9; padding-left:22px; padding-top:6px;">
+
+                      <!-- 요구사항 본문 -->
+                      <div style="display:flex; align-items:center; gap:7px; margin-bottom:8px;">
+                        <span style="width:5px; height:5px; border-radius:50%; background:#E36BA6;"></span>
+                        <span style="font-size:11.5px; font-weight:700; letter-spacing:.04em; color:#B0788F;">요구사항 본문</span>
+                      </div>
+                      <div style="background:#FDF3F8; border:1px solid #F6DDEB; border-radius:8px; padding:13px 15px; font-size:14.5px; line-height:1.75; color:#38424E;">{{ req.text }}</div>
+
+                      <!-- 만족시키는 작업 -->
+                      <div style="display:flex; align-items:center; gap:7px; margin:20px 0 10px;">
+                        <span style="width:5px; height:5px; border-radius:50%; background:#8AA0C4;"></span>
+                        <span style="font-size:11.5px; font-weight:700; letter-spacing:.04em; color:#7C8AA0;">만족시키는 작업</span>
+                        <span style="display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:#EDF1F7; color:#7C8AA0; font-size:11px; font-weight:700;">{{ req.taskCount }}</span>
+                      </div>
+
+                      <sc-if value="{{ req.hasTasks }}">
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                          <sc-for list="{{ req.tasks }}" as="task" hint-placeholder-count="1">
+                            <div style="display:flex; align-items:flex-start; gap:11px; background:#fff; border:1px solid #E7ECF3; border-radius:9px; padding:11px 13px;">
+                              <span onClick="{{ task.toggle }}" style="flex:none; display:inline-flex; margin-top:1px; cursor:pointer;">
+                                <sc-if value="{{ task.done }}" hint-placeholder-val="{{ true }}">
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#D6398E" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5" stroke="none"/><path d="M7 12.4l3 3 6.5-7"/></svg>
+                                </sc-if>
+                                <sc-if value="{{ task.notDone }}">
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BAC2CE" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="4"/></svg>
+                                </sc-if>
+                              </span>
+                              <span style="flex:none; font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace; font-size:12px; font-weight:600; color:#5B6B7C; padding:2px 7px; background:#EEF1F6; border-radius:5px; margin-top:0px;">{{ task.label }}</span>
+                              <span style="flex:1; min-width:0; font-size:13.5px; line-height:1.6; color:#3C4653;">{{ task.text }}</span>
+                              <sc-if value="{{ task.done }}">
+                                <span style="flex:none; display:inline-flex; align-items:center; gap:4px; color:#D6398E; font-size:12px; font-weight:700; margin-top:1px;">
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#D6398E"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.7 5.9 20.4l1.5-6.8L2.2 9l6.9-.7z"/></svg>
+                                  완료
+                                </span>
+                              </sc-if>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+
+                      <sc-if value="{{ req.noTasks }}">
+                        <div style="border:1px dashed #DCE2EB; border-radius:9px; padding:16px; text-align:center; color:#9AA4B2; font-size:13px;">아직 등록된 작업이 없습니다.</div>
+                      </sc-if>
+
+                      <sc-if value="{{ showActions }}" hint-placeholder-val="{{ true }}">
+                        <div style="display:flex; gap:6px; margin-top:14px;">
+                          <button style="display:inline-flex; align-items:center; gap:5px; border:1px solid #E3E8EF; background:#fff; color:#6B7684; font-size:12.5px; font-weight:600; padding:6px 11px; border-radius:7px; cursor:pointer; font-family:inherit;" style-hover="background:#F5F7FA;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+                            수정
+                          </button>
+                          <button style="display:inline-flex; align-items:center; gap:5px; border:1px solid #E3E8EF; background:#fff; color:#B9707E; font-size:12.5px; font-weight:600; padding:6px 11px; border-radius:7px; cursor:pointer; font-family:inherit;" style-hover="background:#FCF3F5;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+                            삭제
+                          </button>
+                        </div>
+                      </sc-if>
+
+                    </div>
+                  </div>
+                </sc-if>
+
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+      </div>
+    </sc-for>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1000,&quot;height&quot;:720},&quot;expandByDefault&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;동작&quot;},&quot;showActions&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;동작&quot;}}">
+class Component extends DCLogic {
+  data = [
+    { id:'s1', title:'공통체계', reqs:[
+      { id:1, text:'모든 유닛(소환수·소환술사·침략자)은 동일한 능력치 체계를 공유한다.', tasks:[] },
+      { id:2, text:'유닛은 공격력·공격 속도·사거리·치명타 확률·치명타 배율·피해 증가·최대 체력·방어력·이동 속도·쿨타임 감소의 10종 능력치를 가지며, 각 능력치는 기획서 표에 정의된 효과를 가진다.', tasks:[
+        { id:2, text:'능력치 종류 집합 10종 단일화 (공격력·방어력 단일화, 상태저항력·받는 피해 감소 제거)', done:true } ] },
+      { id:3, text:'각 능력치의 단위·범위: 공격력 0~무한(정수)·공격 속도 0.1~무한(실수)·사거리 0~무한(실수)·치명타 확률 0~100%(기본 0%)·치명타 배율 1.0~무한(기본 1.0).', tasks:[] },
+      { id:4, text:'본 게임은 공격 타입을 물리/마법으로 분리하지 않고, 단일 공격력·단일 방어력 능력치만 사용한다.', tasks:[] },
+    ]},
+    { id:'s2', title:'스탯구조', reqs:[
+      { id:5, text:'각 능력치는 기본 스탯과 추가 스탯으로 구성된다.', tasks:[] },
+      { id:6, text:'기본 스탯은 유닛이 본래 가진 능력치다.', tasks:[] },
+      { id:7, text:'추가 스탯은 시너지·전술지원·버프 등 외부 효과로 증감하는 능력치다.', tasks:[] },
+      { id:8, text:'최종 스탯은 기본 스탯과 추가 스탯의 합이며, 전투에는 최종 스탯이 적용된다.', tasks:[] },
+    ]},
+    { id:'s3', title:'수정자', reqs:[
+      { id:9, text:'외부 효과는 수정자를 통해 유닛의 스탯을 변경하되, 수정자의 존재 자체는 플레이어에게 노출되지 않는다.', tasks:[] },
+      { id:10, text:'수정자는 고정값(정해진 수치를 더함)과 비율(비율만큼 올림)의 두 종류로 구분된다.', tasks:[] },
+      { id:11, text:'각 수정자는 출처를 가지며, 출처가 된 효과가 해제되면 그 수정자만 사라진다(상태 효과 모델로 표현).', tasks:[] },
+      { id:12, text:'수정자가 추가되거나 빠지면 최종 스탯이 자동으로 다시 계산된다.', tasks:[] },
+      { id:13, text:'최종 스탯이 바뀌면 유닛의 행동(공격 속도·이동 속도·사거리 등)에 즉시 반영된다.', tasks:[] },
+    ]},
+  ];
+
+  state = { openSecs:{ s1:true, s2:true, s3:true }, openReqs:{}, done:{} };
+
+  componentDidMount() {
+    const expandAll = this.props.expandByDefault;
+    const openReqs = {};
+    this.data.forEach(s => s.reqs.forEach(r => { if (expandAll || r.id === 2) openReqs['r'+r.id] = true; }));
+    const done = {};
+    this.data.forEach(s => s.reqs.forEach(r => r.tasks.forEach(t => { done[r.id+'-'+t.id] = t.done; })));
+    this.setState({ openReqs, done });
+  }
+
+  toggleSec(id){ this.setState(s => ({ openSecs: { ...s.openSecs, [id]: !s.openSecs[id] } })); }
+  toggleReq(id){ this.setState(s => ({ openReqs: { ...s.openReqs, ['r'+id]: !s.openReqs['r'+id] } })); }
+  toggleTask(rid,tid){ const k=rid+'-'+tid; this.setState(s => ({ done: { ...s.done, [k]: !s.done[k] } })); }
+
+  renderVals() {
+    const showActions = this.props.showActions ?? true;
+    const sections = this.data.map(sec => {
+      const open = !!this.state.openSecs[sec.id];
+      const requirements = sec.reqs.map(r => {
+        const rOpen = !!this.state.openReqs['r'+r.id];
+        const tasks = r.tasks.map(t => {
+          const d = this.state.done[r.id+'-'+t.id];
+          return { label:'Task-'+t.id, text:t.text, done:!!d, notDone:!d, toggle:(e)=>{ e && e.stopPropagation && e.stopPropagation(); this.toggleTask(r.id,t.id); } };
+        });
+        const doneCount = tasks.filter(t=>t.done).length;
+        return {
+          label:'Requirement-'+r.id, text:r.text,
+          open:rOpen, closed:!rOpen,
+          taskCount:r.tasks.length, doneCount,
+          doneStyle: doneCount>0 ? 'color:#D6398E; font-weight:700;' : 'color:#6B7684; font-weight:700;',
+          hasTasks:r.tasks.length>0, noTasks:r.tasks.length===0,
+          rowHoverStyle:'background:#F7F9FC;',
+          tasks,
+          toggle:()=>this.toggleReq(r.id),
+        };
+      });
+      return { title:sec.title, count:sec.reqs.length, open, closed:!open, requirements, toggle:()=>this.toggleSec(sec.id) };
+    });
+    return { sections, showActions };
+  }
+}
+</script>
+</body>
+</html>

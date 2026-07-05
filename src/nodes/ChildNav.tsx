@@ -2,7 +2,7 @@ import { useNodes } from "@/nodes/NodesProvider"
 import { ProgressBadge, StatusBadge } from "@/nodes/NodeBadges"
 import { PIXEL_ICONS } from "@/nodes/pixelIcons"
 import { LAYER_COLOR } from "@/nodes/layerColors"
-import { TYPE_META } from "@/nodes/nodeGrammar"
+import { TYPE_META, ticketKey } from "@/nodes/nodeGrammar"
 
 /**
  * 상세 패널 드릴다운 — 비-잎 노드의 "한 단계 아래" 자식 목록을 클릭 가능한 네비로.
@@ -40,20 +40,29 @@ export function ChildNav({ parentId }: { parentId: string }) {
               className="size-4 shrink-0"
               style={{ color: LAYER_COLOR[k.type].base }}
             />
+            <code
+              className="tnum shrink-0 font-mono text-[11px] font-semibold"
+              style={{ color: "var(--c-plum)" }}
+              data-testid="child-nav-key"
+            >
+              {ticketKey(k.type, k.ticket_number)}
+            </code>
             <span className="min-w-0 flex-1 truncate text-[13.5px]">
               {k.title}
             </span>
             <span
-              className="text-[10.5px] font-medium"
+              className="shrink-0 text-[10.5px] font-medium"
               style={{ color: "var(--c-ink-3)" }}
             >
               {TYPE_META[k.type].label}
             </span>
-            {k.type === "작업" ? (
-              <StatusBadge statusId={k.status_id} />
-            ) : (
-              <ProgressBadge nodeId={k.id} />
-            )}
+            <span className="shrink-0">
+              {k.type === "작업" ? (
+                <StatusBadge statusId={k.status_id} />
+              ) : (
+                <ProgressBadge nodeId={k.id} />
+              )}
+            </span>
           </button>
         )
       })}

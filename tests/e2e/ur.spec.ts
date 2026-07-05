@@ -66,7 +66,7 @@ test.describe.serial("UR 서브시스템 (세부기능 소유)", () => {
     // 상태 오구현 + 사유 입력
     await urRow(page, "2마리 합성").getByTestId("ur-state").click()
     await page.getByTestId("ur-state-option").filter({ hasText: "오작업" }).click()
-    await urRow(page, "2마리 합성").getByTestId("ur-expand").click()
+    await urRow(page, "2마리 합성").getByTestId("ur-row-header").click()
     await page.getByTestId("misimpl-reason").fill("물리/마법으로 분리됨")
     await page.getByTestId("misimpl-reason").blur()
 
