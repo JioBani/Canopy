@@ -4,7 +4,11 @@ import { defineConfig } from "vitest/config"
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["tests/backend/**/*.test.ts", "tests/unit/**/*.test.ts"],
+    include: [
+      "tests/backend/**/*.test.ts",
+      "tests/unit/**/*.test.ts",
+      "tests/cli/**/*.test.mjs",
+    ],
     testTimeout: 20000,
     hookTimeout: 20000,
     // DB 상태 공유 자원이므로 파일 간 병렬 실행을 피해 격리/안정성 우선.

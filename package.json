@@ -4,12 +4,18 @@
   "description": "게임 기획 계층 관리용 커스텀 Jira 대체 웹앱",
   "private": true,
   "type": "module",
+  "bin": {
+    "canopy": "./cli/canopy.mjs"
+  },
   "scripts": {
+    "canopy": "node ./cli/canopy.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "test:backend": "vitest run",
+    "test:cli": "vitest run tests/cli",
+    "test:cli:local": "node tests/cli/local-integration.mjs",
     "test:e2e": "playwright test",
     "predemo": "supabase start",
     "demo": "vite --mode e2e --port 5173 --strictPort",
