@@ -1,4 +1,5 @@
-import { useMemo, useState, type DragEvent } from "react"
+import { useEffect, useMemo, useState, type DragEvent } from "react"
+import { ClipboardList } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
 import { memberLabel } from "@/lib/members"
 import { ticketKey, TYPE_META, type NodeType } from "@/nodes/nodeGrammar"
@@ -9,11 +10,17 @@ import type { AppNode, NodeDomain } from "@/lib/nodes"
 import { BLOOM_GLYPH, CATEGORY_TEXT_COLOR } from "@/nodes/bloomGlyph"
 import { CATEGORY_COLOR } from "@/lib/statuses"
 import { FilterSelect } from "@/components/ui/filter-select"
+import { listUrs, updateUr, type Ur, type UrStatus } from "@/lib/ur"
+import { UrBoard } from "@/ur/UrBoard"
+import { getPriority, PRIORITIES, PRIORITY_COLOR } from "@/lib/fields"
 import { cn } from "@/lib/utils"
 
 const CATEGORIES: StatusCategory[] = ["할일", "진행중", "완료", "취소됨"]
-/** 보드 레이어 선택지 (작업 기본). */
+/** 보드 레이어: 노드 타입 + 요구사항(UR, 노드 아님). */
+type BoardLayer = NodeType | "요구사항"
+/** 보드 레이어 선택지 (작업 기본, 마지막에 요구사항). */
 const LAYERS: NodeType[] = ["작업", "세부기능", "기능", "컨텐츠", "마스터데이터"]
+const LAYER_TABS: BoardLayer[] = [...LAYERS, "요구사항"]
 const DOMAINS: NodeDomain[] = [
   "기획",
   "디자인",
@@ -45,6 +52,7 @@ function BoardCard({ node }: { node: AppNode }) {
   const { getStatus, getMember, openNode } = useNodes()
   const status = getStatus(node.status_id)
   const assignee = node.assignee_id ? getMember(node.assignee_id) : undefined
+  const priority = getPriority(node.fields)
   const ticket = ticketKey(node.type, node.ticket_number)
 
   function onDragStart(e: DragEvent<HTMLDivElement>) {
@@ -90,6 +98,21 @@ function BoardCard({ node }: { node: AppNode }) {
       </div>
       <div className="line-clamp-2 text-[13px] leading-snug">{node.title}</div>
       <div className="flex items-center gap-2">
+        {priority && (
+          <span
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] font-medium"
+            style={{ background: "var(--c-bg-sunken)", color: "var(--c-ink-2)" }}
+            data-testid="board-card-priority"
+            data-priority={priority}
+            title={`우선순위: ${priority}`}
+          >
+            <span
+              className="size-1.5 rounded-full"
+              style={{ background: PRIORITY_COLOR[priority] }}
+            />
+            {priority}
+          </span>
+        )}
         {node.domain && (
           <span
             className="rounded-md px-1.5 py-0.5 text-[10.5px] font-medium"
@@ -113,12 +136,13 @@ function BoardCard({ node }: { node: AppNode }) {
 }
 
 export function BoardView() {
-  const { nodes, statuses, members, updateFields } = useNodes()
-  const [layer, setLayer] = useState<NodeType>("작업")
+  const { nodes, statuses, members, updateFields, openNode } = useNodes()
+  const [layer, setLayer] = useState<BoardLayer>("작업")
   const [fDomain, setFDomain] = useState("")
   const [fAssignee, setFAssignee] = useState("")
   const [fContent, setFContent] = useState("")
   const [fFeature, setFFeature] = useState("")
+  const [fPriority, setFPriority] = useState("")
 
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
   const statusById = useMemo(
@@ -130,9 +154,14 @@ export function BoardView() {
 
   // 도메인/담당 필터는 작업 레이어에만 의미. 컨텐츠/기능 조상 필터는 그 조상이 있는 레이어만.
   const isTaskLayer = layer === "작업"
+  const isUrLayer = layer === "요구사항"
+  // UR 은 세부기능 소유 → 컨텐츠/기능 조상 있음. 컨텐츠 레이어만 컨텐츠 필터 숨김.
   const showContentFilter = layer !== "컨텐츠"
   const showFeatureFilter =
-    layer === "작업" || layer === "세부기능" || layer === "마스터데이터"
+    isUrLayer ||
+    layer === "작업" ||
+    layer === "세부기능" ||
+    layer === "마스터데이터"
 
   const cards = useMemo(() => {
     return nodes
@@ -146,6 +175,7 @@ export function BoardView() {
         if (isTaskLayer && fDomain && node.domain !== fDomain) return false
         if (isTaskLayer && fAssignee && node.assignee_id !== fAssignee)
           return false
+        if (fPriority && getPriority(node.fields) !== fPriority) return false
         return true
       })
       .map(({ node }) => node)
@@ -160,7 +190,61 @@ export function BoardView() {
     fAssignee,
     fContent,
     fFeature,
+    fPriority,
   ])
+
+  // ── 요구사항(UR) 레이어 ────────────────────────────────────────────
+  // UR 은 노드가 아니라 세부기능 소유 별도 엔티티 → 보드 진입 시 별도 로드.
+  const subFeatureIds = useMemo(
+    () => nodes.filter((n) => n.type === "세부기능").map((n) => n.id),
+    [nodes]
+  )
+  const [urs, setUrs] = useState<Ur[] | null>(null)
+
+  useEffect(() => {
+    if (!isUrLayer) return
+    let alive = true
+    setUrs(null)
+    listUrs(subFeatureIds)
+      .then((rows) => {
+        if (alive) setUrs(rows)
+      })
+      .catch((e) => {
+        console.error("[board] UR 로드 실패:", e)
+        if (alive) setUrs([])
+      })
+    return () => {
+      alive = false
+    }
+  }, [isUrLayer, subFeatureIds])
+
+  // 컨텐츠/기능 필터를 소유 세부기능의 조상 기준으로 적용.
+  const urCards = useMemo(() => {
+    if (!urs) return []
+    return urs.filter((u) => {
+      const owner = byId.get(u.feature_id)
+      if (!owner) return false
+      const anc = ancestorsOf(owner, byId)
+      if (fContent && anc.contentId !== fContent) return false
+      if (fFeature && anc.featureId !== fFeature) return false
+      return true
+    })
+  }, [urs, byId, fContent, fFeature])
+
+  async function updateUrStatus(id: string, status: UrStatus) {
+    setUrs((prev) =>
+      prev ? prev.map((u) => (u.id === id ? { ...u, status } : u)) : prev
+    )
+    try {
+      await updateUr(id, { status })
+    } catch (e) {
+      console.error("[board] UR 상태 변경 실패:", e)
+      // 실패 시 서버 상태로 되돌림.
+      listUrs(subFeatureIds)
+        .then(setUrs)
+        .catch(() => {})
+    }
+  }
 
   function categoryOf(node: AppNode): StatusCategory | "미지정" {
     const s = node.status_id ? statusById.get(node.status_id) : undefined
@@ -202,8 +286,11 @@ export function BoardView() {
           className="flex items-center gap-0.5 rounded-lg bg-[var(--c-bg-sunken)] p-0.5"
           role="tablist"
         >
-          {LAYERS.map((l) => {
-            const Icon = PIXEL_ICONS[l]
+          {LAYER_TABS.map((l) => {
+            const Icon = l === "요구사항" ? ClipboardList : PIXEL_ICONS[l]
+            const color =
+              l === "요구사항" ? "var(--c-sakura)" : LAYER_COLOR[l].base
+            const label = l === "요구사항" ? "요구사항" : TYPE_META[l].label
             const active = layer === l
             return (
               <button
@@ -219,11 +306,8 @@ export function BoardView() {
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <Icon
-                  className="size-3.5"
-                  style={{ color: LAYER_COLOR[l].base }}
-                />
-                {TYPE_META[l].label}
+                <Icon className="size-3.5" style={{ color }} />
+                {label}
               </button>
             )
           })}
@@ -249,6 +333,15 @@ export function BoardView() {
             testid="board-filter-feature"
           />
         )}
+        {!isUrLayer && (
+          <FilterSelect
+            value={fPriority}
+            onChange={setFPriority}
+            allLabel="우선순위"
+            items={PRIORITIES.map((p) => ({ value: p, label: p }))}
+            testid="board-filter-priority"
+          />
+        )}
         {isTaskLayer && (
           <>
             <FilterSelect
@@ -270,6 +363,15 @@ export function BoardView() {
       </div>
 
       {/* 컬럼 */}
+      {isUrLayer ? (
+        <UrBoard
+          urs={urCards}
+          loading={urs === null}
+          byId={byId}
+          onOpenOwner={openNode}
+          onChangeStatus={updateUrStatus}
+        />
+      ) : (
       <div className="flex flex-1 gap-3 overflow-x-auto p-4">
         {columns.map((col) => {
           const colTasks = cards.filter((t) => categoryOf(t) === col)
@@ -309,6 +411,7 @@ export function BoardView() {
           )
         })}
       </div>
+      )}
     </div>
   )
 }

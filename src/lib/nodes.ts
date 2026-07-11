@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase"
 import type { NodeType } from "@/nodes/nodeGrammar"
+import type { NodeFields } from "@/lib/fields"
 
 export type NodeDomain =
   | "기획"
@@ -23,6 +24,8 @@ export interface AppNode {
   assignee_id: string | null
   /** 작업 시간 수동 보정(분). 표시 총시간 = 이 값 + Σ(종료 로그 duration). */
   time_spent_minutes: number
+  /** 커스텀 필드 값 컨테이너(jsonb, 기본 {}). 예: { priority: "높음" }. */
+  fields: NodeFields
   created_at: string
   updated_at: string
 }
@@ -77,6 +80,7 @@ export async function updateNode(
       | "domain"
       | "assignee_id"
       | "time_spent_minutes"
+      | "fields"
     >
   >
 ): Promise<AppNode> {

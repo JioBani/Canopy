@@ -16,6 +16,13 @@ import { TaskBlocks } from "@/ur/TaskBlocks"
 import { WorkLogSection } from "@/ur/WorkLogSection"
 import type { NodeDomain } from "@/lib/nodes"
 import type { StatusCategory } from "@/lib/statuses"
+import {
+  PRIORITIES,
+  PRIORITY_COLOR,
+  getPriority,
+  withPriority,
+  type Priority,
+} from "@/lib/fields"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -185,6 +192,7 @@ export function NodeDetail() {
   const assignee = node.assignee_id
     ? members.find((m) => m.id === node.assignee_id)
     : undefined
+  const priority = getPriority(node.fields)
 
   return (
     <div className="mx-auto w-full max-w-5xl" data-testid="node-detail">
@@ -239,6 +247,44 @@ export function NodeDetail() {
                     )
                   })}
                 </SelectGroup>
+              ))}
+            </GuardedSelect>
+          </PropField>
+
+          {/* 우선순위 — 전 타입(커스텀 필드 priority, 0007 시드). 값=node.fields.priority. */}
+          <PropField label="우선순위">
+            <GuardedSelect
+              value={priority ?? NONE}
+              onValueChange={(v) =>
+                set({
+                  fields: withPriority(
+                    node.fields,
+                    v === NONE ? null : (v as Priority)
+                  ),
+                })
+              }
+              placeholder="우선순위"
+              testid="detail-priority"
+              leading={
+                priority ? (
+                  <span
+                    aria-hidden
+                    className="inline-block size-2.5 shrink-0 rounded-full"
+                    style={{ background: PRIORITY_COLOR[priority] }}
+                  />
+                ) : undefined
+              }
+            >
+              <SelectItem value={NONE}>미지정</SelectItem>
+              {PRIORITIES.map((p) => (
+                <SelectItem key={p} value={p} textValue={p}>
+                  <span
+                    aria-hidden
+                    className="inline-block size-2.5 shrink-0 rounded-full"
+                    style={{ background: PRIORITY_COLOR[p] }}
+                  />
+                  {p}
+                </SelectItem>
               ))}
             </GuardedSelect>
           </PropField>

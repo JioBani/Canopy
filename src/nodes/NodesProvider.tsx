@@ -55,6 +55,7 @@ interface NodesContextValue {
         | "domain"
         | "assignee_id"
         | "time_spent_minutes"
+        | "fields"
       >
     >
   ) => Promise<void>
