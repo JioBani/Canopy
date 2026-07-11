@@ -13,7 +13,7 @@ export function ProgressBadge({ nodeId }: { nodeId: string }) {
   if (!np || np.total_urs === 0 || np.progress === null) {
     return (
       <span
-        className="w-[68px] text-right text-xs"
+        className="w-[84px] text-right text-xs"
         style={{ color: "var(--c-ink-3)" }}
         data-testid="node-progress"
         data-progress="none"
@@ -29,7 +29,7 @@ export function ProgressBadge({ nodeId }: { nodeId: string }) {
   const filled = Math.round(np.progress * cells)
   return (
     <span
-      className="flex w-[68px] items-center justify-end gap-1.5"
+      className="flex w-[84px] items-center justify-end gap-1.5"
       data-testid="node-progress"
       data-progress={String(pct)}
       title={`요구사항 ${np.done_urs}/${np.total_urs} 완료`}
