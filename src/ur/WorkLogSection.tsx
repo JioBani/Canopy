@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { Pause, Pencil, Play, Trash2 } from "lucide-react"
+import { Clock, Pause, Pencil, Play, Trash2 } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
 import { Markdown } from "@/components/Markdown"
 import { memberLabel } from "@/lib/members"
@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { FilterSelect } from "@/components/ui/filter-select"
+import { Section } from "@/components/ds"
 
 /** now-앵커 라이브 시계: started_at 기준 경과(초). 1초마다 갱신(표시용). */
 function useNowTick(active: boolean): number {
@@ -140,80 +141,68 @@ export function WorkLogSection({
     setEditingLogId(null)
   }
 
-  return (
-    <section className="flex flex-col gap-3" data-testid="work-log-section">
-      <div className="flex flex-wrap items-center gap-2">
-        <h3 className="font-display text-[15px] font-bold">작업 시간</h3>
+  const totalNode = editingTotal ? (
+    <label className="text-body text-fg-2 flex items-center gap-1.5">
+      총
+      <Input
+        type="number"
+        autoFocus
+        defaultValue={total}
+        className="h-8 w-24"
+        data-testid="work-log-total-input"
+        onBlur={(e) => {
+          const v = Math.max(0, Math.round(Number(e.target.value) || 0))
+          if (v !== total)
+            void updateFields(workId, { time_spent_minutes: v - logged })
+        }}
+      />
+      분
+    </label>
+  ) : (
+    <span className="text-body text-fg tnum font-semibold" data-testid="work-log-total">
+      총 {formatMinutes(total)}
+    </span>
+  )
 
-        {/* 총 작업 시간 — 텍스트 + 작은 수정 토글 */}
-        {editingTotal ? (
-          <label className="flex items-center gap-1.5 text-[13px]">
-            <span style={{ color: "var(--c-ink-3)" }}>총</span>
-            <Input
-              type="number"
-              autoFocus
-              defaultValue={total}
-              className="h-7 w-20"
-              data-testid="work-log-total-input"
-              onBlur={(e) => {
-                const v = Math.max(0, Math.round(Number(e.target.value) || 0))
-                if (v !== total)
-                  void updateFields(workId, { time_spent_minutes: v - logged })
-              }}
-            />
-            <span style={{ color: "var(--c-ink-3)" }}>분</span>
-          </label>
+  return (
+    <Section
+      icon={<Clock />}
+      title="작업 시간"
+      data-testid="work-log-section"
+      actions={
+        active ? (
+          <>
+            <span className="text-body text-danger tnum font-semibold" data-testid="work-log-active">
+              ● {clock((now - new Date(active.started_at).getTime()) / 1000)}
+            </span>
+            <Button size="sm" onClick={() => void stop()} data-testid="work-log-stop">
+              <Pause />종료
+            </Button>
+          </>
         ) : (
-          <span
-            className="tnum text-[13px] font-semibold"
-            style={{ color: "var(--c-plum)" }}
-            data-testid="work-log-total"
-          >
-            총 {formatMinutes(total)}
-          </span>
-        )}
+          <Button size="sm" variant="outline" onClick={() => void start()} data-testid="work-log-start">
+            <Play />작업 시작
+          </Button>
+        )
+      }
+    >
+      <div className="mb-4 flex items-center gap-1">
+        {totalNode}
         <Button
           variant={editingTotal ? "default" : "ghost"}
-          size="icon"
-          className="size-7"
+          size="icon-sm"
           onClick={() => setEditingTotal((v) => !v)}
           data-testid="work-log-total-edit"
           title="총 작업 시간 보정"
         >
-          <Pencil className="size-3.5" />
+          <Pencil />
         </Button>
-
-        {/* 시작/종료 (즉시 동작) */}
-        {active ? (
-          <span className="ml-auto flex items-center gap-2">
-            <span
-              className="tnum text-[13px] font-semibold"
-              style={{ color: "var(--c-ember)" }}
-              data-testid="work-log-active"
-            >
-              ● {clock((now - new Date(active.started_at).getTime()) / 1000)}
-            </span>
-            <Button size="sm" onClick={() => void stop()} data-testid="work-log-stop">
-              <Pause className="size-3.5" />종료
-            </Button>
-          </span>
-        ) : (
-          <Button
-            size="sm"
-            variant="outline"
-            className="ml-auto"
-            onClick={() => void start()}
-            data-testid="work-log-start"
-          >
-            <Play className="size-3.5" />작업 시작
-          </Button>
-        )}
       </div>
 
       {/* 로그 목록 — 내용은 댓글처럼 아래에(마크다운) */}
       <div className="flex flex-col gap-2">
         {ordered.length === 0 && (
-          <p className="text-muted-foreground text-[13px]">작업 로그가 없습니다.</p>
+          <p className="text-body text-fg-3">작업 로그가 없습니다. ‘작업 시작’을 누르면 기록됩니다.</p>
         )}
         {ordered.map((l) => {
           const editing = editingLogId === l.id
@@ -222,10 +211,10 @@ export function WorkLogSection({
             <div
               key={l.id}
               className={
-                "flex flex-col gap-2 rounded-[10px] border px-3 py-2.5 text-[13px] " +
+                "text-body flex flex-col gap-2 rounded-lg border px-4 py-3 " +
                 (running
-                  ? "border-[var(--c-ember)] bg-[rgba(216,95,110,0.06)] ring-1 ring-[var(--c-ember)]/30"
-                  : "border-border bg-card")
+                  ? "border-danger/40 bg-danger-soft"
+                  : "border-line bg-surface")
               }
               data-testid="work-log-row"
               data-running={running ? "true" : "false"}
@@ -241,31 +230,31 @@ export function WorkLogSection({
                       onChange={(e) => setEditStart(e.target.value)}
                       onBlur={() => void saveTimes(l)}
                       data-testid="work-log-start-input"
-                      className="border-input h-7 rounded-md border bg-card px-2 text-[12.5px]"
+                      className="border-line-strong bg-surface text-body h-8 rounded-md border px-2"
                     />
                     {l.ended_at && (
                       <>
-                        <span style={{ color: "var(--c-ink-3)" }}>→</span>
+                        <span className="text-fg-3">→</span>
                         <input
                           type="datetime-local"
                           value={editEnd}
                           onChange={(e) => setEditEnd(e.target.value)}
                           onBlur={() => void saveTimes(l)}
                           data-testid="work-log-end-input"
-                          className="border-input h-7 rounded-md border bg-card px-2 text-[12.5px]"
+                          className="border-line-strong bg-surface text-body h-8 rounded-md border px-2"
                         />
                       </>
                     )}
                   </span>
                 ) : (
                   <>
-                    <span className="tnum shrink-0" style={{ color: "var(--c-ink-3)" }}>
+                    <span className="tnum text-fg-2 shrink-0">
                       {timeLabel(l.started_at)}
                       {" → "}
                       {l.ended_at ? timeLabel(l.ended_at) : "진행 중"}
                     </span>
                     {l.ended_at && (
-                      <span className="tnum font-semibold" data-testid="work-log-duration">
+                      <span className="tnum text-fg font-semibold" data-testid="work-log-duration">
                         {formatMinutes(l.duration_minutes ?? 0)}
                       </span>
                     )}
@@ -284,8 +273,7 @@ export function WorkLogSection({
                   />
                 ) : (
                   <span
-                    className="rounded-md px-1.5 py-0.5 text-[11.5px]"
-                    style={{ background: "var(--c-pink-bg)", color: "var(--c-plum)" }}
+                    className="text-label bg-sunken text-fg-2 rounded-md px-2 py-0.5"
                     data-testid="work-log-member"
                   >
                     {nameOf(l.member_id)}
@@ -296,24 +284,23 @@ export function WorkLogSection({
                   <Button
                     variant={editing ? "default" : "ghost"}
                     size="sm"
-                    className="h-7 gap-1 text-xs"
                     onClick={() => (editing ? setEditingLogId(null) : openLogEdit(l))}
                     data-testid="work-log-edit"
                   >
-                    {!editing && <Pencil className="size-3" />}
+                    {!editing && <Pencil />}
                     {editing ? "완료" : "수정"}
                   </Button>
                   {/* 진행 중(미종료) 로그는 삭제 숨김 — 종료된 로그만 삭제 가능 */}
                   {editing && l.ended_at && (
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="text-destructive size-7"
+                      size="icon-sm"
+                      className="text-danger hover:text-danger"
                       onClick={() => void deleteWorkLog(l.id).then(reload)}
                       data-testid="work-log-delete"
                       title="로그 삭제"
                     >
-                      <Trash2 className="size-3.5" />
+                      <Trash2 />
                     </Button>
                   )}
                 </span>
@@ -324,7 +311,7 @@ export function WorkLogSection({
                 <textarea
                   defaultValue={l.note ?? ""}
                   placeholder="무슨 작업을 했는지 (마크다운, 선택)"
-                  className="min-h-20 rounded-[8px] border border-[var(--c-sakura)]/50 bg-card p-2.5 text-[13px] leading-relaxed outline-none ring-2 ring-[var(--c-sakura)]/20 focus-visible:ring-ring/50"
+                  className="text-reading text-fg border-line-strong bg-surface focus-visible:border-brand min-h-24 rounded-md border p-3 outline-none"
                   data-testid="work-log-note-input"
                   onBlur={(e) => {
                     const v = e.target.value
@@ -335,7 +322,7 @@ export function WorkLogSection({
               ) : (
                 l.note && (
                   <div
-                    className="border-border rounded-[8px] border-l-2 bg-[var(--c-bg-sunken)]/40 px-3 py-1.5"
+                    className="border-line-strong border-l-[3px] pl-3"
                     data-testid="work-log-note"
                   >
                     <Markdown>{l.note}</Markdown>
@@ -346,6 +333,6 @@ export function WorkLogSection({
           )
         })}
       </div>
-    </section>
+    </Section>
   )
 }

@@ -1,17 +1,14 @@
-import { Copy } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
-import { PIXEL_ICONS } from "@/nodes/pixelIcons"
-import { TYPE_META, ticketKey } from "@/nodes/nodeGrammar"
-import { LAYER_COLOR, layerTint } from "@/nodes/layerColors"
+import { ticketKey } from "@/nodes/nodeGrammar"
 import type { AppNode } from "@/lib/nodes"
-import { Button } from "@/components/ui/button"
+import { LayerChip, LayerIcon, TicketKey } from "@/components/ds"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-/** 큰 브레드크럼 — 조상 경로(루트→부모), 세그먼트 클릭 시 점프. 길면 중간 생략. */
+/** 경로 — 조상(루트→부모), 레이어 아이콘 + 제목. 클릭 시 점프. 길면 중간 생략. */
 function Breadcrumb({
   ancestors,
   onJump,
@@ -23,28 +20,29 @@ function Breadcrumb({
   const shown: (AppNode | null)[] = collapsed
     ? [ancestors[0], null, ancestors[ancestors.length - 1]]
     : ancestors
-  const full = ancestors.map((a) => a.title).join(" › ")
+  const full = ancestors.map((a) => a.title).join(" / ")
 
   const nav = (
     <nav
-      className="flex items-center gap-1.5 text-[14px] font-medium"
-      style={{ color: "var(--c-ink-2)" }}
+      className="text-body text-fg-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
+      aria-label="경로"
       data-testid="cover-breadcrumb"
     >
       {shown.map((a, i) => (
-        <span key={a?.id ?? `gap-${i}`} className="flex items-center gap-1.5">
-          {i > 0 && <span style={{ color: "var(--c-ink-3)" }}>›</span>}
+        <span key={a?.id ?? `gap-${i}`} className="flex min-w-0 items-center gap-2">
+          {i > 0 && <span className="text-fg-disabled">/</span>}
           {a ? (
             <button
               type="button"
               onClick={() => onJump(a.id)}
               data-testid="breadcrumb-seg"
-              className="max-w-[200px] truncate transition-colors hover:text-[var(--c-ink)] hover:underline"
+              className="hover:text-fg flex max-w-[260px] min-w-0 items-center gap-1.5 rounded-sm hover:underline"
             >
-              {a.title}
+              <LayerIcon type={a.type} className="size-3.5" />
+              <span className="truncate">{a.title}</span>
             </button>
           ) : (
-            <span style={{ color: "var(--c-ink-3)" }}>…</span>
+            <span className="text-fg-3">…</span>
           )}
         </span>
       ))}
@@ -61,13 +59,11 @@ function Breadcrumb({
 }
 
 /**
- * 상세 커버 밴드 — 레이어 칩(색+아이콘) + 큰 브레드크럼 + 티켓키.
- * 레이어색은 커버에만 등장(한 화면 한 색). 제목은 밴드 아래(NodeDetail) 가 담당.
+ * 상세 헤더 줄 — 경로 · 타입 칩 · 티켓키(복사). 제목은 아래 NodeDetail 이 담당.
+ * (v1 의 레이어 틴트 커버 밴드는 폐지 — design-system-v2)
  */
 export function CoverHeader({ node }: { node: AppNode }) {
   const { nodes, openNode } = useNodes()
-  const layer = LAYER_COLOR[node.type]
-  const Icon = PIXEL_ICONS[node.type]
   const ticket = ticketKey(node.type, node.ticket_number)
 
   const ancestors: AppNode[] = []
@@ -81,49 +77,18 @@ export function CoverHeader({ node }: { node: AppNode }) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-t-[14px] border-b"
-      style={{ background: layerTint(node.type), borderColor: "var(--c-line)" }}
+      className="flex min-h-8 flex-wrap items-center gap-x-4 gap-y-2"
       data-testid="cover-header"
       data-layer={node.type}
     >
-      <span
-        aria-hidden
-        className="absolute inset-y-0 left-0 w-[3px]"
-        style={{ background: layer.base }}
-      />
-      <div className="flex flex-col gap-1.5 px-5 py-3">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5" data-testid="cover-layer">
-            <Icon className="size-[15px] shrink-0" style={{ color: layer.base }} />
-            <span
-              className="text-[13px] font-bold"
-              style={{ color: layer.ink }}
-              data-testid="detail-type"
-            >
-              {TYPE_META[node.type].label}
-            </span>
-          </span>
-          <code
-            className="tnum ml-auto font-mono text-[11.5px] font-semibold"
-            style={{ color: "var(--c-plum)" }}
-            data-testid="detail-ticket"
-          >
-            {ticket}
-          </code>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6"
-            title="티켓키 복사"
-            data-testid="copy-ticket"
-            onClick={() => void navigator.clipboard?.writeText(ticket)}
-          >
-            <Copy className="size-3.5" />
-          </Button>
-        </div>
-        {ancestors.length > 0 && (
-          <Breadcrumb ancestors={ancestors} onJump={openNode} />
-        )}
+      {ancestors.length > 0 ? (
+        <Breadcrumb ancestors={ancestors} onJump={openNode} />
+      ) : (
+        <span className="text-body text-fg-3">최상위</span>
+      )}
+      <div className="ml-auto flex items-center gap-2" data-testid="cover-layer">
+        <LayerChip type={node.type} data-testid="detail-type" />
+        <TicketKey value={ticket} copy data-testid="detail-ticket" />
       </div>
     </div>
   )

@@ -7,8 +7,9 @@ import { LAYER_COLOR } from "@/nodes/layerColors"
 import { PIXEL_ICONS } from "@/nodes/pixelIcons"
 import type { StatusCategory } from "@/lib/statuses"
 import type { AppNode, NodeDomain } from "@/lib/nodes"
-import { BLOOM_GLYPH, CATEGORY_TEXT_COLOR } from "@/nodes/bloomGlyph"
-import { CATEGORY_COLOR } from "@/lib/statuses"
+import { BLOOM_GLYPH } from "@/nodes/bloomGlyph"
+import { CATEGORY_TONE, statusTone } from "@/lib/statusTone"
+import { Count, TicketKey } from "@/components/ds"
 import { FilterSelect } from "@/components/ui/filter-select"
 import { listUrs, updateUr, type Ur, type UrStatus } from "@/lib/ur"
 import { UrBoard } from "@/ur/UrBoard"
@@ -65,49 +66,32 @@ function BoardCard({ node }: { node: AppNode }) {
       draggable
       onDragStart={onDragStart}
       onClick={() => openNode(node.id)}
-      className="flex cursor-grab flex-col gap-2 rounded-[10px] border bg-card p-2.5 shadow-xs transition-shadow hover:shadow-sm active:cursor-grabbing"
-      style={{ borderColor: "var(--c-line)" }}
+      className="border-line bg-surface hover:border-line-strong flex cursor-grab flex-col gap-2 rounded-lg border p-3 transition-colors active:cursor-grabbing"
       data-testid="board-card"
       data-task-id={node.id}
     >
       <div className="flex items-center gap-2">
-        <code
-          className="tnum font-mono text-[11px] font-semibold"
-          style={{ color: "var(--c-plum)" }}
-        >
-          {ticket}
-        </code>
+        <TicketKey value={ticket} />
         {status && (
-          <span
-            className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium"
-            style={{ color: CATEGORY_TEXT_COLOR[status.category] }}
-          >
+          <span className="ml-auto inline-flex" title={status.name}>
             {(() => {
               const G = BLOOM_GLYPH[status.category]
-              return (
-                <G
-                  className="size-3"
-                  style={{
-                    color: status.color ?? CATEGORY_COLOR[status.category],
-                  }}
-                />
-              )
+              return <G className="size-4" style={{ color: statusTone(status).fg }} />
             })()}
           </span>
         )}
       </div>
-      <div className="line-clamp-2 text-[13px] leading-snug">{node.title}</div>
+      <div className="text-body text-fg line-clamp-3 font-medium">{node.title}</div>
       <div className="flex items-center gap-2">
         {priority && (
           <span
-            className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] font-medium"
-            style={{ background: "var(--c-bg-sunken)", color: "var(--c-ink-2)" }}
+            className="text-label bg-sunken text-fg-2 inline-flex items-center gap-1.5 rounded-md px-2 py-0.5"
             data-testid="board-card-priority"
             data-priority={priority}
             title={`우선순위: ${priority}`}
           >
             <span
-              className="size-1.5 rounded-full"
+              className="size-2 rounded-full"
               style={{ background: PRIORITY_COLOR[priority] }}
             />
             {priority}
@@ -115,16 +99,15 @@ function BoardCard({ node }: { node: AppNode }) {
         )}
         {node.domain && (
           <span
-            className="rounded-md px-1.5 py-0.5 text-[10.5px] font-medium"
-            style={{ background: "var(--c-pink-bg)", color: "var(--c-plum)" }}
+            className="text-label bg-sunken text-fg-2 rounded-md px-2 py-0.5"
           >
             {node.domain}
           </span>
         )}
         {assignee && (
           <span
-            className="ml-auto inline-flex size-5 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-            style={{ background: "var(--c-sakura)" }}
+            className="text-micro ml-auto inline-flex size-[22px] items-center justify-center rounded-full"
+            style={{ background: assignee.color ?? "#F6D3E0", color: "#3B1D2A" }}
             title={memberLabel(assignee)}
           >
             {memberLabel(assignee).slice(0, 1).toUpperCase()}
@@ -280,16 +263,16 @@ export function BoardView() {
   return (
     <div className="flex h-full flex-col" data-testid="board-view">
       {/* 레이어 선택 + 필터 */}
-      <div className="border-border flex flex-wrap items-center gap-2 border-b px-4 py-2.5">
-        <span className="text-muted-foreground mr-1 text-xs">레이어</span>
+      <div className="border-line bg-surface flex flex-wrap items-center gap-2 border-b px-4 py-2.5">
+        <span className="text-label text-fg-2 mr-1">레이어</span>
         <div
-          className="flex items-center gap-0.5 rounded-lg bg-[var(--c-bg-sunken)] p-0.5"
+          className="bg-sunken flex flex-wrap items-center gap-0.5 rounded-lg p-[3px]"
           role="tablist"
         >
           {LAYER_TABS.map((l) => {
             const Icon = l === "요구사항" ? ClipboardList : PIXEL_ICONS[l]
             const color =
-              l === "요구사항" ? "var(--c-sakura)" : LAYER_COLOR[l].base
+              l === "요구사항" ? "var(--ds-fg-2)" : LAYER_COLOR[l].base
             const label = l === "요구사항" ? "요구사항" : TYPE_META[l].label
             const active = layer === l
             return (
@@ -300,21 +283,21 @@ export function BoardView() {
                 aria-pressed={active}
                 data-testid={`board-layer-${l}`}
                 className={cn(
-                  "flex items-center gap-1 rounded-md px-2 py-1 text-[12.5px] font-semibold transition-colors",
+                  "text-body flex items-center gap-1.5 rounded-md px-2.5 py-1 font-semibold transition-colors",
                   active
-                    ? "bg-card shadow-[0_1px_2px_rgba(90,40,60,.10),0_0_0_1px_var(--c-line)]"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-surface text-fg ring-line ring-1"
+                    : "text-fg-2 hover:text-fg"
                 )}
               >
-                <Icon className="size-3.5" style={{ color }} />
+                <Icon className="size-4" style={{ color }} />
                 {label}
               </button>
             )
           })}
         </div>
 
-        <span className="bg-[var(--c-line-2)] mx-1 h-5 w-px" />
-        <span className="text-muted-foreground mr-1 text-xs">필터</span>
+        <span className="bg-line mx-1 h-5 w-px" />
+        <span className="text-label text-fg-2 mr-1">필터</span>
         {showContentFilter && (
           <FilterSelect
             value={fContent}
@@ -375,32 +358,28 @@ export function BoardView() {
       <div className="flex flex-1 gap-3 overflow-x-auto p-4">
         {columns.map((col) => {
           const colTasks = cards.filter((t) => categoryOf(t) === col)
-          const accent =
+          const tone =
             col === "미지정"
-              ? "var(--c-ink-3)"
-              : (CATEGORY_COLOR[col as StatusCategory] ?? "var(--c-ink-3)")
+              ? null
+              : (CATEGORY_TONE[col as StatusCategory] ?? null)
+          const G = tone ? BLOOM_GLYPH[col as StatusCategory] : null
           return (
             <div
               key={col}
-              className="flex w-72 shrink-0 flex-col rounded-[var(--radius-card)] border"
-              style={{ background: "var(--c-bg-sunken)", borderColor: "var(--c-line)" }}
+              className="bg-sunken border-line rounded-card flex w-[300px] shrink-0 flex-col border"
               data-testid="board-column"
               data-category={col}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => void onDropTo(e, col)}
             >
-              <div className="flex items-center gap-2 px-3 py-2.5">
-                <span
-                  className="size-2.5 rounded-full"
-                  style={{ background: accent }}
-                />
-                <span className="font-display text-sm font-bold">{col}</span>
-                <span
-                  className="tnum text-muted-foreground text-xs"
-                  data-testid="board-column-count"
-                >
-                  {colTasks.length}
-                </span>
+              <div className="flex items-center gap-2 px-3 py-3">
+                {G && tone ? (
+                  <G className="size-4" style={{ color: tone.fg }} />
+                ) : (
+                  <span className="border-fg-3 size-3.5 rounded-full border border-dashed" />
+                )}
+                <span className="text-subheading text-fg">{col}</span>
+                <Count data-testid="board-column-count">{colTasks.length}</Count>
               </div>
               <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
                 {colTasks.map((t) => (

@@ -38,14 +38,19 @@ export function SubFeatureSections({
     }
   }, [subFeatureId, tab])
 
+  // 상세(full): 요구사항·작업 카드를 세로로 둘 다 노출(탭 전환 없음 — design-system-v2).
+  if (!compact) {
+    return (
+      <div className="flex flex-col gap-4" data-testid="subfeature-sections">
+        <UrSection subFeatureId={subFeatureId} editable={editable} />
+        <WorkSection parentId={subFeatureId} />
+      </div>
+    )
+  }
+
+  // 사이드바(compact): 공간이 좁아 탭 유지.
   const seg = (
-    <div
-      className={cn(
-        "inline-flex items-center gap-1 rounded-lg bg-[var(--c-bg-sunken)] p-1",
-        compact ? "gap-0.5 p-0.5 text-[11px]" : "text-[14px]"
-      )}
-      role="tablist"
-    >
+    <div className="bg-sunken text-label inline-flex items-center gap-0.5 self-start rounded-md p-0.5" role="tablist">
       {(["ur", "work"] as Tab[]).map((t) => (
         <button
           key={t}
@@ -54,11 +59,8 @@ export function SubFeatureSections({
           aria-pressed={tab === t}
           data-testid={t === "ur" ? "ur-tab" : "work-tab"}
           className={cn(
-            "rounded-md font-semibold transition-colors",
-            compact ? "px-2 py-0.5" : "px-4 py-1.5",
-            tab === t
-              ? "bg-card text-foreground shadow-[0_1px_2px_rgba(90,40,60,.10),0_0_0_1px_var(--c-line)]"
-              : "text-muted-foreground hover:text-foreground"
+            "rounded-[5px] px-2.5 py-0.5 transition-colors",
+            tab === t ? "bg-surface text-fg ring-line ring-1" : "text-fg-2 hover:text-fg"
           )}
         >
           {t === "ur"
@@ -70,19 +72,12 @@ export function SubFeatureSections({
   )
 
   return (
-    <div
-      className={cn("flex flex-col", compact ? "gap-1.5" : "gap-3")}
-      data-testid="subfeature-sections"
-    >
+    <div className="flex flex-col gap-1.5" data-testid="subfeature-sections">
       {seg}
       {tab === "ur" ? (
-        <UrSection
-          subFeatureId={subFeatureId}
-          compact={compact}
-          editable={editable}
-        />
+        <UrSection subFeatureId={subFeatureId} compact editable={editable} />
       ) : (
-        <WorkSection parentId={subFeatureId} compact={compact} />
+        <WorkSection parentId={subFeatureId} compact />
       )}
     </div>
   )

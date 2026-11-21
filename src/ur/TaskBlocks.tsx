@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { Link2, X } from "lucide-react"
+import { Lock, X } from "lucide-react"
 import { useNodes } from "@/nodes/NodesProvider"
 import {
   addNodeLink,
@@ -10,6 +10,7 @@ import {
 import { ticketKey } from "@/nodes/nodeGrammar"
 import { Button } from "@/components/ui/button"
 import { Picker, type PickerGroup } from "@/components/ui/picker"
+import { LayerIcon, Section, TicketKey } from "@/components/ds"
 
 export function TaskBlocks({
   nodeId,
@@ -50,62 +51,65 @@ export function TaskBlocks({
   ]
 
   return (
-    <section className="flex flex-col gap-2.5" data-testid="task-blocks">
-      <h3 className="font-display text-[15px] font-bold">선제조건 (blocks)</h3>
-
-      <div className="flex flex-col gap-1.5">
-        {links.map((l) => (
-          <div
-            key={l.id}
-            className="group/bl border-border bg-card flex items-center gap-2 rounded-[10px] border px-3 py-2 text-[13.5px]"
-            data-testid="block-link"
-          >
-            <Link2
-              className="size-3.5 shrink-0"
-              style={{ color: "var(--c-ink-3)" }}
-            />
-            <code
-              className="tnum shrink-0 font-mono text-[11.5px] font-semibold"
-              style={{ color: "var(--c-plum)" }}
-            >
-              {tk(l.to_node_id)}
-            </code>
-            <span className="flex-1 truncate">{titleOf(l.to_node_id)}</span>
-            {editable && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-destructive size-6 shrink-0 opacity-0 group-hover/bl:opacity-100"
-                onClick={async () => {
-                  await removeNodeLink(l.id)
-                  await reload()
-                }}
-                data-testid="block-remove"
-                title="제거"
+    <Section
+      icon={<Lock />}
+      title="선제조건"
+      count={links.length || undefined}
+      meta="먼저 끝나야 하는 항목"
+      data-testid="task-blocks"
+      actions={
+        editable && (
+          <Picker
+            triggerLabel="선제조건 추가"
+            placeholder="티켓·제목 검색…"
+            empty="추가할 노드가 없습니다."
+            groups={groups}
+            onPick={async (toId) => {
+              await addNodeLink(nodeId, toId, "blocks")
+              await reload()
+            }}
+            testid="block-picker"
+          />
+        )
+      }
+    >
+      {links.length === 0 ? (
+        <p className="text-body text-fg-3">선제조건이 없습니다.</p>
+      ) : (
+        <div className="border-line overflow-hidden rounded-lg border">
+          {links.map((l) => {
+            const n = nodeById.get(l.to_node_id)
+            return (
+              <div
+                key={l.id}
+                className="group/bl border-line flex min-h-11 items-center gap-3 border-t px-4 py-2.5 first:border-t-0"
+                data-testid="block-link"
               >
-                <X className="size-3.5" />
-              </Button>
-            )}
-          </div>
-        ))}
-        {links.length === 0 && (
-          <p className="text-muted-foreground text-[13px]">선제조건이 없습니다.</p>
-        )}
-      </div>
-
-      {editable && (
-        <Picker
-          triggerLabel="선제조건 추가"
-          placeholder="티켓·제목 검색…"
-          empty="추가할 노드가 없습니다."
-          groups={groups}
-          onPick={async (toId) => {
-            await addNodeLink(nodeId, toId, "blocks")
-            await reload()
-          }}
-          testid="block-picker"
-        />
+                {n && <LayerIcon type={n.type} />}
+                <TicketKey value={tk(l.to_node_id)} />
+                <span className="text-body text-fg min-w-0 flex-1 font-medium">
+                  {titleOf(l.to_node_id)}
+                </span>
+                {editable && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="hover:text-danger shrink-0 opacity-0 group-hover/bl:opacity-100 focus-visible:opacity-100"
+                    onClick={async () => {
+                      await removeNodeLink(l.id)
+                      await reload()
+                    }}
+                    data-testid="block-remove"
+                    title="선제조건 제거"
+                  >
+                    <X />
+                  </Button>
+                )}
+              </div>
+            )
+          })}
+        </div>
       )}
-    </section>
+    </Section>
   )
 }

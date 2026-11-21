@@ -11,10 +11,10 @@ export function NoProjects() {
       className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center"
       data-testid="no-projects"
     >
-      <FolderPlus className="text-muted-foreground size-10" />
+      <FolderPlus className="text-fg-3 size-10" />
       <div className="flex flex-col gap-1">
-        <h2 className="font-display text-lg font-bold">아직 프로젝트가 없습니다</h2>
-        <p className="text-muted-foreground text-sm">
+        <h2 className="text-heading font-bold">아직 프로젝트가 없습니다</h2>
+        <p className="text-fg-3 text-body">
           첫 프로젝트를 만들어 기획 계층 관리를 시작하세요.
         </p>
       </div>

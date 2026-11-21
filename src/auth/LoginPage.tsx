@@ -30,8 +30,8 @@ export function LoginPage() {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6">
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="font-display text-2xl font-bold tracking-tight">Canopy</h1>
-        <p className="text-muted-foreground text-sm">
+        <h1 className="text-2xl font-bold tracking-tight">Canopy</h1>
+        <p className="text-fg-3 text-body">
           게임 기획 계층 관리 도구 — 로그인이 필요합니다.
         </p>
       </div>
@@ -68,7 +68,7 @@ export function LoginPage() {
         </div>
 
         {error && (
-          <p className="text-destructive text-sm" data-testid="auth-error">
+          <p className="text-destructive text-body" data-testid="auth-error">
             {error}
           </p>
         )}
@@ -83,7 +83,7 @@ export function LoginPage() {
 
         <button
           type="button"
-          className="text-muted-foreground hover:text-foreground text-sm underline-offset-4 hover:underline"
+          className="text-fg-3 hover:text-foreground text-body underline-offset-4 hover:underline"
           onClick={() => {
             setMode((m) => (m === "login" ? "signup" : "login"))
             setError(null)
@@ -102,7 +102,7 @@ export function LoginPage() {
         설정 절차는 DEPLOY.md 참고.
       */}
       <div className="flex w-full max-w-sm flex-col gap-2">
-        <div className="text-muted-foreground text-center text-xs">또는</div>
+        <div className="text-fg-3 text-center text-meta">또는</div>
         <Button
           type="button"
           variant="outline"

@@ -83,7 +83,7 @@ function SearchBody({ onClose }: { onClose: () => void }) {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="제목·설명·티켓키 검색…"
-        className="border-border h-10 w-full rounded-[10px] border bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+        className="border-line-strong bg-surface text-body h-10 w-full rounded-md border px-3 outline-none focus-visible:border-brand focus-visible:outline-2 focus-visible:outline-brand/30"
         data-testid="search-input"
       />
       <div className="flex flex-wrap gap-2">
@@ -132,7 +132,7 @@ function SearchBody({ onClose }: { onClose: () => void }) {
         data-testid="search-results"
       >
         {results.length === 0 ? (
-          <p className="text-muted-foreground px-1 py-6 text-center text-sm">
+          <p className="text-fg-3 px-1 py-6 text-center text-body">
             결과가 없습니다.
           </p>
         ) : (
@@ -148,29 +148,29 @@ function SearchBody({ onClose }: { onClose: () => void }) {
                   onClose()
                 }}
                 data-testid="search-result"
-                className="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-[var(--c-pink-bg)]"
+                className="hover:bg-hover flex min-h-10 w-full min-w-0 items-center gap-2.5 rounded-md px-2 py-2 text-left"
               >
                 <Icon
                   className="size-4 shrink-0"
                   style={{ color: LAYER_COLOR[n.type as NodeType].base }}
                 />
                 <code
-                  className="tnum shrink-0 font-mono text-[11px] font-semibold"
-                  style={{ color: "var(--c-plum)" }}
+                  className="tnum shrink-0 font-mono text-meta font-semibold"
+                  style={{ color: "var(--ds-fg-3)" }}
                 >
                   {ticketKey(n.type, n.ticket_number)}
                 </code>
-                <span className="min-w-0 flex-1 truncate text-[13px]">
+                <span className="min-w-0 flex-1 truncate text-body">
                   {n.title}
                 </span>
                 {anc.path.length > 0 && (
-                  <span className="text-muted-foreground hidden max-w-[35%] shrink-0 truncate text-[11px] sm:block">
+                  <span className="text-fg-3 hidden max-w-[35%] shrink-0 truncate text-meta sm:block">
                     {anc.path.join(" / ")}
                   </span>
                 )}
                 <span
-                  className="shrink-0 text-[10.5px] whitespace-nowrap"
-                  style={{ color: "var(--c-ink-3)" }}
+                  className="shrink-0 text-meta whitespace-nowrap"
+                  style={{ color: "var(--ds-fg-3)" }}
                 >
                   {TYPE_META[n.type as NodeType].label}
                   {status ? ` · ${status.name}` : ""}
@@ -204,11 +204,11 @@ export function SearchButton() {
         type="button"
         onClick={() => setOpen(true)}
         data-testid="search-open"
-        className="text-muted-foreground border-border flex h-8 w-9 items-center justify-center gap-2 rounded-lg border bg-[var(--c-bg-sunken)] text-[13px] transition-colors hover:bg-[#EFE7EC] sm:w-[200px] sm:justify-start sm:px-2.5"
+        className="text-fg-3 border-line bg-surface text-body hover:border-line-strong flex h-9 w-9 items-center justify-center gap-2 rounded-md border transition-colors sm:w-[240px] sm:justify-start sm:px-3"
       >
-        <Search className="size-3.5 shrink-0" />
+        <Search className="size-4 shrink-0" />
         <span className="hidden flex-1 text-left sm:block">검색</span>
-        <kbd className="tnum hidden rounded bg-card px-1.5 py-0.5 text-[10px] font-medium shadow-xs sm:inline-block">
+        <kbd className="text-micro text-fg-2 border-line hidden rounded border bg-surface px-1.5 font-mono sm:inline-block">
           ⌘K
         </kbd>
       </button>

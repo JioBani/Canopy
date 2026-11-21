@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type KeyboardEvent } from "react"
-import { Trash2 } from "lucide-react"
+import { ListTodo, Trash2 } from "lucide-react"
 import {
   deleteChecklistItem,
   insertChecklistItem,
@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Section } from "@/components/ds"
 
 export function TaskChecklist({
   workId,
@@ -47,27 +48,21 @@ export function TaskChecklist({
   const doneCount = items.filter((i) => i.done).length
 
   return (
-    <section className="flex flex-col gap-2.5" data-testid="task-checklist">
-      <div className="flex items-baseline gap-2">
-        <h3 className="font-display text-[15px] font-bold">작업내용</h3>
-        {items.length > 0 && (
-          <span
-            className="tnum text-xs font-medium"
-            style={{ color: "var(--c-ink-3)" }}
-          >
-            {doneCount}/{items.length}
-          </span>
-        )}
-      </div>
-
+    <Section
+      icon={<ListTodo />}
+      title="작업 내용"
+      count={items.length > 0 ? `${doneCount}/${items.length}` : undefined}
+      data-testid="task-checklist"
+    >
       <div className="flex flex-col">
         {items.map((it) => (
           <label
             key={it.id}
-            className="group/ci flex items-center gap-2.5 rounded-md px-1.5 py-1.5 transition-colors hover:bg-[var(--c-pink-bg)]/50"
+            className="group/ci border-line hover:bg-subtle -mx-2 flex min-h-10 cursor-pointer items-start gap-3 rounded-md border-t px-2 py-2 transition-colors first:border-t-0"
             data-testid="checklist-item"
           >
             <Checkbox
+              className="mt-[3px]"
               checked={it.done}
               disabled={!editable}
               onCheckedChange={(c) => {
@@ -81,8 +76,7 @@ export function TaskChecklist({
             />
             <span
               className={
-                "flex-1 text-[13.5px] leading-snug " +
-                (it.done ? "text-muted-foreground line-through" : "")
+                "text-reading flex-1 " + (it.done ? "text-fg-3" : "text-fg")
               }
             >
               {it.text}
@@ -90,23 +84,24 @@ export function TaskChecklist({
             {editable && (
               <Button
                 variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-destructive size-6 opacity-0 group-hover/ci:opacity-100"
+                size="icon-sm"
+                className="hover:text-danger opacity-0 group-hover/ci:opacity-100 focus-visible:opacity-100"
                 onClick={(e) => {
                   e.preventDefault()
                   setItems((prev) => prev.filter((x) => x.id !== it.id))
                   void deleteChecklistItem(it.id)
                 }}
+                title="항목 삭제"
                 data-testid="checklist-delete"
               >
-                <Trash2 className="size-3.5" />
+                <Trash2 />
               </Button>
             )}
           </label>
         ))}
-        {items.length === 0 && !editable && (
-          <p className="text-muted-foreground py-1 text-[13px]">
-            작업내용이 없습니다.
+        {items.length === 0 && (
+          <p className="text-body text-fg-3 pb-1">
+            {editable ? "아직 항목이 없습니다. 아래에 할 일을 적고 Enter 를 누르세요." : "작업 내용이 없습니다."}
           </p>
         )}
       </div>
@@ -116,11 +111,11 @@ export function TaskChecklist({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKey}
-          placeholder="할 일 추가 후 Enter"
-          className="h-8"
+          placeholder="할 일을 입력하고 Enter"
+          className="mt-3"
           data-testid="checklist-input"
         />
       )}
-    </section>
+    </Section>
   )
 }

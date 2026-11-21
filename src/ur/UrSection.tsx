@@ -1,8 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import {
   AlertTriangle,
+  ChevronDown,
   ChevronRight,
   ChevronUp,
+  ListChecks,
   Pencil,
   Plus,
   Trash2,
@@ -29,46 +37,58 @@ import { UR_STATE_META, UrStateGlyph } from "@/ur/urStateGlyph"
 import { UrStateMenu } from "@/ur/UrStateMenu"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Markdown } from "@/components/Markdown"
+import { Count, EmptyNote, Section, StatusChip, SubLabel, TicketKey } from "@/components/ds"
 import { cn } from "@/lib/utils"
 
 function nextOrder<T extends { sort_order: number }>(items: T[]): number {
   return items.reduce((m, i) => Math.max(m, i.sort_order), -1) + 1
 }
 
-function CoverageText({ cov }: { cov: UrCoverage | undefined }) {
+function CoverageText({
+  cov,
+  compact = false,
+}: {
+  cov: UrCoverage | undefined
+  compact?: boolean
+}) {
   if (!cov || cov.is_uncovered) {
     return (
       <span
-        className="inline-flex shrink-0 items-center gap-0.5 text-[11px]"
-        style={{ color: "var(--c-ember)" }}
+        className="text-meta text-danger inline-flex shrink-0 items-center gap-1 font-semibold whitespace-nowrap"
         data-testid="ur-coverage"
         data-uncovered="true"
+        title="연결된 작업 없음"
       >
-        <AlertTriangle className="size-3" /> 미커버
+        <AlertTriangle className="size-3.5" />
+        {compact ? "미연결" : "연결된 작업 없음"}
       </span>
     )
   }
-  const doneOn = cov.done_work_count > 0
   return (
     <span
-      className="tnum shrink-0 text-[12px]"
-      style={{ color: "#9AA4B2" }}
+      className="text-meta text-fg-3 tnum shrink-0 whitespace-nowrap"
       data-testid="ur-coverage"
       data-uncovered="false"
     >
-      작업{" "}
-      <b style={{ color: "#6B7684", fontWeight: 700 }}>
-        {cov.linked_work_count}
-      </b>{" "}
-      / 완료{" "}
-      <b style={{ color: doneOn ? "#D6398E" : "#6B7684", fontWeight: 700 }}>
-        {cov.done_work_count}
-      </b>
+      {compact ? (
+        <>
+          <b className="text-fg-2 font-semibold">{cov.done_work_count}</b>/{cov.linked_work_count}
+        </>
+      ) : (
+        <>
+          작업 <b className="text-fg font-semibold">{cov.linked_work_count}</b>
+          {" · "}완료{" "}
+          <b className={cn("font-semibold", cov.done_work_count > 0 ? "text-st-done" : "text-fg")}>
+            {cov.done_work_count}
+          </b>
+        </>
+      )}
     </span>
   )
 }
 
-/** 상태 롤업 칩 (완료 n · 미구현 n · ⚠오구현 n). 0 인 항목 생략. */
+/** 상태 롤업 (완료 n · 미작업 n · 오작업 n). 0 인 항목 생략. */
 function StatusRollup({ urs }: { urs: Ur[] }) {
   const c = { 완료: 0, 미구현: 0, 오구현: 0 } as Record<UrStatus, number>
   urs.forEach((u) => (c[u.status] += 1))
@@ -78,14 +98,15 @@ function StatusRollup({ urs }: { urs: Ur[] }) {
     .map((s) => ({ s, n: c[s] }))
     .filter((p) => p.n > 0)
   return (
-    <span className="flex items-center gap-1.5">
+    <span className="flex items-center gap-2.5">
       {parts.map(({ s, n }) => (
         <span
           key={s}
-          className="tnum inline-flex items-center gap-0.5 text-[11px]"
+          className="text-meta tnum inline-flex items-center gap-1 font-medium"
           style={{ color: UR_STATE_META[s].color }}
+          title={UR_STATE_META[s].label}
         >
-          <UrStateGlyph status={s} className="size-3" />
+          <UrStateGlyph status={s} className="size-3.5" />
           {n}
         </span>
       ))}
@@ -93,77 +114,94 @@ function StatusRollup({ urs }: { urs: Ur[] }) {
   )
 }
 
-/** 완료 체크(채움) / 미완료 체크(빈칸) / 완료 별 — 디자인 스펙 인라인 SVG. */
-function DoneCheck() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="#D6398E"
-      stroke="#fff"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="mt-px shrink-0"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="5" stroke="none" />
-      <path d="M7 12.4l3 3 6.5-7" />
-    </svg>
-  )
-}
-function EmptyCheck() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#BAC2CE"
-      strokeWidth="2"
-      className="mt-px shrink-0"
-    >
-      <rect x="4" y="4" width="16" height="16" rx="4" />
-    </svg>
-  )
-}
-function StarIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="#D6398E">
-      <path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.7 5.9 20.4l1.5-6.8L2.2 9l6.9-.7z" />
-    </svg>
-  )
-}
+/**
+ * 요구사항 설명·히스토리 — 읽기=마크다운, '수정' 토글 시 textarea(노드 설명과 동일 모델).
+ * 원문(text)은 한 줄 요약이므로 배경·결정 히스토리·상세 스펙은 여기에 적는다.
+ */
+function UrDescription({
+  ur,
+  editable,
+  onSaved,
+}: {
+  ur: Ur
+  editable: boolean
+  onSaved: () => void | Promise<void>
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(ur.description ?? "")
+  // 저장된 값 기준선 — textarea blur 와 '완료' 클릭이 함께 들어와도 중복 쓰기를 막는다.
+  const saved = useRef(ur.description ?? null)
 
-/** "만족시키는 작업" 라벨 + 개수 pill (본문과 다른 블루-그레이 액센트). */
-function WorksLabel({ count }: { count: number }) {
+  useEffect(() => {
+    setDraft(ur.description ?? "")
+    saved.current = ur.description ?? null
+    setEditing(false)
+  }, [ur.id, ur.description])
+
+  async function commit() {
+    setEditing(false)
+    const next = draft.trim() ? draft : null
+    if (next === saved.current) return
+    saved.current = next
+    await updateUr(ur.id, { description: next })
+    await onSaved()
+  }
+
+  const has = Boolean(ur.description && ur.description.trim())
+
   return (
-    <div className="mt-5 mb-2.5 flex items-center gap-[7px]">
-      <span
-        className="size-[5px] rounded-full"
-        style={{ background: "#8AA0C4" }}
-      />
-      <span
-        className="text-[11.5px] font-bold tracking-[.04em]"
-        style={{ color: "#7C8AA0" }}
+    <div data-testid="ur-description-section">
+      <SubLabel
+        actions={
+          editable && (
+            <Button
+              type="button"
+              variant={editing ? "default" : "ghost"}
+              size="sm"
+              onMouseDown={(e) => editing && e.preventDefault()}
+              onClick={() => (editing ? void commit() : setEditing(true))}
+              data-testid="ur-description-edit-toggle"
+            >
+              {!editing && <Pencil />}
+              {editing ? "완료" : has ? "수정" : "추가"}
+            </Button>
+          )
+        }
       >
-        만족시키는 작업
-      </span>
-      <span
-        className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[9px] px-[5px] text-[11px] font-bold"
-        style={{ background: "#EDF1F7", color: "#7C8AA0" }}
-      >
-        {count}
-      </span>
+        설명 · 히스토리
+      </SubLabel>
+
+      {editing ? (
+        <textarea
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => void commit()}
+          placeholder="배경·결정 히스토리·상세 스펙을 마크다운으로 작성하세요 (#, **굵게**, - 목록, | 표 | …)"
+          className="text-reading text-fg border-line-strong bg-surface focus-visible:border-brand focus-visible:outline-brand/30 min-h-36 w-full rounded-lg border p-4 outline-none focus-visible:outline-2"
+          data-testid="ur-description-input"
+        />
+      ) : has ? (
+        <div
+          className="bg-surface border-line rounded-lg border px-4 py-3.5"
+          data-testid="ur-description"
+        >
+          <Markdown>{ur.description!}</Markdown>
+        </div>
+      ) : (
+        <EmptyNote className="bg-surface" data-testid="ur-description-empty">
+          {editable
+            ? "설명이 없습니다. ‘추가’로 배경·결정 히스토리를 남기세요."
+            : "설명이 없습니다."}
+        </EmptyNote>
+      )}
     </div>
   )
 }
 
 /**
  * UR 을 만족시키는 작업 목록 — 링크 id 는 UrSection 진입 시 프리페치(한 방 쿼리)해서
- * prop 으로 받는다. 펼침 시 네트워크 왕복 없이 즉시 렌더(작업 상세는 nodes 컨텍스트에서).
- * 흰색 작업 카드(본문 로즈 카드와 배경/보더로 구분). 카드 클릭 → 작업으로 이동.
- * 체크 표식은 작업의 상태 카테고리(완료 여부) 반영(읽기 전용 — 실제 상태변경은 작업 상세에서).
+ * prop 으로 받는다. 펼침 시 네트워크 왕복 없이 즉시 렌더. 행 클릭 → 작업으로 이동.
  */
 function UrLinkedWorks({ workIds }: { workIds: string[] }) {
   const { nodes, openNode, getStatus } = useNodes()
@@ -173,57 +211,38 @@ function UrLinkedWorks({ workIds }: { workIds: string[] }) {
     .filter((n): n is NonNullable<typeof n> => Boolean(n))
 
   return (
-    <>
-      <WorksLabel count={works.length} />
+    <div>
+      <SubLabel count={works.length}>연결된 작업</SubLabel>
       {works.length === 0 ? (
-        <div
-          className="rounded-[9px] border border-dashed p-4 text-center text-[13px]"
-          style={{ borderColor: "#DCE2EB", color: "#9AA4B2" }}
-          data-testid="ur-works-empty"
-        >
-          아직 등록된 작업이 없습니다.
-        </div>
+        <EmptyNote className="bg-surface" data-testid="ur-works-empty">
+          아직 연결된 작업이 없습니다. 작업 상세의 ‘충족하는 요구사항’에서 연결하세요.
+        </EmptyNote>
       ) : (
-        <div className="flex flex-col gap-2" data-testid="ur-works">
-          {works.map((w) => {
-            const done = getStatus(w.status_id)?.category === "완료"
-            return (
-              <button
-                key={w.id}
-                type="button"
-                onClick={() => openNode(w.id)}
-                className="flex items-start gap-[11px] rounded-[9px] border bg-white px-[13px] py-[11px] text-left transition-colors hover:bg-[#F7F9FC]"
-                style={{ borderColor: "#E7ECF3" }}
-                data-testid="ur-work-row"
-              >
-                {done ? <DoneCheck /> : <EmptyCheck />}
-                <span
-                  className="mt-px shrink-0 rounded-[5px] px-[7px] py-0.5 font-mono text-[12px] font-semibold"
-                  style={{ color: "#5B6B7C", background: "#EEF1F6" }}
-                >
-                  {ticketKey(w.type, w.ticket_number)}
+        <div
+          className="bg-surface border-line overflow-hidden rounded-lg border"
+          data-testid="ur-works"
+        >
+          {works.map((w) => (
+            <button
+              key={w.id}
+              type="button"
+              onClick={() => openNode(w.id)}
+              className="border-line hover:bg-subtle flex w-full items-center gap-3 border-t px-4 py-2.5 text-left transition-colors first:border-t-0"
+              data-testid="ur-work-row"
+            >
+              <StatusChip status={getStatus(w.status_id)} />
+              <TicketKey value={ticketKey(w.type, w.ticket_number)} className="hidden sm:inline" />
+              <span className="text-body text-fg min-w-0 flex-1 font-medium">{w.title}</span>
+              {w.domain && (
+                <span className="text-label bg-sunken text-fg-2 shrink-0 rounded-md px-2 py-0.5">
+                  {w.domain}
                 </span>
-                <span
-                  className="min-w-0 flex-1 text-[13.5px] leading-[1.6]"
-                  style={{ color: "#3C4653" }}
-                >
-                  {w.title}
-                </span>
-                {done && (
-                  <span
-                    className="mt-px inline-flex shrink-0 items-center gap-1 text-[12px] font-bold"
-                    style={{ color: "#D6398E" }}
-                  >
-                    <StarIcon />
-                    완료
-                  </span>
-                )}
-              </button>
-            )
-          })}
+              )}
+            </button>
+          ))}
         </div>
       )}
-    </>
+    </div>
   )
 }
 
@@ -329,53 +348,47 @@ export function UrSection({
     await reload()
   }
 
-  if (loading) {
-    return (
-      <div className="text-muted-foreground p-2 text-xs" data-testid="ur-section">
-        UR 불러오는 중…
+  const total = urs.length
+  const doneCount = urs.filter((u) => u.status === "완료").length
+
+  const groupAdd = editable ? (
+    addingGroup ? (
+      <div className="w-44">
+        <Input
+          autoFocus
+          placeholder="그룹명 입력 후 Enter"
+          className="h-7"
+          data-testid="ur-group-name-input"
+          onKeyDown={(e) => {
+            const v = (e.target as HTMLInputElement).value.trim()
+            if (e.key === "Enter" && v) {
+              void insertUrGroup(subFeatureId, v, nextOrder(groups)).then(() => {
+                setAddingGroup(false)
+                void reload()
+              })
+            } else if (e.key === "Escape") setAddingGroup(false)
+          }}
+          onBlur={() => setAddingGroup(false)}
+        />
       </div>
+    ) : (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setAddingGroup(true)}
+        data-testid="add-ur-group"
+      >
+        <Plus />그룹
+      </Button>
     )
-  }
+  ) : null
 
-  return (
-    <div className="flex flex-col gap-1.5" data-testid="ur-section">
-      {editable && (
-        <div className="flex items-center justify-end">
-          {addingGroup ? (
-            <div className="w-44">
-              <Input
-                autoFocus
-                placeholder="그룹명"
-                className="h-7"
-                data-testid="ur-group-name-input"
-                onKeyDown={(e) => {
-                  const v = (e.target as HTMLInputElement).value.trim()
-                  if (e.key === "Enter" && v) {
-                    void insertUrGroup(subFeatureId, v, nextOrder(groups)).then(
-                      () => {
-                        setAddingGroup(false)
-                        void reload()
-                      }
-                    )
-                  } else if (e.key === "Escape") setAddingGroup(false)
-                }}
-                onBlur={() => setAddingGroup(false)}
-              />
-            </div>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 gap-1 text-xs"
-              onClick={() => setAddingGroup(true)}
-              data-testid="add-ur-group"
-            >
-              <Plus className="size-3.5" />그룹
-            </Button>
-          )}
-        </div>
-      )}
-
+  const body = loading ? (
+    <div className={cn("text-fg-3", compact ? "text-meta p-2" : "text-body px-5 py-4")}>
+      요구사항 불러오는 중…
+    </div>
+  ) : (
+    <>
       {sections.map((sec) => {
         const list = ursOf(sec.id)
         // 미분류: 비면 숨김(편집 모드에서만 첫 UR 추가 진입점으로 노출).
@@ -383,45 +396,50 @@ export function UrSection({
         const key = sec.id ?? "none"
         const open = isOpen(key)
         return (
-          <div key={key} className="flex flex-col" data-testid="ur-group">
+          <div
+            key={key}
+            className={cn("flex flex-col", !compact && "border-line border-t first:border-t-0")}
+            data-testid="ur-group"
+          >
             {/* 그룹 헤더 */}
-            <div className="group/gh flex items-center gap-1.5 py-1">
+            <div
+              className={cn(
+                "group/gh flex items-center gap-2",
+                compact ? "min-h-7 px-1" : "bg-subtle min-h-11 px-5 py-1.5"
+              )}
+            >
               <button
                 type="button"
                 onClick={() => toggleGroup(key)}
-                className="flex min-w-0 flex-1 items-center gap-1"
+                className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                aria-expanded={open}
                 data-testid="ur-group-header"
               >
-                <ChevronRight
+                <ChevronDown
                   className={cn(
-                    "text-muted-foreground size-3.5 shrink-0 transition-transform",
-                    open && "rotate-90"
+                    "text-fg-3 size-4 shrink-0 transition-transform",
+                    !open && "-rotate-90"
                   )}
                 />
                 <span
-                  className="truncate text-[13px] font-semibold"
+                  className={cn(
+                    "text-fg truncate",
+                    compact ? "text-label" : "text-subheading"
+                  )}
                   data-testid="ur-group-name"
                 >
                   {sec.name}
                 </span>
+                {!compact && <Count>{list.length}</Count>}
                 <StatusRollup urs={list} />
               </button>
               {editable && (
                 <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 gap-1 px-1.5 text-[11px]"
-                    onClick={() => setAddingIn(sec.id ?? "none")}
-                    data-testid="add-ur"
-                  >
-                    <Plus className="size-3" />UR
-                  </Button>
                   {sec.id && (
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="text-destructive size-6 opacity-0 group-hover/gh:opacity-100"
+                      size="icon-sm"
+                      className="hover:text-danger opacity-0 group-hover/gh:opacity-100 focus-visible:opacity-100"
                       onClick={async () => {
                         await deleteUrGroup(sec.id!)
                         await reload()
@@ -429,15 +447,23 @@ export function UrSection({
                       data-testid="ur-group-delete"
                       title="그룹 삭제"
                     >
-                      <Trash2 className="size-3" />
+                      <Trash2 />
                     </Button>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setAddingIn(sec.id ?? "none")}
+                    data-testid="add-ur"
+                  >
+                    <Plus />요구사항
+                  </Button>
                 </>
               )}
             </div>
 
             {open && (
-              <div className="flex flex-col gap-0.5 pl-4">
+              <div className={cn("flex flex-col", compact && "pl-3")}>
                 {list.map((u) => {
                   const expanded = !compact && expandedUr === u.id
                   const editing = editingUr === u.id
@@ -445,220 +471,163 @@ export function UrSection({
                     if (!compact && !editing)
                       setExpandedUr(expanded ? null : u.id)
                   }
+
+                  /* ── 사이드바 컴팩트 행 ── */
+                  if (compact) {
+                    return (
+                      <div
+                        key={u.id}
+                        className="hover:bg-hover flex min-h-8 items-center gap-2 rounded-md px-1.5 py-1"
+                        title={`${urKey(u.ticket_number)} ${u.text}`}
+                        data-testid="ur-row"
+                      >
+                        <span data-testid="ur-row-header" className="contents">
+                          <UrStateGlyph status={u.status} className="size-4 shrink-0" />
+                          <span className="text-body text-fg min-w-0 flex-1 truncate" data-testid="ur-text">
+                            {u.text}
+                          </span>
+                          <CoverageText cov={cov.get(u.id)} compact />
+                        </span>
+                      </div>
+                    )
+                  }
+
+                  /* ── 상세 행 ── */
                   return (
                     <div
                       key={u.id}
                       className={cn(
-                        "rounded-md",
-                        u.status === "오구현" &&
-                          "border-l-2 border-[var(--c-ember)] bg-[rgba(216,95,110,0.05)] pl-1.5"
+                        "border-line border-t",
+                        expanded && "bg-subtle",
+                        u.status === "오구현" && "shadow-[inset_3px_0_0_var(--ds-danger)]"
                       )}
                       data-testid="ur-row"
                     >
                       {/* 헤더 행 — 전체 클릭으로 펼침/접힘(편집 컨트롤은 전파 차단) */}
                       <div
                         className={cn(
-                          "flex items-center gap-2.5 py-1.5",
-                          !compact && !editing && "cursor-pointer"
+                          "grid grid-cols-[20px_minmax(0,1fr)_18px] items-start gap-3 px-5 py-3",
+                          !editing && "hover:bg-subtle cursor-pointer"
                         )}
                         onClick={toggleExpand}
                         data-testid="ur-row-header"
                       >
-                        {editable ? (
-                          <span
-                            className="inline-flex shrink-0"
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                        <span className="mt-px flex" onClick={(e) => editable && e.stopPropagation()}>
+                          {editable ? (
                             <UrStateMenu
                               status={u.status}
                               onChange={(s) => void setStatus(u, s)}
+                              size={18}
                               testid="ur-state"
                             />
-                          </span>
-                        ) : (
-                          <UrStateGlyph
-                            status={u.status}
-                            className="size-[15px] shrink-0"
-                          />
-                        )}
-
-                        <code
-                          className="tnum shrink-0 rounded-md px-2 py-0.5 font-mono text-[12px] font-semibold"
-                          style={{ color: "#5B6B7C", background: "#EEF1F6" }}
-                          data-testid="ur-key"
-                        >
-                          {urKey(u.ticket_number)}
-                        </code>
-
-                        {editing ? (
-                          <span
-                            className="flex-1"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Input
-                              autoFocus
-                              defaultValue={u.text}
-                              className="h-7"
-                              data-testid="ur-text-input"
-                              onKeyDown={(e) => {
-                                const v = (
-                                  e.target as HTMLInputElement
-                                ).value.trim()
-                                if (e.key === "Enter" && v) {
-                                  void updateUr(u.id, { text: v }).then(() => {
-                                    setEditingUr(null)
-                                    void reload()
-                                  })
-                                } else if (e.key === "Escape")
-                                  setEditingUr(null)
-                              }}
-                              onBlur={() => setEditingUr(null)}
-                            />
-                          </span>
-                        ) : expanded ? (
-                          <>
-                            <span
-                              className="min-w-0 flex-1 text-[12px] font-semibold tracking-[.02em]"
-                              style={{ color: "#AAB3C0" }}
-                            >
-                              요구사항 상세
-                            </span>
-                            <span data-testid="ur-text" className="sr-only">
-                              {u.text}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <span
-                              className="min-w-0 flex-1 truncate text-[14px]"
-                              style={{ color: "#3C4653" }}
-                            >
-                              {u.text}
-                            </span>
-                            <span data-testid="ur-text" className="sr-only">
-                              {u.text}
-                            </span>
-                          </>
-                        )}
-
-                        <CoverageText cov={cov.get(u.id)} />
-
-                        {!compact &&
-                          (expanded ? (
-                            <ChevronUp
-                              className="size-4 shrink-0"
-                              style={{ color: "#98A2B0" }}
-                            />
                           ) : (
-                            <ChevronRight
-                              className="size-4 shrink-0"
-                              style={{ color: "#98A2B0" }}
-                            />
-                          ))}
+                            <UrStateGlyph status={u.status} className="size-[18px] shrink-0" />
+                          )}
+                        </span>
+
+                        <div className="flex min-w-0 flex-col gap-1">
+                          {editing ? (
+                            <span onClick={(e) => e.stopPropagation()}>
+                              <Input
+                                autoFocus
+                                defaultValue={u.text}
+                                data-testid="ur-text-input"
+                                onKeyDown={(e) => {
+                                  const v = (e.target as HTMLInputElement).value.trim()
+                                  if (e.key === "Enter" && v) {
+                                    void updateUr(u.id, { text: v }).then(() => {
+                                      setEditingUr(null)
+                                      void reload()
+                                    })
+                                  } else if (e.key === "Escape") setEditingUr(null)
+                                }}
+                                onBlur={() => setEditingUr(null)}
+                              />
+                            </span>
+                          ) : (
+                            <span
+                              className={cn(
+                                "text-body text-fg",
+                                expanded ? "font-medium" : "line-clamp-2"
+                              )}
+                              data-testid="ur-text"
+                            >
+                              {u.text}
+                            </span>
+                          )}
+                          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <TicketKey value={urKey(u.ticket_number)} data-testid="ur-key" />
+                            <CoverageText cov={cov.get(u.id)} />
+                          </span>
+                        </div>
+
+                        {expanded ? (
+                          <ChevronUp className="text-fg-3 mt-0.5 size-[18px]" />
+                        ) : (
+                          <ChevronRight className="text-fg-3 mt-0.5 size-[18px]" />
+                        )}
                       </div>
 
                       {expanded && (
                         <div
-                          className="px-1.5 pb-4 pl-7"
+                          className="flex flex-col gap-5 pt-1 pr-5 pb-5 pl-5 sm:pl-[52px]"
                           data-testid="ur-detail"
                         >
-                          {/* 커넥터 라인 — 이 내용이 해당 요구사항에 속함을 시각화 */}
-                          <div
-                            className="border-l-2 pt-1.5 pl-[22px]"
-                            style={{ borderColor: "#EDE1E9" }}
-                          >
-                            {/* 요구사항 본문 */}
-                            <div className="mb-2 flex items-center gap-[7px]">
-                              <span
-                                className="size-[5px] rounded-full"
-                                style={{ background: "#E36BA6" }}
-                              />
-                              <span
-                                className="text-[11.5px] font-bold tracking-[.04em]"
-                                style={{ color: "#B0788F" }}
-                              >
-                                요구사항 본문
-                              </span>
-                            </div>
+                          {/* 설명 · 히스토리 */}
+                          <UrDescription ur={u} editable={editable} onSaved={reload} />
+
+                          {u.status === "오구현" && (
                             <div
-                              className="rounded-lg border px-[15px] py-[13px] text-[14.5px] leading-[1.75] whitespace-normal"
-                              style={{
-                                background: "#FDF3F8",
-                                borderColor: "#F6DDEB",
-                                color: "#38424E",
-                              }}
+                              className="border-danger/30 bg-danger-soft flex flex-col gap-2 rounded-lg border p-3.5"
+                              data-testid="misimpl-box"
                             >
-                              {u.text}
+                              <span className="text-label text-danger inline-flex items-center gap-1.5">
+                                <AlertTriangle className="size-4" />
+                                오작업 사유
+                              </span>
+                              {editable ? (
+                                <textarea
+                                  defaultValue={u.misimpl_reason ?? ""}
+                                  placeholder="무엇이 어떻게 잘못 작업됐는지 적어 주세요"
+                                  className="text-body text-fg border-line-strong bg-surface focus-visible:border-brand min-h-16 rounded-md border p-3 outline-none"
+                                  data-testid="misimpl-reason"
+                                  onBlur={(e) => {
+                                    if (e.target.value !== (u.misimpl_reason ?? ""))
+                                      void saveReason(u, e.target.value)
+                                  }}
+                                />
+                              ) : (
+                                <p className="text-body text-fg" data-testid="misimpl-reason">
+                                  {u.misimpl_reason || "—"}
+                                </p>
+                              )}
                             </div>
+                          )}
 
-                            {u.status === "오구현" && (
-                              <div
-                                className="mt-3 flex flex-col gap-1 rounded-md border border-[var(--c-ember)]/40 bg-[rgba(216,95,110,0.05)] p-2"
-                                data-testid="misimpl-box"
+                          {/* 연결된 작업 */}
+                          <UrLinkedWorks workIds={worksByUr.get(u.id) ?? []} />
+
+                          {editable && (
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditingUr(u.id)}
+                                data-testid="ur-edit"
                               >
-                                <span
-                                  className="text-[11px] font-semibold"
-                                  style={{ color: "var(--c-ember)" }}
-                                >
-                                  ⚠ 오작업 사유
-                                </span>
-                                {editable ? (
-                                  <textarea
-                                    defaultValue={u.misimpl_reason ?? ""}
-                                    placeholder="무엇이 어떻게 잘못 작업됐는지…"
-                                    className="min-h-14 rounded border bg-transparent p-2 text-[12.5px] outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                                    data-testid="misimpl-reason"
-                                    onBlur={(e) => {
-                                      if (
-                                        e.target.value !==
-                                        (u.misimpl_reason ?? "")
-                                      )
-                                        void saveReason(u, e.target.value)
-                                    }}
-                                  />
-                                ) : (
-                                  <p
-                                    className="text-[12.5px] whitespace-normal"
-                                    data-testid="misimpl-reason"
-                                  >
-                                    {u.misimpl_reason || "—"}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-
-                            {/* 만족시키는 작업 */}
-                            <UrLinkedWorks workIds={worksByUr.get(u.id) ?? []} />
-
-                            {editable && (
-                              <div className="mt-3.5 flex gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => setEditingUr(u.id)}
-                                  className="inline-flex items-center gap-1.5 rounded-[7px] border bg-white px-[11px] py-1.5 text-[12.5px] font-semibold transition-colors hover:bg-[#F5F7FA]"
-                                  style={{
-                                    borderColor: "#E3E8EF",
-                                    color: "#6B7684",
-                                  }}
-                                  data-testid="ur-edit"
-                                >
-                                  <Pencil className="size-3.5" />수정
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => void removeUr(u.id)}
-                                  className="inline-flex items-center gap-1.5 rounded-[7px] border bg-white px-[11px] py-1.5 text-[12.5px] font-semibold transition-colors hover:bg-[#FCF3F5]"
-                                  style={{
-                                    borderColor: "#E3E8EF",
-                                    color: "#B9707E",
-                                  }}
-                                  data-testid="ur-delete"
-                                >
-                                  <Trash2 className="size-3.5" />삭제
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                                <Pencil />문장 수정
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-danger hover:text-danger"
+                                onClick={() => void removeUr(u.id)}
+                                data-testid="ur-delete"
+                              >
+                                <Trash2 />삭제
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -666,18 +635,19 @@ export function UrSection({
                 })}
 
                 {!compact && addingIn === (sec.id ?? "none") && (
-                  <Input
-                    autoFocus
-                    placeholder="요구사항 입력 후 Enter"
-                    className="h-7"
-                    data-testid="ur-text-input"
-                    onKeyDown={(e) => {
-                      const v = (e.target as HTMLInputElement).value.trim()
-                      if (e.key === "Enter" && v) void addUr(sec.id, v)
-                      else if (e.key === "Escape") setAddingIn(null)
-                    }}
-                    onBlur={() => setAddingIn(null)}
-                  />
+                  <div className="border-line border-t px-5 py-3">
+                    <Input
+                      autoFocus
+                      placeholder="요구사항 문장을 입력하고 Enter (Esc 로 닫기)"
+                      data-testid="ur-text-input"
+                      onKeyDown={(e) => {
+                        const v = (e.target as HTMLInputElement).value.trim()
+                        if (e.key === "Enter" && v) void addUr(sec.id, v)
+                        else if (e.key === "Escape") setAddingIn(null)
+                      }}
+                      onBlur={() => setAddingIn(null)}
+                    />
+                  </div>
                 )}
               </div>
             )}
@@ -686,8 +656,32 @@ export function UrSection({
       })}
 
       {urs.length === 0 && (
-        <p className="text-muted-foreground py-1 text-xs">요구사항이 없습니다.</p>
+        <p className={cn("text-fg-3", compact ? "text-meta px-2 py-1" : "text-body px-5 py-4")}>
+          요구사항이 없습니다.
+        </p>
       )}
-    </div>
+    </>
+  )
+
+  if (compact) {
+    return (
+      <div className="flex flex-col gap-0.5" data-testid="ur-section">
+        {body}
+      </div>
+    )
+  }
+
+  return (
+    <Section
+      icon={<ListChecks />}
+      title="요구사항"
+      count={loading ? undefined : total}
+      meta={!loading && total > 0 ? `완료 ${doneCount} · 남음 ${total - doneCount}` : undefined}
+      actions={groupAdd}
+      flush
+      data-testid="ur-section"
+    >
+      {body}
+    </Section>
   )
 }

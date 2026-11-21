@@ -54,7 +54,7 @@ function MembersContent() {
     <div className="flex flex-col gap-3" data-testid="members-content">
       <div className="flex flex-col gap-2">
         {members.length === 0 && (
-          <p className="text-muted-foreground text-sm">아직 멤버가 없습니다.</p>
+          <p className="text-fg-3 text-body">아직 멤버가 없습니다.</p>
         )}
         {members.map((m) => (
           <div

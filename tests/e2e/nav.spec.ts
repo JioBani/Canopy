@@ -57,9 +57,9 @@ test.describe.serial("상세 드릴다운 + 작업 독립 생성", () => {
     await addChildSingle(page, "전장", "소환수기능")
     await addChildTyped(page, "소환수기능", "세부기능", "합성세부")
 
-    // 세부기능 상세 → 작업 탭 → 작업 추가(수정 모드 없이 항상 가능, 특정 UR 종속 없음)
+    // 세부기능 상세 → 작업 카드 → 작업 추가(수정 모드 없이 항상 가능, 특정 UR 종속 없음)
+    // (design-system-v2: 상세에선 요구사항/작업 탭 없이 카드 두 장이 함께 노출)
     await rowByTitle(page, "합성세부").click()
-    await detail(page).getByTestId("work-tab").click()
     await detail(page).getByTestId("add-work").click()
     await detail(page).getByTestId("add-work-input").fill("독립작업")
     await detail(page).getByTestId("add-work-input").press("Enter")
@@ -100,9 +100,8 @@ test.describe.serial("상세 드릴다운 + 작업 독립 생성", () => {
     await addChildTyped(page, "소환수기능", "세부기능", "합성세부")
     await addWork(page, "합성세부", "합성로직") // 생성 → 작업 선택됨
 
-    // 세부기능으로 돌아가 작업 탭의 리스트(컴팩트) 확인
+    // 세부기능으로 돌아가 작업 카드의 리스트 확인
     await rowByTitle(page, "합성세부").click()
-    await detail(page).getByTestId("work-tab").click()
     const workRow = detail(page)
       .getByTestId("work-row")
       .filter({ hasText: "합성로직" })

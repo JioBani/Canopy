@@ -46,20 +46,20 @@ export function Picker({
         <Button
           variant="outline"
           size="sm"
-          className="bg-card h-8 justify-start gap-1.5 rounded-[9px] text-[13px] font-medium"
+          className="justify-start"
           data-testid={testid}
         >
-          <Plus className="size-3.5" />
+          <Plus />
           {triggerLabel}
         </Button>
       </PopoverTrigger>
       <PopoverContent
         align={align}
-        className="w-72 overflow-hidden p-0"
+        className="w-80 overflow-hidden p-0"
         data-testid={testid ? `${testid}-menu` : undefined}
       >
         <Command>
-          <CommandInput placeholder={placeholder} className="text-[13px]" />
+          <CommandInput placeholder={placeholder} />
           <CommandList>
             <CommandEmpty>{empty}</CommandEmpty>
             {groups.map((g) => (
@@ -72,7 +72,6 @@ export function Picker({
                       onPick(it.value)
                       setOpen(false)
                     }}
-                    className="text-[13px]"
                   >
                     <span className="truncate">{it.label}</span>
                   </CommandItem>

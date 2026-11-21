@@ -39,7 +39,7 @@ export function FilterSelect({
         size="sm"
         data-testid={testid}
         className={cn(
-          "bg-card h-8 gap-1.5 rounded-[9px] text-[13px] font-medium",
+          "bg-surface text-body h-8 gap-1.5 font-medium",
           className
         )}
       >

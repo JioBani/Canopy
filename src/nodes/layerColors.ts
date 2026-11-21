@@ -1,21 +1,18 @@
 import type { NodeType } from "@/nodes/nodeGrammar"
 
 /**
- * Pixel Blossom "정원의 레이어" — 타입(레이어)별 저채도 distinct 색.
- * 상태색(mist/peach/sakura/ember)·도메인칩(pink-bg/plum)과 다른 의미축.
- * 사용처 절제: 커버 밴드 틴트·액센트, 레이어 칩, 트리/네비 타입 아이콘(아이콘만).
- *  - base: 아이콘·틴트·굵은 액센트 (작은 텍스트 금지)
- *  - ink : 칩 라벨 텍스트 (틴트/흰 위 AA)
+ * 레이어(계층 타입) 색 — design-system-v2.
+ * 아이콘(base)과 타입 칩(ink 글자 + soft 배경)에서만 쓴다. 본문 텍스트·넓은 배경 틴트 금지.
  */
-export const LAYER_COLOR: Record<NodeType, { base: string; ink: string }> = {
-  컨텐츠: { base: "#E27BA4", ink: "#B84A77" },
-  기능: { base: "#A892D9", ink: "#6E55B0" },
-  세부기능: { base: "#7DAEDE", ink: "#3F6FA6" },
-  마스터데이터: { base: "#5FBBA2", ink: "#2E7E6A" },
-  작업: { base: "#DDA24A", ink: "#9C6B1C" },
+export const LAYER_COLOR: Record<NodeType, { base: string; ink: string; soft: string }> = {
+  컨텐츠: { base: "#D9669A", ink: "#9E3566", soft: "#FBEBF2" },
+  기능: { base: "#8F75D1", ink: "#5B42A3", soft: "#F0ECFA" },
+  세부기능: { base: "#4F8FD1", ink: "#2C5F9E", soft: "#E8F1FB" },
+  마스터데이터: { base: "#3DA588", ink: "#1F6E59", soft: "#E4F5EF" },
+  작업: { base: "#D08E2C", ink: "#8A5A12", soft: "#FBF1E1" },
 }
 
-/** 레이어 틴트 배경(흰색에 base 12% 혼합) — 커버 밴드용. */
+/** 레이어 soft 배경 (타입 칩). */
 export function layerTint(type: NodeType): string {
-  return `color-mix(in oklab, ${LAYER_COLOR[type].base} 12%, white)`
+  return LAYER_COLOR[type].soft
 }

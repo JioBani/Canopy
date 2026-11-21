@@ -13,12 +13,12 @@ export interface Status {
   updated_at: string
 }
 
-/** 카테고리 기본색 (Pixel Blossom 개화 램프). status.color 없을 때 fallback. */
+/** 카테고리 기본색 (design-system-v2 의미색). 새 상태 생성 시 기본값·차트용. 칩은 statusTone() 사용. */
 export const CATEGORY_COLOR: Record<StatusCategory, string> = {
-  할일: "#ABA2A8", // mist
-  진행중: "#EC9A78", // peach
-  완료: "#E88AAB", // sakura
-  취소됨: "#ABA2A8", // mist(흐림)
+  할일: "#4B5563",
+  진행중: "#1D5FD1",
+  완료: "#16794A",
+  취소됨: "#6B7280",
 }
 
 /** 프로젝트의 상태 목록 (카테고리 순서 → sort_order). */

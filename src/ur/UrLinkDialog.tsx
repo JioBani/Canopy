@@ -54,7 +54,7 @@ function SubUrList({
 }) {
   if (urs.length === 0)
     return (
-      <p className="text-muted-foreground py-1 pl-2 text-[12.5px]">
+      <p className="text-fg-3 py-1 pl-2 text-meta">
         요구사항이 없습니다.
       </p>
     )
@@ -71,8 +71,8 @@ function SubUrList({
           <div key={gid ?? "none"} className="flex flex-col gap-0.5">
             <div className="flex flex-wrap items-center gap-1.5 py-0.5">
               <span
-                className="text-[11px] font-semibold"
-                style={{ color: "var(--c-ink-3)" }}
+                className="text-meta font-semibold"
+                style={{ color: "var(--ds-fg-3)" }}
                 data-testid="ur-link-group-name"
               >
                 {gid ? groupName(gid) : "미분류"} · {list.length}
@@ -81,7 +81,7 @@ function SubUrList({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 px-1.5 text-[11px]"
+                  className="h-6 px-1.5 text-meta"
                   onClick={() => onSetMany(ids, true)}
                   data-testid="ur-link-group-all"
                 >
@@ -92,7 +92,7 @@ function SubUrList({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 px-1.5 text-[11px]"
+                  className="h-6 px-1.5 text-meta"
                   onClick={() => onSetMany(incompleteUnsel, true)}
                   data-testid="ur-link-group-incomplete"
                 >
@@ -103,7 +103,7 @@ function SubUrList({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-muted-foreground h-6 px-1.5 text-[11px]"
+                  className="text-fg-3 h-6 px-1.5 text-meta"
                   onClick={() => onSetMany(ids, false)}
                   data-testid="ur-link-group-clear"
                 >
@@ -121,7 +121,7 @@ function SubUrList({
                   onClick={() => onToggle(u)}
                   className={cn(
                     "flex items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors",
-                    isSel ? "bg-[var(--c-pink-bg)]" : "hover:bg-[var(--c-pink-bg)]/50"
+                    isSel ? "bg-selected" : "hover:bg-hover"
                   )}
                   data-testid="ur-link-row"
                   data-linked={isSel ? "true" : "false"}
@@ -130,8 +130,8 @@ function SubUrList({
                     className={cn(
                       "flex size-4 shrink-0 items-center justify-center rounded border",
                       isSel
-                        ? "border-[var(--c-sakura)] bg-[var(--c-sakura)] text-white"
-                        : "border-[var(--c-line-2)]"
+                        ? "border-brand bg-brand text-white"
+                        : "border-line-strong"
                     )}
                   >
                     {isSel && <Check className="size-3" />}
@@ -141,15 +141,15 @@ function SubUrList({
                     style={{ color: meta.color }}
                   >
                     <UrStateGlyph status={u.status} className="size-[15px]" />
-                    <span className="text-[11px] font-semibold">{meta.label}</span>
+                    <span className="text-meta font-semibold">{meta.label}</span>
                   </span>
                   <code
-                    className="tnum shrink-0 font-mono text-[11px] font-semibold"
-                    style={{ color: "var(--c-plum)" }}
+                    className="tnum shrink-0 font-mono text-meta font-semibold"
+                    style={{ color: "var(--ds-fg-3)" }}
                   >
                     {urKey(u.ticket_number)}
                   </code>
-                  <span className="min-w-0 flex-1 text-[13px]">{u.text}</span>
+                  <span className="min-w-0 flex-1 text-body">{u.text}</span>
                 </button>
               )
             })}
@@ -277,13 +277,13 @@ export function UrLinkDialog({
         <button
           type="button"
           onClick={() => toggleExpand(node.id)}
-          className="flex items-center gap-1.5 rounded-md py-1 text-left text-[13px] hover:bg-[var(--c-pink-bg)]/40"
+          className="flex items-center gap-1.5 rounded-md py-1 text-left text-body hover:bg-hover"
           style={{ paddingLeft: depth * 14 + 4 }}
           data-testid="ur-tree-node"
         >
           <ChevronRight
             className={cn(
-              "text-muted-foreground size-3.5 shrink-0 transition-transform",
+              "text-fg-3 size-3.5 shrink-0 transition-transform",
               openRow && "rotate-90"
             )}
           />
@@ -293,8 +293,8 @@ export function UrLinkDialog({
           />
           <span className="truncate">{node.title}</span>
           <span
-            className="text-[10.5px]"
-            style={{ color: "var(--c-ink-3)" }}
+            className="text-meta"
+            style={{ color: "var(--ds-fg-3)" }}
           >
             {TYPE_META[node.type].label}
           </span>
@@ -342,7 +342,7 @@ export function UrLinkDialog({
                   return (
                     <span key={n.id} className="flex items-center gap-1.5">
                       {i > 0 && (
-                        <span style={{ color: "var(--c-ink-3)" }}>/</span>
+                        <span style={{ color: "var(--ds-fg-3)" }}>/</span>
                       )}
                       <Icon
                         className="size-4 shrink-0"
@@ -350,10 +350,10 @@ export function UrLinkDialog({
                       />
                       <span
                         className={cn(
-                          "text-[15px]",
-                          last ? "font-display font-bold" : "font-medium"
+                          "text-reading",
+                          last ? "font-bold" : "font-medium"
                         )}
-                        style={last ? undefined : { color: "var(--c-ink-2)" }}
+                        style={last ? undefined : { color: "var(--ds-fg-2)" }}
                       >
                         {n.title}
                       </span>
@@ -374,8 +374,8 @@ export function UrLinkDialog({
           {/* 다른 요구사항 — 계층 트리(아이콘+텍스트), 접힘 기본 */}
           <div className="flex flex-col gap-0.5" data-testid="ur-link-tree">
             <span
-              className="mb-1 text-[12px] font-bold"
-              style={{ color: "var(--c-ink-2)" }}
+              className="mb-1 text-meta font-bold"
+              style={{ color: "var(--ds-fg-2)" }}
             >
               다른 요구사항
             </span>

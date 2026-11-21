@@ -1,5 +1,6 @@
 import type { SVGProps } from "react"
 import type { StatusCategory } from "@/lib/statuses"
+import { CATEGORY_TONE } from "@/lib/statusTone"
 
 const petals = [
   ["8", "3.7"],
@@ -8,15 +9,8 @@ const petals = [
   ["5.4", "11.4"],
   ["3.7", "6.4"],
 ]
-const petalsSmall = [
-  ["8", "4"],
-  ["12", "6.6"],
-  ["10.4", "11.2"],
-  ["5.6", "11.2"],
-  ["4", "6.6"],
-]
 
-// 만개(완료)
+/** 브랜드 마크(로고) 전용 꽃. 상태 표시에 쓰지 않는다. */
 export const BloomFull = (p: SVGProps<SVGSVGElement>) => (
   <svg width="15" height="15" viewBox="0 0 16 16" {...p}>
     <g fill="currentColor">
@@ -24,61 +18,62 @@ export const BloomFull = (p: SVGProps<SVGSVGElement>) => (
         <circle key={i} cx={cx} cy={cy} r="2.3" />
       ))}
     </g>
-    <circle cx="8" cy="8" r="1.7" fill="#C24E78" />
-  </svg>
-)
-// 반개(진행중)
-export const BloomHalf = (p: SVGProps<SVGSVGElement>) => (
-  <svg width="15" height="15" viewBox="0 0 16 16" {...p}>
-    <g fill="currentColor">
-      {petalsSmall.map(([cx, cy], i) => (
-        <circle key={i} cx={cx} cy={cy} r="2.1" />
-      ))}
-    </g>
-    <circle cx="8" cy="8" r="1.5" fill="#BE6A3F" />
-  </svg>
-)
-// 빈꽃(할일) — 외곽선만
-export const BloomEmpty = (p: SVGProps<SVGSVGElement>) => (
-  <svg
-    width="15"
-    height="15"
-    viewBox="0 0 16 16"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.2"
-    {...p}
-  >
-    {petalsSmall.map(([cx, cy], i) => (
-      <circle key={i} cx={cx} cy={cy} r="2.1" />
-    ))}
-  </svg>
-)
-// 시듦(취소) — 흐린 채움
-export const BloomWilt = (p: SVGProps<SVGSVGElement>) => (
-  <svg width="15" height="15" viewBox="0 0 16 16" opacity=".55" {...p}>
-    <g fill="currentColor">
-      {petalsSmall.map(([cx, cy], i) => (
-        <circle key={i} cx={cx} cy={cy} r="2.1" />
-      ))}
-    </g>
+    <circle cx="8" cy="8" r="1.7" fill="#fff" />
   </svg>
 )
 
+/* ── 상태 글리프 (design-system-v2): ○ 할일 · ◐ 진행중 · ✓ 완료 · ⊘ 취소됨 ──
+   색만이 아니라 모양으로도 구분된다. currentColor 사용. */
+const ring = {
+  width: 16,
+  height: 16,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2.2,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+}
+
+export const StatusTodo = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...ring} {...p}>
+    <circle cx="12" cy="12" r="8.5" />
+  </svg>
+)
+export const StatusProgress = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...ring} {...p}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none" />
+  </svg>
+)
+export const StatusDone = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...ring} {...p}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="m8.3 12.2 2.6 2.6 4.8-5.2" />
+  </svg>
+)
+export const StatusCancelled = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...ring} {...p}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="m6 18 12-12" />
+  </svg>
+)
+
+/** 카테고리 → 상태 글리프 (이름은 v1 호환). */
 export const BLOOM_GLYPH: Record<
   StatusCategory,
   (p: SVGProps<SVGSVGElement>) => React.JSX.Element
 > = {
-  할일: BloomEmpty,
-  진행중: BloomHalf,
-  완료: BloomFull,
-  취소됨: BloomWilt,
+  할일: StatusTodo,
+  진행중: StatusProgress,
+  완료: StatusDone,
+  취소됨: StatusCancelled,
 }
 
-/** 카테고리별 글리프 색 / 라벨 텍스트색 (대비 규칙: 작은 핑크 텍스트는 plum). */
+/** 카테고리별 텍스트/아이콘 색 (v1 호환 이름). */
 export const CATEGORY_TEXT_COLOR: Record<StatusCategory, string> = {
-  할일: "var(--c-mist)",
-  진행중: "var(--c-peach-d)",
-  완료: "var(--c-plum)",
-  취소됨: "var(--c-ink-3)",
+  할일: CATEGORY_TONE.할일.fg,
+  진행중: CATEGORY_TONE.진행중.fg,
+  완료: CATEGORY_TONE.완료.fg,
+  취소됨: CATEGORY_TONE.취소됨.fg,
 }

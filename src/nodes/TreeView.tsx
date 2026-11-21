@@ -84,7 +84,7 @@ function InlineAdd({
           if (!value.trim()) onClose()
         }}
         placeholder={`${TYPE_META[type].label} 제목 입력 후 Enter`}
-        className="h-7"
+        className="h-8"
         data-testid="inline-add-input"
       />
     </div>
@@ -106,8 +106,7 @@ function AddChildButton({
     return (
       <Button
         variant="ghost"
-        size="icon"
-        className="size-6"
+        size="icon-sm"
         onClick={(e) => {
           e.stopPropagation()
           onPick(allowed[0])
@@ -115,7 +114,7 @@ function AddChildButton({
         data-testid="node-add"
         title={`${TYPE_META[allowed[0]].label} 추가`}
       >
-        <Plus className="size-3.5" />
+        <Plus className="size-4" />
       </Button>
     )
   }
@@ -125,13 +124,12 @@ function AddChildButton({
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          className="size-6"
+          size="icon-sm"
           onClick={(e) => e.stopPropagation()}
           data-testid="node-add"
           title="자식 추가"
         >
-          <Plus className="size-3.5" />
+          <Plus className="size-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
@@ -156,7 +154,6 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
     toggleCollapse,
     selectedId,
     select,
-    getProgress,
   } = useNodes()
   const [addingType, setAddingType] = useState<NodeType | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -165,24 +162,17 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
   const expanded = isExpanded(node.id)
   const selected = selectedId === node.id
   const Icon = PIXEL_ICONS[node.type]
-  // 레이어색 단일화: 타입 아이콘에 레이어 base 색(아이콘만, 텍스트/배경 색칠 금지).
+  // 레이어색은 타입 아이콘에만(텍스트/배경 색칠 금지).
   const iconColor = LAYER_COLOR[node.type].base
-
-  // 시그니처 "꽃핀 가지": 하위 완료율이 오를수록 가지 가이드선이 sakura 로 물듦.
-  const np = getProgress(node.id)
-  const branchColor =
-    np && np.progress != null
-      ? `color-mix(in oklab, var(--c-sakura) ${Math.round(np.progress * 100)}%, var(--c-line-2))`
-      : "var(--c-line-2)"
 
   return (
     <div className="relative">
       <div
         className={cn(
-          "group relative flex cursor-pointer items-center gap-1.5 rounded-lg py-1 pr-1 transition-colors",
+          "group text-body relative flex h-[34px] cursor-pointer items-center gap-1.5 rounded-md pr-2 transition-colors",
           selected
-            ? "bg-[var(--c-pink-bg)] before:absolute before:top-1 before:bottom-1 before:left-0 before:w-[2px] before:rounded-full before:bg-[var(--c-sakura)] before:content-['']"
-            : "hover:bg-[rgba(40,28,40,0.045)]"
+            ? "bg-selected text-fg font-semibold before:bg-brand before:absolute before:top-1.5 before:bottom-1.5 before:left-0 before:w-[3px] before:rounded-full before:content-['']"
+            : "text-fg hover:bg-hover"
         )}
         style={{ paddingLeft: depth * INDENT + 2 }}
         onClick={() => select(node.id)}
@@ -191,7 +181,7 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
       >
         <button
           type="button"
-          className="text-muted-foreground flex size-5 items-center justify-center"
+          className="text-fg-3 hover:text-fg flex size-5 shrink-0 items-center justify-center"
           onClick={(e) => {
             e.stopPropagation()
             if (hasKids) toggleCollapse(node.id)
@@ -211,20 +201,29 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
         <Icon className="size-4 shrink-0" style={{ color: iconColor }} />
 
         <span
-          className={cn("flex-1 truncate text-[13px]", selected && "font-semibold")}
+          className="min-w-0 flex-1 truncate"
+          title={node.title}
           data-testid="node-title"
         >
           {node.title}
         </span>
 
-        {node.type === "작업" ? (
-          <StatusBadge statusId={node.status_id} />
-        ) : (
-          <ProgressBadge nodeId={node.id} />
-        )}
+        {/* 진행률/상태 — 액션 버튼은 hover 시 이 위에 겹쳐 뜸(제목 폭을 미리 잡아먹지 않음). */}
+        <span className="flex shrink-0 items-center">
+          {node.type === "작업" ? (
+            <StatusBadge statusId={node.status_id} />
+          ) : (
+            <ProgressBadge nodeId={node.id} />
+          )}
+        </span>
 
         {/* 사이드바=보기/네비 전용: 이름/필드 편집은 상세에서. 구조(추가/삭제)만 유지. */}
-        <span className="flex items-center opacity-0 group-hover:opacity-100">
+        <span
+          className={cn(
+            "absolute top-1/2 right-1 flex -translate-y-1/2 items-center rounded-md opacity-0 group-hover:opacity-100 focus-within:opacity-100 has-[[data-state=open]]:opacity-100",
+            selected ? "bg-selected" : "bg-hover"
+          )}
+        >
           <AddChildButton
             parentType={node.type}
             onPick={(t) => setAddingType(t)}
@@ -233,13 +232,12 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                size="icon"
-                className="size-6"
+                size="icon-sm"
                 onClick={(e) => e.stopPropagation()}
                 data-testid="node-more"
                 title="더보기"
               >
-                <MoreHorizontal className="size-3.5" />
+                <MoreHorizontal className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -280,11 +278,11 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
       {/* 그 외(컨텐츠/기능/마스터데이터 등): 자식 행 렌더 */}
       {expanded && hasKids && node.type !== "세부기능" && (
         <>
-          {/* 가지 가이드선 — 완료율 따라 sakura 로 물듦(꽃핀 가지) */}
+          {/* 가지 가이드선 */}
           <span
             aria-hidden
-            className="absolute bottom-1.5 top-7 w-px"
-            style={{ left: depth * INDENT + 12, background: branchColor }}
+            className="bg-line absolute top-[34px] bottom-1 w-px"
+            style={{ left: depth * INDENT + 12 }}
           />
           {kids.map((child) => (
             <TreeNodeRow key={child.id} node={child} depth={depth + 1} />
@@ -308,7 +306,7 @@ export function TreeView() {
 
   if (loading) {
     return (
-      <div className="text-muted-foreground p-3 text-sm" data-testid="tree-loading">
+      <div className="text-fg-3 text-body p-3" data-testid="tree-loading">
         트리 불러오는 중…
       </div>
     )
@@ -320,7 +318,7 @@ export function TreeView() {
         className="flex flex-col items-center gap-3 p-6 text-center"
         data-testid="empty-state"
       >
-        <p className="font-display text-base">
+        <p className="text-body text-fg-2">
           아직 컨텐츠가 없습니다. 첫 컨텐츠를 추가해 시작하세요.
         </p>
         {addingRoot ? (
@@ -342,7 +340,7 @@ export function TreeView() {
   }
 
   return (
-    <div className="flex flex-col gap-0.5 p-2">
+    <div className="flex flex-col gap-px p-2">
       {roots.map((n) => (
         <TreeNodeRow key={n.id} node={n} depth={0} />
       ))}
@@ -357,12 +355,11 @@ export function TreeView() {
       ) : (
         <Button
           variant="ghost"
-          size="sm"
-          className="mt-1 justify-start gap-1"
+          className="mt-1 h-8 justify-start gap-1.5 px-2"
           onClick={() => setAddingRoot(true)}
           data-testid="root-add"
         >
-          <Plus className="size-3.5" />컨텐츠
+          <Plus className="size-4" />컨텐츠 추가
         </Button>
       )}
     </div>

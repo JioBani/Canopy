@@ -23,9 +23,8 @@ export function ProjectSwitcher() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="outline"
-            size="sm"
-            className="min-w-0 max-w-[40vw] gap-2 sm:max-w-[220px]"
+            variant="ghost"
+            className="text-fg h-8 min-w-0 max-w-[40vw] gap-1.5 px-2.5 sm:max-w-[240px]"
             data-testid="project-switcher"
           >
             {currentProject ? (
@@ -33,9 +32,9 @@ export function ProjectSwitcher() {
                 {currentProject.name}
               </span>
             ) : (
-              <span className="text-muted-foreground truncate">프로젝트 선택</span>
+              <span className="text-fg-3 truncate">프로젝트 선택</span>
             )}
-            <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+            <ChevronsUpDown className="text-fg-3 size-4 shrink-0" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-64">

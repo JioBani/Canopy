@@ -4,19 +4,11 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ── 폰트 (셀프호스트, woff2, swap) ──────────────────────────
-   Tier2 본문/밀집 = Pretendard(가변), Tier1 제목/브랜드 = 메이플스토리체.
-   메이플체는 둥근 디스플레이체라 16px+ 제목에만, 밀집/숫자는 Pretendard. */
+   전 UI = Pretendard(가변). 메이플스토리체는 워드마크 "Canopy" 에만. */
 @font-face {
   font-family: "Pretendard";
   src: url("/fonts/PretendardVariable.woff2") format("woff2-variations");
   font-weight: 45 920;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Maplestory";
-  src: url("/fonts/Maplestory-Light.woff2") format("woff2");
-  font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
@@ -31,109 +23,169 @@
 @theme {
   --font-sans: "Pretendard", system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-  --font-display: "Maplestory", var(--font-sans);
+  --font-display: "Maplestory", var(--font-sans); /* 워드마크 전용 */
+  --font-mono: "JetBrains Mono", "D2Coding", ui-monospace, "SFMono-Regular",
+    Consolas, monospace;
+
+  /* ── 타입 스케일 (design-system-v2) — 정수 px, 12px 미만 금지 ── */
+  --text-title: 26px;
+  --text-title--line-height: 36px;
+  --text-title--font-weight: 700;
+  --text-title--letter-spacing: -0.02em;
+  --text-heading: 18px;
+  --text-heading--line-height: 26px;
+  --text-heading--font-weight: 700;
+  --text-heading--letter-spacing: -0.01em;
+  --text-subheading: 15px;
+  --text-subheading--line-height: 22px;
+  --text-subheading--font-weight: 700;
+  --text-reading: 15px;
+  --text-reading--line-height: 26px;
+  --text-body: 14px;
+  --text-body--line-height: 22px;
+  --text-label: 13px;
+  --text-label--line-height: 18px;
+  --text-label--font-weight: 600;
+  --text-meta: 13px;
+  --text-meta--line-height: 18px;
+  --text-micro: 12px;
+  --text-micro--line-height: 16px;
+  --text-micro--font-weight: 600;
 }
 
+/* ═══ Canopy 디자인 시스템 v2 "읽히는 도구" — docs/design/design-system-v2.md ═══
+   라이트만. 면(canvas/surface/sunken)으로 경계를 만들고, 텍스트 회색은 3단계(모두 4.5:1↑). */
 :root {
-  /* Pixel Blossom (B안) — 라이트만. 다크는 범위 밖. */
-  --radius: 0.625rem; /* 컨트롤 기본 */
-  --radius-card: 1rem; /* 카드/패널 */
+  --radius: 0.375rem; /* 컨트롤 6px */
+  --radius-card: 0.625rem; /* 카드·팝오버 10px */
 
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.27 0.012 350); /* ink */
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.27 0.012 350);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.27 0.012 350);
+  /* 면 · 선 */
+  --ds-canvas: #f3f4f6;
+  --ds-surface: #ffffff;
+  --ds-sunken: #f3f4f6;
+  --ds-hover: #f0f1f4;
+  --ds-subtle: #fafafb;
+  --ds-selected: #fbeaf0;
+  --ds-line: #e3e5ea;
+  --ds-line-strong: #cbd0d8;
 
-  --primary: oklch(0.74 0.105 357); /* Sakura */
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0.006 350);
-  --secondary-foreground: oklch(0.49 0.012 350);
-  --muted: oklch(0.97 0.004 350);
-  --muted-foreground: oklch(0.49 0.012 350); /* ink-2 */
-  --accent: oklch(0.94 0.022 350); /* pink-bg (hover/선택) */
-  --accent-foreground: oklch(0.58 0.155 357); /* plum */
-  --destructive: oklch(0.62 0.155 12); /* ember */
+  /* 텍스트 */
+  --ds-fg: #16181d;
+  --ds-fg-2: #454b57;
+  --ds-fg-3: #646b78;
+  --ds-fg-disabled: #9aa0ab;
 
-  --border: rgba(40, 28, 40, 0.075);
-  --input: rgba(40, 28, 40, 0.12);
-  --ring: oklch(0.58 0.155 357); /* plum — 포커스 링 */
+  /* 브랜드 · 위험 */
+  --ds-brand: #be3a6b;
+  --ds-brand-hover: #a32f5b;
+  --ds-brand-soft: #fbeaf0;
+  --ds-brand-mark: #e88aab;
+  --ds-danger: #c42b3b;
+  --ds-danger-soft: #fdecee;
 
-  --chart-1: oklch(0.74 0.105 357);
-  --chart-2: oklch(0.77 0.095 50);
-  --chart-3: oklch(0.58 0.155 357);
-  --chart-4: oklch(0.71 0.008 350);
-  --chart-5: oklch(0.62 0.155 12);
-  --sidebar: oklch(0.99 0.002 350); /* surface */
-  --sidebar-foreground: oklch(0.27 0.012 350);
-  --sidebar-primary: oklch(0.74 0.105 357);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.94 0.022 350);
-  --sidebar-accent-foreground: oklch(0.58 0.155 357);
-  --sidebar-border: rgba(40, 28, 40, 0.075);
-  --sidebar-ring: oklch(0.58 0.155 357);
+  /* 상태 카테고리 */
+  --ds-st-todo: #4b5563;
+  --ds-st-todo-bg: #eef0f3;
+  --ds-st-prog: #1d5fd1;
+  --ds-st-prog-bg: #e7effd;
+  --ds-st-done: #16794a;
+  --ds-st-done-bg: #e3f4ea;
+  --ds-st-cancel: #6b7280;
+  --ds-st-cancel-bg: #f3f4f6;
 
-  /* 커스텀 토큰 (시맨틱 외 직접 사용) — 정본 HEX */
-  --c-ink: #272129;
-  --c-ink-2: #6e646c;
-  --c-ink-3: #a89fa4;
-  --c-sakura: #e88aab;
-  --c-plum: #c24e78;
-  --c-plum-d: #a53e66;
-  --c-peach: #ec9a78;
-  --c-peach-d: #be6a3f;
-  --c-mist: #aba2a8;
-  --c-ember: #d85f6e;
-  --c-pink-bg: #fbeaf1;
-  --c-exp-empty: #efe6ea;
-  --c-bg-sunken: #f1eff1;
-  --c-surface: #fcfbfc;
-  --c-line: rgba(40, 28, 40, 0.075);
-  --c-line-2: rgba(40, 28, 40, 0.12);
-}
+  --ds-shadow-pop: 0 8px 24px rgba(16, 24, 40, 0.12);
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* shadcn 시맨틱 매핑 */
+  --background: var(--ds-surface);
+  --foreground: var(--ds-fg);
+  --card: var(--ds-surface);
+  --card-foreground: var(--ds-fg);
+  --popover: var(--ds-surface);
+  --popover-foreground: var(--ds-fg);
+  --primary: var(--ds-brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--ds-sunken);
+  --secondary-foreground: var(--ds-fg);
+  --muted: var(--ds-sunken);
+  --muted-foreground: var(--ds-fg-3);
+  --accent: var(--ds-hover);
+  --accent-foreground: var(--ds-fg);
+  --destructive: var(--ds-danger);
+  --border: var(--ds-line);
+  --input: var(--ds-line-strong);
+  --ring: var(--ds-brand);
+  --chart-1: #1d5fd1;
+  --chart-2: #16794a;
+  --chart-3: #d26b12;
+  --chart-4: #8f75d1;
+  --chart-5: #c42b3b;
+  --sidebar: var(--ds-surface);
+  --sidebar-foreground: var(--ds-fg);
+  --sidebar-primary: var(--ds-brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--ds-hover);
+  --sidebar-accent-foreground: var(--ds-fg);
+  --sidebar-border: var(--ds-line);
+  --sidebar-ring: var(--ds-brand);
+
+  /* v1 호환 별칭 — 새 코드에서 쓰지 말 것 */
+  --c-ink: var(--ds-fg);
+  --c-ink-2: var(--ds-fg-2);
+  --c-ink-3: var(--ds-fg-3);
+  --c-sakura: var(--ds-brand-mark);
+  --c-plum: var(--ds-brand);
+  --c-plum-d: var(--ds-brand-hover);
+  --c-peach: #d26b12;
+  --c-peach-d: #a8540b;
+  --c-mist: var(--ds-fg-3);
+  --c-ember: var(--ds-danger);
+  --c-pink-bg: var(--ds-brand-soft);
+  --c-exp-empty: var(--ds-line);
+  --c-bg-sunken: var(--ds-sunken);
+  --c-surface: var(--ds-surface);
+  --c-line: var(--ds-line);
+  --c-line-2: var(--ds-line-strong);
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: 4px;
+  --radius-md: var(--radius);
+  --radius-lg: 8px;
+  --radius-xl: var(--radius-card);
   --radius-card: var(--radius-card);
-  /* Pixel Blossom 커스텀 색 (text-plum / bg-pink-bg 등 유틸 노출) */
+  --shadow-pop: var(--ds-shadow-pop);
+
+  /* v2 유틸 — bg-canvas / bg-surface / bg-sunken / bg-hover / bg-subtle / bg-selected,
+     border-line / border-line-strong, text-fg / text-fg-2 / text-fg-3 / text-fg-disabled,
+     bg-brand / text-brand / bg-brand-soft, text-danger, text-st-done / bg-st-done-bg … */
+  --color-canvas: var(--ds-canvas);
+  --color-surface: var(--ds-surface);
+  --color-sunken: var(--ds-sunken);
+  --color-hover: var(--ds-hover);
+  --color-subtle: var(--ds-subtle);
+  --color-selected: var(--ds-selected);
+  --color-line: var(--ds-line);
+  --color-line-strong: var(--ds-line-strong);
+  --color-fg: var(--ds-fg);
+  --color-fg-2: var(--ds-fg-2);
+  --color-fg-3: var(--ds-fg-3);
+  --color-fg-disabled: var(--ds-fg-disabled);
+  --color-brand: var(--ds-brand);
+  --color-brand-hover: var(--ds-brand-hover);
+  --color-brand-soft: var(--ds-brand-soft);
+  --color-brand-mark: var(--ds-brand-mark);
+  --color-danger: var(--ds-danger);
+  --color-danger-soft: var(--ds-danger-soft);
+  --color-st-todo: var(--ds-st-todo);
+  --color-st-todo-bg: var(--ds-st-todo-bg);
+  --color-st-prog: var(--ds-st-prog);
+  --color-st-prog-bg: var(--ds-st-prog-bg);
+  --color-st-done: var(--ds-st-done);
+  --color-st-done-bg: var(--ds-st-done-bg);
+  --color-st-cancel: var(--ds-st-cancel);
+  --color-st-cancel-bg: var(--ds-st-cancel-bg);
+
+  /* v1 호환 유틸 */
   --color-ink: var(--c-ink);
   --color-ink-2: var(--c-ink-2);
   --color-ink-3: var(--c-ink-3);
@@ -145,6 +197,7 @@
   --color-ember: var(--c-ember);
   --color-pink-bg: var(--c-pink-bg);
   --color-exp-empty: var(--c-exp-empty);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -182,11 +235,17 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-    font-family: var(--font-sans);
+  html {
+    -webkit-text-size-adjust: 100%;
   }
-  /* Tier1 메이플체: letter-spacing 만 보강(font-family 는 font-display 유틸이 담당) */
+  body {
+    @apply bg-canvas text-fg text-body;
+    font-family: var(--font-sans);
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* 워드마크 전용 */
   .font-display {
     letter-spacing: -0.01em;
   }
@@ -194,28 +253,31 @@
   .tnum {
     font-variant-numeric: tabular-nums;
   }
-  /* 텍스트 선택 — 핑크 틴트 */
   ::selection {
-    background: var(--c-pink-bg);
-    color: var(--c-plum-d);
+    background: #f6d3e0;
+    color: var(--ds-fg);
   }
-  /* 얇고 차분한 스크롤바(운영급 디테일) */
+  :focus-visible {
+    outline: 2px solid var(--ds-brand);
+    outline-offset: 1px;
+  }
+  /* 얇고 차분한 스크롤바 */
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--c-line-2) transparent;
+    scrollbar-color: var(--ds-line-strong) transparent;
   }
   *::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
   *::-webkit-scrollbar-thumb {
-    background: var(--c-line-2);
+    background: var(--ds-line-strong);
     border-radius: 99px;
     border: 3px solid transparent;
     background-clip: content-box;
   }
   *::-webkit-scrollbar-thumb:hover {
-    background: var(--c-ink-3);
+    background: var(--ds-fg-disabled);
     background-clip: content-box;
   }
   *::-webkit-scrollbar-track {
@@ -223,7 +285,6 @@
   }
 }
 
-/* 개화/꽃잎 등 장식 모션은 모션 최소화 설정 시 정지 */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -1,3 +1,4 @@
+import { isCustomStatusColor } from "@/lib/statusTone"
 import { useCallback, useEffect, useState, type KeyboardEvent } from "react"
 import { ChevronDown, ChevronUp, Settings, Trash2 } from "lucide-react"
 import { useProjects } from "@/projects/ProjectProvider"
@@ -139,14 +140,14 @@ function StatusSettingsContent({ projectId }: { projectId: string }) {
                 className="size-3 rounded-full"
                 style={{ backgroundColor: CATEGORY_COLOR[cat] }}
               />
-              <span className="text-sm font-semibold">{cat}</span>
+              <span className="text-body font-semibold">{cat}</span>
             </div>
 
             {list.map((s, i) => (
               <div key={s.id} className="flex items-center gap-2" data-testid="status-row">
                 <input
                   type="color"
-                  value={s.color ?? CATEGORY_COLOR[cat]}
+                  value={isCustomStatusColor(s.color, cat) ? s.color : CATEGORY_COLOR[cat]}
                   onChange={async (e) => {
                     await updateStatus(s.id, { color: e.target.value })
                     await reload()
@@ -188,7 +189,7 @@ function StatusSettingsContent({ projectId }: { projectId: string }) {
                   <ChevronDown className="size-4" />
                 </Button>
                 <span
-                  className="text-muted-foreground w-12 text-right text-xs tabular-nums"
+                  className="text-fg-3 w-12 text-right text-meta tabular-nums"
                   data-testid="status-usage"
                   title="이 상태를 쓰는 작업 수"
                 >
@@ -225,7 +226,7 @@ function StatusSettingsContent({ projectId }: { projectId: string }) {
         >
           {deleting.count > 0 ? (
             <>
-              <p className="text-sm">
+              <p className="text-body">
                 이 상태를 쓰는 작업 <b>{deleting.count}</b>개가 있습니다. 옮길 상태를 고르세요.
               </p>
               <FilterSelect
@@ -242,7 +243,7 @@ function StatusSettingsContent({ projectId }: { projectId: string }) {
               />
             </>
           ) : (
-            <p className="text-sm">이 상태를 삭제할까요?</p>
+            <p className="text-body">이 상태를 삭제할까요?</p>
           )}
           <div className="flex justify-end gap-2">
             <Button variant="outline" size="sm" onClick={() => setDeleting(null)}>

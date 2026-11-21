@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils"
 function Brand() {
   return (
     <span className="flex select-none items-center gap-1.5">
-      <BloomFull style={{ color: "var(--c-sakura)" }} className="size-[19px]" />
+      <BloomFull className="text-brand-mark size-[19px]" />
       <span className="font-display relative top-px hidden text-[17px] font-bold tracking-tight sm:inline">
         Canopy
       </span>
@@ -50,16 +50,15 @@ function UserMenu() {
           type="button"
           data-testid="user-menu"
           title={email}
-          className="flex size-8 items-center justify-center rounded-full text-[12px] font-bold text-white shadow-[0_0_0_1px_var(--c-line-2),0_1px_2px_rgba(150,60,90,.16)] transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-          style={{ background: "linear-gradient(150deg,#F6CFDD,#EC9EBA)", color: "#9b3a5e" }}
+          className="text-label flex size-8 items-center justify-center rounded-full bg-[#F6D3E0] text-[#8E2F55] ring-1 ring-black/5 hover:ring-black/15"
         >
           {initial}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuLabel className="flex flex-col gap-0.5">
-          <span className="text-muted-foreground text-[11px] font-normal">로그인 계정</span>
-          <span className="truncate text-[13px]" data-testid="user-email">{email}</span>
+          <span className="text-meta text-fg-3 font-normal">로그인 계정</span>
+          <span className="text-body text-fg truncate font-medium" data-testid="user-email">{email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={signOut} data-testid="logout-button">
@@ -81,16 +80,16 @@ function TopBar({
 }) {
   return (
     <header
-      className="border-border flex h-[52px] shrink-0 items-center gap-1.5 border-b px-2 sm:gap-2 sm:px-3"
+      className="border-line bg-surface flex h-[52px] shrink-0 items-center gap-1.5 border-b px-2 sm:gap-2 sm:px-4"
       data-testid="app-shell"
     >
       <Brand />
-      <span className="bg-[var(--c-line-2)] mx-1 h-5 w-px" />
+      <span className="bg-line mx-1 h-5 w-px" />
       <ProjectSwitcher />
       <div className="flex-1" />
       {center}
       {tools && <div className="flex items-center gap-1.5">{tools}</div>}
-      <span className="bg-[var(--c-line-2)] mx-1 h-5 w-px" />
+      <span className="bg-line mx-1 h-5 w-px" />
       <UserMenu />
     </header>
   )
@@ -114,10 +113,10 @@ function SegmentTab({
       data-testid={testid}
       aria-pressed={active}
       className={cn(
-        "shrink-0 rounded-md px-2.5 py-1 text-[13px] font-semibold whitespace-nowrap transition-colors sm:px-3",
+        "text-body shrink-0 rounded-md px-2.5 py-[5px] font-semibold whitespace-nowrap transition-colors sm:px-3.5",
         active
-          ? "bg-card text-foreground shadow-[0_1px_2px_rgba(90,40,60,.10),0_0_0_1px_var(--c-line)]"
-          : "text-muted-foreground hover:text-foreground"
+          ? "bg-surface text-fg ring-line ring-1"
+          : "text-fg-2 hover:text-fg"
       )}
     >
       {children}
@@ -125,10 +124,10 @@ function SegmentTab({
   )
 }
 
-const SIDEBAR_MIN = 240
+const SIDEBAR_MIN = 260
 const SIDEBAR_MAX = 560
-const SIDEBAR_DEFAULT = 300
-const SIDEBAR_KEY = "canopy.sidebarWidth"
+const SIDEBAR_DEFAULT = 320
+const SIDEBAR_KEY = "canopy.sidebarWidth.v2"
 
 function clampWidth(w: number) {
   return Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, w))
@@ -183,7 +182,7 @@ function ResizableSplit({
               type="button"
               onClick={() => select(null)}
               data-testid="mobile-back-tree"
-              className="border-border text-muted-foreground hover:text-foreground flex shrink-0 items-center gap-1 border-b px-3 py-2 text-[13px] font-medium"
+              className="border-line bg-surface text-fg-2 hover:text-fg text-body flex shrink-0 items-center gap-1 border-b px-3 py-2.5 font-medium"
             >
               <ChevronLeft className="size-4" /> 트리로
             </button>
@@ -191,7 +190,7 @@ function ResizableSplit({
           </section>
         ) : (
           <aside
-            className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[var(--c-surface)]"
+            className="bg-surface flex min-h-0 flex-1 flex-col overflow-y-auto"
             data-testid="tree-panel"
           >
             {sidebar}
@@ -204,7 +203,7 @@ function ResizableSplit({
   return (
     <div className="flex min-h-0 flex-1">
       <aside
-        className="flex shrink-0 flex-col overflow-y-auto border-r bg-[var(--c-surface)]"
+        className="bg-surface flex shrink-0 flex-col overflow-y-auto"
         style={{ width }}
         data-testid="tree-panel"
       >
@@ -231,9 +230,9 @@ function ResizableSplit({
         }}
         className="group relative w-1 shrink-0 cursor-col-resize focus-visible:outline-none"
       >
-        <span className="bg-border group-hover:bg-[var(--c-sakura)] group-focus-visible:bg-[var(--c-sakura)] absolute inset-y-0 left-0 w-px transition-colors" />
+        <span className="bg-line group-hover:bg-brand group-focus-visible:bg-brand absolute inset-y-0 left-0 w-px transition-colors" />
       </div>
-      <section className="min-w-0 flex-1 overflow-y-auto">{main}</section>
+      <section className="bg-canvas min-w-0 flex-1 overflow-y-auto">{main}</section>
     </div>
   )
 }
@@ -246,7 +245,7 @@ function WorkspaceInner() {
       <TopBar
         center={
           <div
-            className="flex shrink-0 items-center gap-0.5 rounded-lg bg-[var(--c-bg-sunken)] p-0.5"
+            className="bg-sunken flex shrink-0 items-center gap-0.5 rounded-lg p-[3px]"
             role="tablist"
           >
             <SegmentTab active={view === "tree"} onClick={() => setView("tree")} testid="view-tab-tree">
@@ -310,7 +309,7 @@ function WorkspaceBody() {
   if (loading) {
     return (
       <EdgeShell>
-        <div className="text-muted-foreground p-6 text-sm" data-testid="projects-loading">
+        <div className="text-fg-3 text-body p-6" data-testid="projects-loading">
           프로젝트 불러오는 중…
         </div>
       </EdgeShell>
@@ -326,7 +325,7 @@ function WorkspaceBody() {
   if (currentProject) return <ProjectWorkspace projectId={currentProject.id} />
   return (
     <EdgeShell>
-      <div className="text-muted-foreground flex h-full items-center justify-center p-6 text-sm">
+      <div className="text-fg-2 text-body flex h-full items-center justify-center p-6">
         프로젝트를 선택하세요.
       </div>
     </EdgeShell>

@@ -77,7 +77,7 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
               />
             </div>
             {error && (
-              <p className="text-destructive text-sm" data-testid="project-form-error">
+              <p className="text-destructive text-body" data-testid="project-form-error">
                 {error}
               </p>
             )}

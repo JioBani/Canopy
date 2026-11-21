@@ -12,7 +12,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <div className="flex min-h-svh items-center justify-center">
-        <p className="text-muted-foreground text-sm">불러오는 중…</p>
+        <p className="text-fg-3 text-body">불러오는 중…</p>
       </div>
     )
   }

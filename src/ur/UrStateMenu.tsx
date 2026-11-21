@@ -24,7 +24,7 @@ export function UrStateMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex shrink-0 items-center justify-center rounded-full p-0.5 outline-none hover:bg-[var(--c-pink-bg)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+          className="hover:bg-hover flex shrink-0 items-center justify-center rounded-full p-0.5"
           title={`상태: ${UR_STATE_META[status].label}`}
           onClick={(e) => e.stopPropagation()}
           data-testid={testid}

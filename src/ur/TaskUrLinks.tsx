@@ -13,6 +13,7 @@ import {
 import { UrStateMenu } from "@/ur/UrStateMenu"
 import { UrLinkDialog } from "@/ur/UrLinkDialog"
 import { Button } from "@/components/ui/button"
+import { Section, TicketKey } from "@/components/ds"
 
 export function TaskUrLinks({
   workId,
@@ -71,84 +72,83 @@ export function TaskUrLinks({
   )
 
   return (
-    <section className="flex flex-col gap-2.5" data-testid="task-ur-links">
-      <h3 className="font-display text-[15px] font-bold">만족시키는 UR</h3>
-
-      <div className="flex flex-col gap-1.5">
-        {linked.map((u) => (
-          <div
-            key={u.id}
-            className="group/lu border-border bg-card flex items-start gap-2 rounded-[10px] border px-3 py-2.5"
-            data-testid="linked-ur"
-          >
-            <div className="mt-px shrink-0">
-              <UrStateMenu
-                status={u.status}
-                testid="linked-ur-state"
-                onChange={(s) => void changeStatus(u.id, s)}
-              />
-            </div>
-            <div className="flex-1">
-              <p className="text-[13.5px] leading-relaxed">{u.text}</p>
-              <p
-                className="mt-0.5 text-[11px]"
-                style={{ color: "var(--c-ink-3)" }}
-              >
-                <code
-                  className="tnum font-mono font-semibold"
-                  style={{ color: "var(--c-plum)" }}
-                  data-testid="ur-key"
-                >
-                  {urKey(u.ticket_number)}
-                </code>
-                {" · "}
-                {featureTitle.get(u.feature_id) ?? ""}
-              </p>
-            </div>
-            {editable && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-destructive size-6 shrink-0 opacity-0 group-hover/lu:opacity-100"
-                onClick={async () => {
-                  await unlinkUrWork(u.id, workId)
-                  await reload()
-                }}
-                data-testid="unlink-ur"
-                title="연결 해제"
-              >
-                <X className="size-3.5" />
-              </Button>
-            )}
-          </div>
-        ))}
-        {linked.length === 0 && (
-          <p className="text-muted-foreground text-[13px]">
-            연결된 UR 이 없습니다.
-          </p>
-        )}
-      </div>
-
-      {editable && (
-        <>
+    <Section
+      icon={<Link2 />}
+      title="충족하는 요구사항"
+      count={linked.length || undefined}
+      flush
+      data-testid="task-ur-links"
+      actions={
+        editable && (
           <Button
             variant="outline"
             size="sm"
-            className="w-fit gap-1.5"
             onClick={() => setDialogOpen(true)}
             data-testid="ur-link-open"
           >
-            <Link2 className="size-3.5" />UR 연결
+            <Link2 />요구사항 연결
           </Button>
-          <UrLinkDialog
-            workId={workId}
-            subFeatureId={parentSub}
-            open={dialogOpen}
-            onOpenChange={setDialogOpen}
-            onChanged={() => void reload()}
-          />
-        </>
+        )
+      }
+    >
+      {linked.length === 0 && (
+        <p className="text-body text-fg-3 px-5 py-4">
+          연결된 요구사항이 없습니다.
+          {editable && " ‘요구사항 연결’로 이 작업이 충족하는 요구사항을 고르세요."}
+        </p>
       )}
-    </section>
+      {linked.map((u) => (
+        <div
+          key={u.id}
+          className="group/lu border-line grid grid-cols-[20px_minmax(0,1fr)_auto] items-start gap-3 border-t px-5 py-3 first:border-t-0"
+          data-testid="linked-ur"
+        >
+          <div className="mt-px flex">
+            <UrStateMenu
+              status={u.status}
+              size={18}
+              testid="linked-ur-state"
+              onChange={(s) => void changeStatus(u.id, s)}
+            />
+          </div>
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className="text-body text-fg">{u.text}</p>
+            <p className="text-meta text-fg-3 flex flex-wrap items-center gap-x-2">
+              <TicketKey value={urKey(u.ticket_number)} data-testid="ur-key" />
+              {featureTitle.get(u.feature_id) && (
+                <span>· {featureTitle.get(u.feature_id)}</span>
+              )}
+            </p>
+          </div>
+          {editable ? (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="hover:text-danger shrink-0 opacity-0 group-hover/lu:opacity-100 focus-visible:opacity-100"
+              onClick={async () => {
+                await unlinkUrWork(u.id, workId)
+                await reload()
+              }}
+              data-testid="unlink-ur"
+              title="연결 해제"
+            >
+              <X />
+            </Button>
+          ) : (
+            <span />
+          )}
+        </div>
+      ))}
+
+      {editable && (
+        <UrLinkDialog
+          workId={workId}
+          subFeatureId={parentSub}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onChanged={() => void reload()}
+        />
+      )}
+    </Section>
   )
 }

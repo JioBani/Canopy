@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Canopy 디자인 시스템 v2</title>
+<style>
+@font-face{font-family:"Pretendard";src:url("../../public/fonts/PretendardVariable.woff2") format("woff2-variations");font-weight:45 920;font-display:swap}
+@font-face{font-family:"Maplestory";src:url("../../public/fonts/Maplestory-Bold.woff2") format("woff2");font-weight:700;font-display:swap}
+:root{
+  --canvas:#F3F4F6;--surface:#FFFFFF;--surface-sunken:#F3F4F6;--surface-hover:#F0F1F4;--surface-selected:#FBEAF0;
+  --border:#E3E5EA;--border-strong:#CBD0D8;
+  --text-1:#16181D;--text-2:#454B57;--text-3:#646B78;--text-disabled:#9AA0AB;
+  --brand:#BE3A6B;--brand-hover:#A32F5B;--brand-soft:#FBEAF0;--brand-mark:#E88AAB;--danger:#C42B3B;
+  --st-todo:#4B5563;--st-todo-bg:#EEF0F3;--st-prog:#1D5FD1;--st-prog-bg:#E7EFFD;--st-done:#16794A;--st-done-bg:#E3F4EA;--st-cancel:#6B7280;--st-cancel-bg:#F3F4F6;
+  --l-content:#D9669A;--l-content-ink:#9E3566;--l-content-soft:#FBEBF2;
+  --l-feature:#8F75D1;--l-feature-ink:#5B42A3;--l-feature-soft:#F0ECFA;
+  --l-sub:#4F8FD1;--l-sub-ink:#2C5F9E;--l-sub-soft:#E8F1FB;
+  --l-master:#3DA588;--l-master-ink:#1F6E59;--l-master-soft:#E4F5EF;
+  --l-task:#D08E2C;--l-task-ink:#8A5A12;--l-task-soft:#FBF1E1;
+  --mono:"JetBrains Mono","D2Coding",ui-monospace,Consolas,monospace;
+  --r-ctl:6px;--r-card:10px;
+  --shadow-pop:0 8px 24px rgba(16,24,40,.12);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--canvas);color:var(--text-1);font-family:"Pretendard",system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:14px;line-height:22px;word-break:keep-all;overflow-wrap:anywhere}
+.tnum{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+/* type tokens */
+.t-title{font-size:26px;line-height:36px;font-weight:700;letter-spacing:-.02em}
+.t-heading{font-size:18px;line-height:26px;font-weight:700;letter-spacing:-.01em}
+.t-sub{font-size:15px;line-height:22px;font-weight:700}
+.t-read{font-size:15px;line-height:26px;font-weight:400}
+.t-body{font-size:14px;line-height:22px}
+.t-label{font-size:13px;line-height:18px;font-weight:600}
+.t-meta{font-size:13px;line-height:18px;color:var(--text-3)}
+.t-micro{font-size:12px;line-height:16px;font-weight:600}
+.c2{color:var(--text-2)}.c3{color:var(--text-3)}
+:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+
+/* doc chrome */
+.doc{max-width:1240px;margin:0 auto;padding:48px 24px 120px}
+.doc-h{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+.doc-h h1{margin:0;font-size:34px;line-height:44px;letter-spacing:-.025em}
+.lede{max-width:720px;font-size:17px;line-height:28px;color:var(--text-2);margin:8px 0 40px}
+.part{margin-top:64px}
+.part>h2{font-size:22px;line-height:30px;margin:0 0 6px;letter-spacing:-.015em}
+.part>p.desc{margin:0 0 20px;color:var(--text-2);max-width:760px;font-size:15px;line-height:26px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:24px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px}
+
+/* principle list */
+.principles{counter-reset:p;display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.principles li{list-style:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:20px}
+.principles b{display:block;font-size:16px;line-height:24px;margin-bottom:4px}
+.principles span{color:var(--text-2);font-size:14px;line-height:22px}
+.principles{padding:0;margin:0}
+
+/* problem table */
+table.cmp{width:100%;border-collapse:collapse;font-size:14px;line-height:22px}
+table.cmp th{text-align:left;font-size:13px;color:var(--text-2);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--border)}
+table.cmp td{padding:12px;border-bottom:1px solid var(--border);vertical-align:top}
+table.cmp tr:last-child td{border-bottom:0}
+table.cmp td:first-child{color:var(--text-2)}
+table.cmp td:last-child{font-weight:500}
+
+/* swatches */
+.sw{display:flex;gap:12px;align-items:center;padding:8px 0}
+.sw i{width:40px;height:40px;border-radius:8px;border:1px solid rgba(0,0,0,.06);flex:none}
+.sw .n{font-weight:600;font-size:14px}
+.sw .v{font-family:var(--mono);font-size:13px;color:var(--text-3)}
+.sw .u{font-size:13px;color:var(--text-2)}
+.textsample{display:grid;gap:10px}
+.textsample div{display:flex;justify-content:space-between;gap:12px;align-items:baseline;border-bottom:1px solid var(--border);padding-bottom:8px}
+.textsample div:last-child{border:0}
+
+/* type specimen */
+.spec-row{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:14px 0;border-bottom:1px solid var(--border);align-items:baseline}
+.spec-row:last-child{border:0}
+.spec-row .tk{font-family:var(--mono);font-size:13px;color:var(--text-3)}
+.spec-row .tk b{display:block;color:var(--text-1);font-family:"Pretendard";font-size:14px}
+
+/* ===== components ===== */
+.btn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:var(--r-ctl);font:600 14px/1 "Pretendard";border:1px solid transparent;cursor:pointer;background:none;color:var(--text-1)}
+.btn svg{width:16px;height:16px}
+.btn.primary{background:var(--brand);color:#fff}.btn.primary:hover{background:var(--brand-hover)}
+.btn.secondary{background:var(--surface);border-color:var(--border-strong)}.btn.secondary:hover{background:var(--surface-hover)}
+.btn.ghost{color:var(--text-2)}.btn.ghost:hover{background:var(--surface-hover);color:var(--text-1)}
+.btn.danger{background:var(--surface);border-color:#EBC1C6;color:var(--danger)}
+.btn.sm{height:28px;padding:0 10px;font-size:13px}
+.btn.icon{width:36px;padding:0;justify-content:center}.btn.sm.icon{width:28px}
+.input{height:36px;border:1px solid var(--border-strong);border-radius:var(--r-ctl);padding:0 12px;font:400 14px "Pretendard";color:var(--text-1);background:var(--surface);width:100%}
+.input::placeholder{color:var(--text-3)}
+.input:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:var(--brand)}
+
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 8px;border-radius:6px;font-size:13px;line-height:18px;font-weight:600;white-space:nowrap}
+.chip svg{width:14px;height:14px;flex:none}
+.st-todo{background:var(--st-todo-bg);color:var(--st-todo)}
+.st-prog{background:var(--st-prog-bg);color:var(--st-prog)}
+.st-done{background:var(--st-done-bg);color:var(--st-done)}
+.st-cancel{background:var(--st-cancel-bg);color:var(--st-cancel);text-decoration:line-through}
+.lc-content{background:var(--l-content-soft);color:var(--l-content-ink)}
+.lc-feature{background:var(--l-feature-soft);color:var(--l-feature-ink)}
+.lc-sub{background:var(--l-sub-soft);color:var(--l-sub-ink)}
+.lc-master{background:var(--l-master-soft);color:var(--l-master-ink)}
+.lc-task{background:var(--l-task-soft);color:var(--l-task-ink)}
+.dom{background:var(--surface-sunken);color:var(--text-2)}
+.count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 7px;border-radius:999px;background:var(--surface-sunken);color:var(--text-2);font-size:12px;font-weight:600;line-height:16px;font-variant-numeric:tabular-nums}
+.key{font-family:var(--mono);font-size:13px;line-height:18px;color:var(--text-3);white-space:nowrap}
+.avatar{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#E9D5F5;color:#5B2A86;font-size:12px;font-weight:700;flex:none}
+.prio{display:inline-flex;align-items:center;gap:6px}
+.prio i{width:8px;height:8px;border-radius:50%}
+kbd{font:600 12px/16px var(--mono);padding:1px 6px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text-2)}
+
+/* section card */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card)}
+.card-h{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border)}
+.card-h svg.hi{width:18px;height:18px;color:var(--text-2);flex:none}
+.card-h .t-heading{flex:none}
+.card-h .sp{flex:1}
+.card-b{padding:20px}
+.card-b.flush{padding:0}
+
+/* property */
+.props{display:grid;gap:2px}
+.prop{display:grid;grid-template-columns:76px 1fr;align-items:center;min-height:36px;gap:8px}
+.prop .pl{font-size:13px;line-height:18px;font-weight:600;color:var(--text-2)}
+.prop .pv{display:flex;align-items:center;gap:6px;min-height:32px;padding:0 8px;margin-left:-8px;border-radius:var(--r-ctl);font-size:14px;font-weight:500}
+.prop .pv:hover{background:var(--surface-hover)}
+.prop .pv .caret{margin-left:auto;color:var(--text-3);width:16px;height:16px}
+.prop .pv.empty{color:var(--text-3);font-weight:400}
+
+/* UR rows */
+.ugroup{border-top:1px solid var(--border)}
+.ugroup:first-child{border-top:0}
+.ugroup-h{display:flex;align-items:center;gap:8px;padding:12px 20px;background:#FAFAFB}
+.ugroup-h svg{width:16px;height:16px;color:var(--text-2)}
+.ur{display:grid;grid-template-columns:18px 1fr 18px;gap:12px;align-items:start;padding:12px 20px;border-top:1px solid var(--border);cursor:pointer}
+.ur:hover{background:#FAFAFB}
+.ur .ic{width:18px;height:18px;margin-top:2px}
+.ur .main{min-width:0;display:grid;gap:2px}
+.ur .txt{font-size:14px;line-height:22px;color:var(--text-1);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ur .umeta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ur .cov{font-size:13px;line-height:18px;color:var(--text-3);white-space:nowrap}
+.ur .cov b{color:var(--text-1);font-weight:600}
+.ur .cov.warn{color:var(--danger);font-weight:600}
+.ur .chev{width:18px;height:18px;color:var(--text-3);margin-top:2px}
+.ur.open{background:#FAFAFB}
+.ur.open .txt{-webkit-line-clamp:unset;font-weight:500}
+.ur-detail{padding:0 20px 20px 50px;background:#FAFAFB}
+.well{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.sublabel{font-size:13px;line-height:18px;font-weight:600;color:var(--text-2);margin:16px 0 8px;display:flex;align-items:center;gap:8px}
+.sublabel:first-child{margin-top:4px}
+.linked{border:1px solid var(--border);border-radius:8px;background:var(--surface)}
+.linked .task-row{padding:10px 14px}
+
+/* task rows */
+.task-row{display:flex;align-items:center;gap:12px;padding:12px 20px;border-top:1px solid var(--border)}
+.task-row:first-child{border-top:0}
+.task-row .tt{flex:1;min-width:0;font-weight:500}
+.task-row:hover{background:#FAFAFB}
+
+/* checklist */
+.chk{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--border)}
+.chk:first-child{border-top:0;padding-top:0}
+.box{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border-strong);flex:none;margin-top:2px;display:flex;align-items:center;justify-content:center}
+.box.on{background:var(--st-done);border-color:var(--st-done)}
+.box.on svg{width:12px;height:12px;color:#fff}
+.chk .ct{font-size:15px;line-height:24px}
+.chk.done .ct{color:var(--text-3)}
+
+/* markdown */
+.md{font-size:15px;line-height:26px;color:var(--text-1);max-width:720px}
+.md h3{font-size:17px;line-height:26px;margin:24px 0 8px}
+.md h3:first-child{margin-top:0}
+.md h4{font-size:15px;line-height:24px;margin:20px 0 6px}
+.md p{margin:0 0 12px}
+.md ul{margin:0 0 12px;padding-left:20px}
+.md li{margin:4px 0}
+.md code{font-family:var(--mono);font-size:13px;background:var(--surface-sunken);border-radius:4px;padding:1px 5px}
+
+/* ===== app mock ===== */
+.frame{border:1px solid var(--border-strong);border-radius:12px;overflow:hidden;background:var(--canvas);box-shadow:0 2px 6px rgba(16,24,40,.06)}
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 16px}
+.brand{display:flex;align-items:center;gap:6px;font-family:"Maplestory","Pretendard";font-weight:700;font-size:17px}
+.brand svg{width:19px;height:19px;color:var(--brand-mark)}
+.vsep{width:1px;height:20px;background:var(--border)}
+.proj{display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:var(--r-ctl);font-weight:600}
+.proj:hover{background:var(--surface-hover)}
+.seg{display:flex;background:var(--surface-sunken);border-radius:8px;padding:3px;gap:2px}
+.seg span{padding:5px 14px;border-radius:6px;font-size:14px;font-weight:600;color:var(--text-2)}
+.seg span.on{background:var(--surface);color:var(--text-1);box-shadow:0 0 0 1px var(--border)}
+.search{display:flex;align-items:center;gap:8px;height:34px;width:240px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r-ctl);color:var(--text-3);background:var(--surface)}
+.search svg{width:16px;height:16px}
+.search kbd{margin-left:auto}
+.body{display:grid;grid-template-columns:320px 1fr;min-height:780px}
+.side{background:var(--surface);border-right:1px solid var(--border);padding:8px}
+.tr{display:flex;align-items:center;gap:6px;height:34px;padding-right:8px;border-radius:6px;font-size:14px;cursor:pointer;position:relative}
+.tr:hover{background:var(--surface-hover)}
+.tr.sel{background:var(--surface-selected);font-weight:600}
+.tr.sel::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:2px;background:var(--brand)}
+.tr .tg{width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:var(--text-3);flex:none}
+.tr .tg svg{width:16px;height:16px}
+.tr .ti{width:16px;height:16px;flex:none}
+.tr .tn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr .pc{font-size:13px;color:var(--text-3);font-variant-numeric:tabular-nums;font-weight:500}
+.tr .pc.full{color:var(--st-done)}
+.tr .pc.zero{color:var(--text-disabled)}
+.detail{padding:24px 32px 48px;overflow:hidden}
+.dhead{max-width:1060px;margin:0 auto}
+.crumbs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;line-height:22px;color:var(--text-2)}
+.crumbs a{color:var(--text-2);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.crumbs a:hover{color:var(--text-1);text-decoration:underline}
+.crumbs .sep{color:var(--text-disabled)}
+.crumbs svg{width:14px;height:14px}
+.crumbs .end{margin-left:auto;display:flex;align-items:center;gap:8px}
+.dtitle{margin:10px 0 24px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:24px;max-width:1060px;margin:0 auto;align-items:start}
+.stack{display:grid;gap:16px}
+.rail{position:sticky;top:16px}
+.rail .card-b{padding:12px 20px 16px}
+.rail-sub{border-top:1px solid var(--border);padding:12px 20px;font-size:13px;line-height:20px;color:var(--text-3)}
+
+.annot{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:22px;color:var(--text-2);margin:14px 0 0}
+.annot b{flex:none;display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--text-1);color:#fff;font-size:12px;align-items:center;justify-content:center}
+.notes{display:grid;gap:8px;margin-top:16px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+
+@media (max-width:1100px){
+  .cols{grid-template-columns:1fr}
+  .rail{position:static;order:-1}
+  .rail .props{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));column-gap:24px}
+  .body{grid-template-columns:1fr}
+  .side{display:none}
+}
+@media (max-width:640px){
+  .doc{padding:32px 16px 80px}
+  .detail{padding:16px}
+  .search{display:none}
+  .seg span{padding:5px 8px}
+  .ur-detail{padding-left:20px}
+  .spec-row{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-chev-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-chev-d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-chev-u" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></symbol>
+    <symbol id="i-updown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"/></symbol>
+    <symbol id="i-check-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+    <symbol id="i-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></symbol>
+    <symbol id="i-half" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12h8M8 8h8M8 16h5" stroke-linecap="round"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-bloom" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="6" r="4"/><circle cx="18" cy="11" r="4"/><circle cx="15.5" cy="18" r="4"/><circle cx="8.5" cy="18" r="4"/><circle cx="6" cy="11" r="4"/><circle cx="12" cy="12.5" r="2.6" fill="#fff"/></symbol>
+    <!-- 픽셀 레이어 아이콘 근사 -->
+    <symbol id="l-content" viewBox="0 0 16 16"><path fill="currentColor" d="M6 1h4v4h4v4h-4v6H6V9H2V5h4z"/></symbol>
+    <symbol id="l-feature" viewBox="0 0 16 16"><path fill="currentColor" d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z" opacity=".9"/></symbol>
+    <symbol id="l-sub" viewBox="0 0 16 16"><path fill="currentColor" d="M1 3h3v2H1zM6 3h9v2H6zM3 7h3v2H3zM8 7h7v2H8zM3 11h3v2H3zM8 11h7v2H8z"/></symbol>
+    <symbol id="l-task" viewBox="0 0 16 16"><path fill="none" stroke="currentColor" stroke-width="2" d="M3 3h10v10H3z"/></symbol>
+  </defs>
+</svg>
+
+<main class="doc">
+  <div class="doc-h"><h1>Canopy 디자인 시스템 v2</h1><span class="chip st-done">확정 · 2026-11-21</span></div>
+  <p class="lede">Jira 가 안 읽혀서 만든 도구라면, 화면에서 가장 먼저 눈에 들어오는 건 기획 문장이어야 합니다. v2 는 장식이 차지하던 폭과 대비를 텍스트에 돌려주고, 서로 다른 정보를 선이 아니라 면으로 나눕니다.</p>
+
+  <!-- 0. 문제 -->
+  <section class="part">
+    <h2>지금 무엇이 읽기를 방해하나</h2>
+    <p class="desc">2026-11-21 운영 화면(데미지 계산 · Task-4)에서 확인한 것만 적었습니다.</p>
+    <div class="panel" style="padding:8px 12px;overflow-x:auto">
+      <table class="cmp">
+        <thead><tr><th>현재</th><th>원인</th><th>v2 규칙</th></tr></thead>
+        <tbody>
+          <tr><td>트리 제목이 <b>데미…</b> <b>터미…</b> 세 글자에서 잘림</td><td>4칸 진행바 + % 가 제목 폭을 먹음</td><td>제목이 행 폭 우선. 진행률은 숫자 하나</td></tr>
+          <tr><td>라벨·메타 10.5~12px, 연회색·핑크</td><td><code>#A89FA4</code> 대비 2.6:1, 소수점 px 난립(123곳)</td><td>콘텐츠 14px↑, 메타 13px↑, 회색 대비 4.5:1↑</td></tr>
+          <tr><td>설명·요구사항·작업·로그가 한 덩어리</td><td>모두 흰 배경 + 1px 구분선</td><td>회색 캔버스 위 흰 섹션 카드</td></tr>
+          <tr><td>본문 한 줄이 950px 이상</td><td>상세가 전폭, 속성이 본문 위에 가로로</td><td>읽기 컬럼 ≤ 760px + 우측 속성 레일</td></tr>
+          <tr><td>요구사항 문장이 한 줄에서 잘림</td><td>단일행 말줄임 + 앞에 긴 회색 pill 키</td><td>문장 2줄까지, 키·커버리지는 문장 아래 메타 줄</td></tr>
+          <tr><td>완료가 핑크, 진행중이 복숭아색</td><td>브랜드색을 상태색으로 재사용</td><td>상태 = 의미색(초록·파랑·회색·빨강)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 1. 원칙 -->
+  <section class="part">
+    <h2>원칙</h2>
+    <p class="desc">충돌하면 위쪽이 이깁니다.</p>
+    <ol class="principles">
+      <li><b>텍스트가 주인공</b><span>크기·대비·줄 길이가 레이아웃보다 먼저 정해집니다. 장식이 글자 폭을 먹으면 장식을 뺍니다.</span></li>
+      <li><b>경계는 면으로</b><span>종류가 다른 정보는 다른 면에 둡니다. 캔버스(회색) · 카드(흰색) · 우물(회색).</span></li>
+      <li><b>색은 의미 하나에 하나</b><span>브랜드 · 상태 · 레이어는 서로 다른 색축입니다. 메타 텍스트는 색 없이 회색.</span></li>
+      <li><b>자르지 말고 줄바꿈</b><span>요구사항 문장과 작업 제목은 2줄까지 보여줍니다. 말줄임은 트리에서만.</span></li>
+      <li><b>조용한 기본값</b><span>그림자·라운드·테두리는 최소. 강조는 굵기와 크기로.</span></li>
+    </ol>
+  </section>
+
+  <!-- 2. 색 -->
+  <section class="part">
+    <h2>색</h2>
+    <p class="desc">브랜드 핑크는 선택·포커스·주요 버튼에만 남깁니다. 텍스트 회색은 세 단계뿐이고, 가장 연한 <code>text-3</code> 도 흰 배경에서 5.4:1 입니다.</p>
+    <div class="grid g3">
+      <div class="panel">
+        <div class="t-label c2" style="margin-bottom:8px">면 · 선</div>
+        <div class="sw"><i style="background:var(--canvas)"></i><div><div class="n">canvas</div><div class="v">#F3F4F6</div><div class="u">앱·상세 배경</div></div></div>
+        <div class="sw"><i style="background:#fff"></i><div><div class="n">surface</div><div class="v">#FFFFFF</div><div class="u">카드·사이드바</div></div></div>
+        <div class="sw"><i style="background:var(--surface-selected)"></i><div><div class="n">surface-selected</div><div class="v">#FBEAF0</div><div class="u">선택 행</div></div></div>
+        <div class="sw"><i style="background:var(--border)"></i><div><div class="n">border</div><div class="v">#E3E5EA</div><div class="u">카드·구분선</div></div></div>
+        <div class="sw"><i style="background:var(--border-strong)"></i><div><div class="n">border-strong</div><div class="v">#CBD0D8</div><div class="u">입력·체크박스</div></div></div>
+      </div>
+      <div class="panel">
+        <div class="t-label c2" style="margin-bottom:8px">텍스트</div>
+        <div class="textsample">
+          <div><span style="color:var(--text-1);font-weight:600">text-1 제목·본문</span><span class="v mono c3">#16181D · 17.9:1</span></div>
+          <div><span style="color:var(--text-2);font-weight:600">text-2 라벨·보조</span><span class="v mono c3">#454B57 · 9.0:1</span></div>
+          <div><span style="color:var(--text-3);font-weight:600">text-3 메타·키</span><span class="v mono c3">#646B78 · 5.4:1</span></div>
+          <div><span style="color:var(--text-disabled);font-weight:600">disabled 비활성만</span><span class="v mono c3">#9AA0AB</span></div>
+        </div>
+        <div class="t-label c2" style="margin:20px 0 8px">브랜드</div>
+        <div class="sw"><i style="background:var(--brand)"></i><div><div class="n">brand</div><div class="v">#BE3A6B · 흰 글자 5.3:1</div><div class="u">주요 버튼·링크·포커스·선택 바</div></div></div>
+        <div class="sw"><i style="background:var(--danger)"></i><div><div class="n">danger</div><div class="v">#C42B3B</div><div class="u">삭제·오류·오작업</div></div></div>
+      </div>
+      <div class="panel">
+        <div class="t-label c2" style="margin-bottom:12px">상태 (카테고리 기본색)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+          <span class="chip st-todo"><svg><use href="#i-circle"/></svg>할일</span>
+          <span class="chip st-prog"><svg><use href="#i-half"/></svg>진행중</span>
+          <span class="chip st-done"><svg><use href="#i-check-c"/></svg>완료</span>
+          <span class="chip st-cancel">취소됨</span>
+        </div>
+        <div class="t-label c2" style="margin-bottom:12px">요구사항 상태</div>
+        <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px" class="t-label">
+          <span style="display:inline-flex;gap:6px;align-items:center;color:var(--st-done)"><svg width="16" height="16"><use href="#i-check-c"/></svg>완료</span>
+          <span style="display:inline-flex;gap:6px;align-items:center;color:var(--st-todo)"><svg width="16" height="16"><use href="#i-circle"/></svg>미작업</span>
+          <span style="display:inline-flex;gap:6px;align-items:center;color:var(--danger)"><svg width="16" height="16"><use href="#i-warn"/></svg>오작업</span>
+        </div>
+        <div class="t-label c2" style="margin-bottom:12px">레이어 (계층 타입) — 아이콘·타입 칩 전용</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span class="chip lc-content"><svg style="color:var(--l-content)"><use href="#l-content"/></svg>컨텐츠</span>
+          <span class="chip lc-feature"><svg style="color:var(--l-feature)"><use href="#l-feature"/></svg>기능</span>
+          <span class="chip lc-sub"><svg style="color:var(--l-sub)"><use href="#l-sub"/></svg>세부기능</span>
+          <span class="chip lc-master"><svg style="color:var(--l-master)"><use href="#l-sub"/></svg>마스터데이터</span>
+          <span class="chip lc-task"><svg style="color:var(--l-task)"><use href="#l-task"/></svg>작업</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 타입 -->
+  <section class="part">
+    <h2>타이포그래피</h2>
+    <p class="desc">Pretendard 하나로 갑니다. 메이플스토리체는 로고 워드마크에만 남깁니다. 정수 px 만 쓰고, 12px 는 숫자 pill·단축키 전용입니다.</p>
+    <div class="panel" style="padding:8px 24px">
+      <div class="spec-row"><div class="tk"><b>title</b>26 / 36 · 700</div><div class="t-title">스탯 누적 합연산 통일 (방어력 곱연산 → 합연산)</div></div>
+      <div class="spec-row"><div class="tk"><b>heading</b>18 / 26 · 700</div><div class="t-heading">요구사항</div></div>
+      <div class="spec-row"><div class="tk"><b>subheading</b>15 / 22 · 700</div><div class="t-sub">스탯계산</div></div>
+      <div class="spec-row"><div class="tk"><b>body-reading</b>15 / 26 · 400</div><div class="t-read" style="max-width:680px">수정자로 누적되는 능력치의 최종값 산정 방식을 전 스탯 합연산으로 통일한다. 현재 방어력만 증감 분리 곱연산을 쓰므로, 방어력을 합연산으로 바꿔 모든 스탯을 동일 규칙으로 맞춘다.</div></div>
+      <div class="spec-row"><div class="tk"><b>body</b>14 / 22 · 400·500</div><div class="t-body">모든 유닛의 데미지는 동일한 데미지 계산 공식으로 산출된다.</div></div>
+      <div class="spec-row"><div class="tk"><b>label</b>13 / 18 · 600</div><div class="t-label c2">우선순위</div></div>
+      <div class="spec-row"><div class="tk"><b>meta</b>13 / 18 · 400</div><div class="t-meta">작업 1 · 완료 1 &nbsp;·&nbsp; <span class="mono">Requirement-23</span> &nbsp;·&nbsp; 2026-07-05</div></div>
+      <div class="spec-row"><div class="tk"><b>micro</b>12 / 16 · 600</div><div><span class="count">10</span> &nbsp; <kbd>⌘K</kbd></div></div>
+    </div>
+  </section>
+
+  <!-- 4. 간격 -->
+  <section class="part">
+    <h2>간격 · 크기 · 라운드</h2>
+    <div class="grid g3">
+      <div class="panel"><div class="t-label c2">간격 (4px 그리드)</div>
+        <div style="display:flex;align-items:flex-end;gap:10px;margin-top:14px;flex-wrap:wrap">
+          <div style="text-align:center"><div style="width:4px;height:4px;background:var(--brand);margin:0 auto 6px"></div><span class="t-meta">4</span></div>
+          <div style="text-align:center"><div style="width:8px;height:8px;background:var(--brand);margin:0 auto 6px"></div><span class="t-meta">8</span></div>
+          <div style="text-align:center"><div style="width:12px;height:12px;background:var(--brand);margin:0 auto 6px"></div><span class="t-meta">12</span></div>
+          <div style="text-align:center"><div style="width:16px;height:16px;background:var(--brand);margin:0 auto 6px"></div><span class="t-meta">16</span></div>
+          <div style="text-align:center"><div style="width:20px;height:20px;background:var(--brand);margin:0 auto 6px"></div><span class="t-meta">20</span></div>
+          <div style="text-align:center"><div style="width:24px;height:24px;background:var(--brand);margin:0 auto 6px"></div><span class="t-meta">24</span></div>
+          <div style="text-align:center"><div style="width:32px;height:32px;background:var(--brand);margin:0 auto 6px"></div><span class="t-meta">32</span></div>
+          <div style="text-align:center"><div style="width:48px;height:48px;background:var(--brand);margin:0 auto 6px"></div><span class="t-meta">48</span></div>
+        </div>
+      </div>
+      <div class="panel"><div class="t-label c2" style="margin-bottom:10px">높이</div>
+        <div class="kv t-body"><span class="c3">컨트롤</span><span>sm 28 · <b>md 36</b> · lg 40</span><span class="c3">트리 행</span><span>34</span><span class="c3">목록 행</span><span>최소 44, 2줄이면 확장</span><span class="c3">속성 행</span><span>36</span></div>
+      </div>
+      <div class="panel"><div class="t-label c2" style="margin-bottom:10px">라운드 · 그림자</div>
+        <div class="kv t-body"><span class="c3">컨트롤·칩</span><span>6</span><span class="c3">카드·팝오버</span><span>10</span><span class="c3">카드 그림자</span><span>없음 (테두리만)</span><span class="c3">팝오버</span><span>0 8 24 / 12%</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 컴포넌트 -->
+  <section class="part">
+    <h2>컴포넌트</h2>
+    <p class="desc">새로 만드는 것은 <b>Section · PropertyRow · StatusChip · LayerChip · TicketKey · Count</b> 여섯 개. 나머지는 기존 shadcn 컴포넌트의 토큰만 바꿉니다.</p>
+    <div class="grid g2">
+      <div class="panel">
+        <div class="t-label c2" style="margin-bottom:14px">버튼 · 입력</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+          <button class="btn primary">저장</button>
+          <button class="btn secondary"><svg><use href="#i-plus"/></svg>요구사항 추가</button>
+          <button class="btn ghost"><svg><use href="#i-pencil"/></svg>수정</button>
+          <button class="btn danger">삭제</button>
+          <button class="btn ghost icon" aria-label="복사"><svg><use href="#i-copy"/></svg></button>
+        </div>
+        <input class="input" placeholder="작업 제목을 입력하고 Enter" />
+      </div>
+      <div class="panel">
+        <div class="t-label c2" style="margin-bottom:14px">속성 (PropertyRow) — 라벨 왼쪽, 값은 넓은 클릭 영역</div>
+        <div class="props">
+          <div class="prop"><span class="pl">상태</span><span class="pv"><span class="chip st-done"><svg><use href="#i-check-c"/></svg>완료</span><svg class="caret"><use href="#i-updown"/></svg></span></div>
+          <div class="prop"><span class="pl">우선순위</span><span class="pv"><span class="prio"><i style="background:#D26B12"></i>높음</span><svg class="caret"><use href="#i-updown"/></svg></span></div>
+          <div class="prop"><span class="pl">담당</span><span class="pv"><span class="avatar">임</span>임강현<svg class="caret"><use href="#i-updown"/></svg></span></div>
+          <div class="prop"><span class="pl">도메인</span><span class="pv empty">비어 있음<svg class="caret"><use href="#i-updown"/></svg></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-h"><svg class="hi"><use href="#i-list"/></svg><span class="t-heading">Section 카드</span><span class="count">3</span><span class="sp"></span><button class="btn ghost sm"><svg><use href="#i-plus"/></svg>추가</button></div>
+      <div class="card-b t-body c2">헤더 = 아이콘 18 + heading 18/700 + 개수 pill + 우측 ghost 액션. 바디 패딩 20. 섹션끼리는 캔버스 회색 16px 간격으로 떨어져, 선이 없어도 경계가 보입니다.</div>
+    </div>
+  </section>
+
+  <!-- 6. 화면: 세부기능 -->
+  <section class="part">
+    <h2>적용 예시 1 — 세부기능 상세</h2>
+    <p class="desc">요구사항과 작업을 탭으로 숨기지 않고 카드 두 장으로 둡니다. 요구사항 문장은 두 줄까지 보이고, 펼치면 같은 문장이 굵어질 뿐 다시 반복되지 않습니다.</p>
+    <div class="frame">
+      <div class="topbar">
+        <span class="brand"><svg><use href="#i-bloom"/></svg>Canopy</span>
+        <span class="vsep"></span>
+        <span class="proj">Tactica Defense <svg width="14" height="14" style="color:var(--text-3)"><use href="#i-updown"/></svg></span>
+        <span style="flex:1"></span>
+        <span class="seg"><span class="on">트리</span><span>보드</span><span>대시보드</span></span>
+        <span class="search"><svg><use href="#i-search"/></svg>검색<kbd>⌘K</kbd></span>
+        <span class="avatar" style="width:30px;height:30px;background:#F6CFDD;color:#8E2F55">J</span>
+      </div>
+      <div class="body">
+        <aside class="side">
+          <div class="tr"><span class="tg"><svg><use href="#i-chev-d"/></svg></span><svg class="ti" style="color:var(--l-content)"><use href="#l-content"/></svg><span class="tn">전장</span><span class="pc">76%</span></div>
+          <div class="tr" style="padding-left:16px"><span class="tg"><svg><use href="#i-chev-d"/></svg></span><svg class="ti" style="color:var(--l-feature)"><use href="#l-feature"/></svg><span class="tn">유닛</span><span class="pc">98%</span></div>
+          <div class="tr" style="padding-left:32px"><span class="tg"><svg><use href="#i-chev-r"/></svg></span><svg class="ti" style="color:var(--l-sub)"><use href="#l-sub"/></svg><span class="tn">능력치(스탯)</span><span class="pc full">100%</span></div>
+          <div class="tr sel" style="padding-left:32px"><span class="tg"><svg><use href="#i-chev-r"/></svg></span><svg class="ti" style="color:var(--l-sub)"><use href="#l-sub"/></svg><span class="tn">데미지 계산</span><span class="pc full">100%</span></div>
+          <div class="tr" style="padding-left:32px"><span class="tg"></span><svg class="ti" style="color:var(--l-sub)"><use href="#l-sub"/></svg><span class="tn">공격 규칙</span><span class="pc full">100%</span></div>
+          <div class="tr" style="padding-left:32px"><span class="tg"><svg><use href="#i-chev-r"/></svg></span><svg class="ti" style="color:var(--l-sub)"><use href="#l-sub"/></svg><span class="tn">타겟팅 규칙</span><span class="pc full">100%</span></div>
+          <div class="tr" style="padding-left:32px"><span class="tg"></span><svg class="ti" style="color:var(--l-sub)"><use href="#l-sub"/></svg><span class="tn">사거리 규칙</span><span class="pc full">100%</span></div>
+          <div class="tr" style="padding-left:32px"><span class="tg"></span><svg class="ti" style="color:var(--l-sub)"><use href="#l-sub"/></svg><span class="tn">능력치 정보 UI</span><span class="pc">75%</span></div>
+          <div class="tr" style="padding-left:16px"><span class="tg"><svg><use href="#i-chev-d"/></svg></span><svg class="ti" style="color:var(--l-feature)"><use href="#l-feature"/></svg><span class="tn">전술 지원</span><span class="pc zero">0%</span></div>
+          <div class="tr" style="padding-left:32px"><span class="tg"></span><svg class="ti" style="color:var(--l-sub)"><use href="#l-sub"/></svg><span class="tn">등장 타이밍</span><span class="pc zero">0%</span></div>
+          <div class="tr" style="padding-left:32px"><span class="tg"></span><svg class="ti" style="color:var(--l-sub)"><use href="#l-sub"/></svg><span class="tn">선택 및 누적</span><span class="pc zero">0%</span></div>
+          <div class="tr" style="padding-left:16px"><span class="tg"><svg><use href="#i-chev-d"/></svg></span><svg class="ti" style="color:var(--l-feature)"><use href="#l-feature"/></svg><span class="tn">소환 터미널</span><span class="pc">91%</span></div>
+          <div class="tr" style="padding-left:32px"><span class="tg"><svg><use href="#i-chev-r"/></svg></span><svg class="ti" style="color:var(--l-sub)"><use href="#l-sub"/></svg><span class="tn">터미널 구성 (UI)</span><span class="pc full">100%</span></div>
+          <div class="tr" style="padding-left:32px"><span class="tg"><svg><use href="#i-chev-r"/></svg></span><svg class="ti" style="color:var(--l-sub)"><use href="#l-sub"/></svg><span class="tn">소환 (구매)</span><span class="pc">78%</span></div>
+          <div class="tr" style="padding-left:32px"><span class="tg"></span><svg class="ti" style="color:var(--l-sub)"><use href="#l-sub"/></svg><span class="tn">스캔 잠금</span><span class="pc full">100%</span></div>
+          <div class="tr" style="padding-left:32px"><span class="tg"></span><svg class="ti" style="color:var(--l-sub)"><use href="#l-sub"/></svg><span class="tn">라운드 구성 (정규 / 엑스트라)</span><span class="pc full">100%</span></div>
+        </aside>
+
+        <div class="detail">
+          <div class="dhead">
+            <div class="crumbs">
+              <a href="#"><svg style="color:var(--l-content)"><use href="#l-content"/></svg>전장</a><span class="sep">/</span>
+              <a href="#"><svg style="color:var(--l-feature)"><use href="#l-feature"/></svg>유닛</a>
+              <span class="end"><span class="chip lc-sub"><svg style="color:var(--l-sub)"><use href="#l-sub"/></svg>세부기능</span><span class="key">SubFeature-2</span><button class="btn ghost sm icon" aria-label="티켓키 복사"><svg><use href="#i-copy"/></svg></button></span>
+            </div>
+            <h1 class="t-title dtitle">데미지 계산</h1>
+          </div>
+          <div class="cols">
+            <div class="stack">
+              <div class="card">
+                <div class="card-h"><svg class="hi"><use href="#i-doc"/></svg><span class="t-heading">설명</span><span class="sp"></span><button class="btn ghost sm"><svg><use href="#i-pencil"/></svg>수정</button></div>
+                <div class="card-b t-body c3">설명이 없습니다. <b class="c2" style="font-weight:600">수정</b>을 눌러 추가하세요.</div>
+              </div>
+
+              <div class="card">
+                <div class="card-h"><svg class="hi"><use href="#i-list"/></svg><span class="t-heading">요구사항</span><span class="count">10</span><span class="t-meta" style="margin-left:4px">완료 2 · 미작업 8</span><span class="sp"></span><button class="btn ghost sm"><svg><use href="#i-plus"/></svg>그룹</button><button class="btn secondary sm"><svg><use href="#i-plus"/></svg>요구사항</button></div>
+                <div class="card-b flush">
+                  <div class="ugroup">
+                    <div class="ugroup-h"><svg><use href="#i-chev-d"/></svg><span class="t-sub">스탯계산</span><span class="count">1</span></div>
+                    <div class="ur"><svg class="ic" style="color:var(--st-done)"><use href="#i-check-c"/></svg><div class="main"><span class="txt">모든 스탯의 최종값은 고정값형 수정자를 부호대로 합산해 기본값에 더하고, 비율형 수정자를 부호대로 합산해 곱하여 구한다 — 최종값 = (기본값 + 고정값 합) × (1 + 비율 합). 이 합연산 방식이 모든 스탯에 동일하게 적용된다.</span><span class="umeta"><span class="key">Requirement-23</span><span class="cov">작업 <b>1</b> · 완료 <b>1</b></span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
+                  </div>
+                  <div class="ugroup">
+                    <div class="ugroup-h"><svg><use href="#i-chev-d"/></svg><span class="t-sub">미분류</span><span class="count">9</span></div>
+                    <div class="ur"><svg class="ic" style="color:var(--st-todo)"><use href="#i-circle"/></svg><div class="main"><span class="txt">모든 유닛의 데미지는 동일한 데미지 계산 공식으로 산출된다.</span><span class="umeta"><span class="key">Requirement-14</span><span class="cov warn">연결된 작업 없음</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
+                    <div class="ur"><svg class="ic" style="color:var(--st-todo)"><use href="#i-circle"/></svg><div class="main"><span class="txt">데미지는 기본 데미지 결정 → 치명타 적용 → 방어력 적용 → 피해 증가 적용 → 최종 확정의 순서로 계산된다.</span><span class="umeta"><span class="key">Requirement-15</span><span class="cov warn">연결된 작업 없음</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
+                    <div class="ur"><svg class="ic" style="color:var(--st-todo)"><use href="#i-circle"/></svg><div class="main"><span class="txt">치명타 확률에 따라 치명타가 발생하며 발생 시 기본 데미지에 치명타 배율을 곱하고, 치명타 확률은 100%를 초과하지 않는다.</span><span class="umeta"><span class="key">Requirement-18</span><span class="cov warn">연결된 작업 없음</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
+                    <div class="ur open"><svg class="ic" style="color:var(--st-done)"><use href="#i-check-c"/></svg><div class="main"><span class="txt">방어력은 다른 모든 스탯과 동일한 합연산 방식으로 누적된다(여러 출처의 방어력 비율은 합산). 방어력 상한(95%)에 의해 피해를 완전히 0으로 만들 수는 없다.</span><span class="umeta"><span class="key">Requirement-20</span><span class="cov">작업 <b>1</b> · 완료 <b>1</b></span></span></div><svg class="chev"><use href="#i-chev-u"/></svg></div>
+                    <div class="ur-detail">
+                      <div class="sublabel">상세 설명</div>
+                      <div class="well t-read">방어력 상한은 95%로 고정한다. 상한은 합산 이후에 적용하며, 상한에 걸린 초과분은 버린다.</div>
+                      <div class="sublabel">연결된 작업 <span class="count">1</span></div>
+                      <div class="linked"><div class="task-row"><span class="chip st-done"><svg><use href="#i-check-c"/></svg>완료</span><span class="key">Task-4</span><span class="tt">스탯 누적 합연산 통일 (방어력 곱연산 → 합연산)</span><span class="chip dom">구현</span></div></div>
+                    </div>
+                    <div class="ur"><svg class="ic" style="color:var(--st-todo)"><use href="#i-circle"/></svg><div class="main"><span class="txt">공격자의 피해 증가 수치만큼 데미지가 늘어나며, 여러 출처의 피해 증가는 합연산으로 먼저 더한 뒤 곱한다.</span><span class="umeta"><span class="key">Requirement-21</span><span class="cov warn">연결된 작업 없음</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-h"><svg class="hi"><use href="#i-box"/></svg><span class="t-heading">작업</span><span class="count">1</span><span class="sp"></span><button class="btn secondary sm"><svg><use href="#i-plus"/></svg>작업</button></div>
+                <div class="card-b flush">
+                  <div class="task-row"><span class="chip st-done"><svg><use href="#i-check-c"/></svg>완료</span><span class="key">Task-4</span><span class="tt">스탯 누적 합연산 통일 (방어력 곱연산 → 합연산)</span><span class="chip dom">구현</span><span class="avatar">임</span></div>
+                </div>
+              </div>
+            </div>
+
+            <aside class="rail card">
+              <div class="card-b">
+                <div class="props">
+                  <div class="prop"><span class="pl">상태</span><span class="pv"><span class="chip st-prog"><svg><use href="#i-half"/></svg>진행중</span><svg class="caret"><use href="#i-updown"/></svg></span></div>
+                  <div class="prop"><span class="pl">우선순위</span><span class="pv empty">비어 있음<svg class="caret"><use href="#i-updown"/></svg></span></div>
+                </div>
+              </div>
+              <div class="rail-sub">진행률 <b class="tnum" style="color:var(--text-1)">100%</b> · 요구사항 2/10 완료</div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <p class="annot"><b>1</b>트리 제목이 끝까지 보입니다. 진행률은 숫자만, 100% 는 초록, 0% 는 흐리게.</p>
+      <p class="annot"><b>2</b>레이어 틴트 커버 밴드를 없애고, 경로·타입·티켓키를 한 줄로 모았습니다.</p>
+      <p class="annot"><b>3</b>속성은 우측 레일. 본문 컬럼은 760px 를 넘지 않습니다.</p>
+      <p class="annot"><b>4</b>연결되지 않은 요구사항은 "연결된 작업 없음"이라고 문장으로 경고합니다.</p>
+    </div>
+  </section>
+
+  <!-- 7. 화면: 작업 -->
+  <section class="part">
+    <h2>적용 예시 2 — 작업 상세</h2>
+    <p class="desc">긴 마크다운 설명을 읽는 화면입니다. 본문은 15/26 으로 키우고 줄 길이를 묶었습니다. 작업 내용·연결 요구사항·선제조건·작업 시간은 각자 카드입니다.</p>
+    <div class="frame">
+      <div class="detail" style="padding-top:28px">
+        <div class="dhead">
+          <div class="crumbs">
+            <a href="#"><svg style="color:var(--l-content)"><use href="#l-content"/></svg>전장</a><span class="sep">/</span>
+            <a href="#"><svg style="color:var(--l-feature)"><use href="#l-feature"/></svg>유닛</a><span class="sep">/</span>
+            <a href="#"><svg style="color:var(--l-sub)"><use href="#l-sub"/></svg>데미지 계산</a>
+            <span class="end"><span class="chip lc-task"><svg style="color:var(--l-task)"><use href="#l-task"/></svg>작업</span><span class="key">Task-4</span><button class="btn ghost sm icon" aria-label="티켓키 복사"><svg><use href="#i-copy"/></svg></button></span>
+          </div>
+          <h1 class="t-title dtitle">스탯 누적 합연산 통일 (방어력 곱연산 → 합연산)</h1>
+        </div>
+        <div class="cols">
+          <div class="stack">
+            <div class="card">
+              <div class="card-h"><svg class="hi"><use href="#i-doc"/></svg><span class="t-heading">설명</span><span class="sp"></span><button class="btn ghost sm"><svg><use href="#i-pencil"/></svg>수정</button></div>
+              <div class="card-b">
+                <div class="md">
+                  <h3>시스템 요구사항 (그룹 A — 스탯 누적 합연산 통일)</h3>
+                  <p>수정자로 누적되는 능력치의 최종값 산정 방식을 전 스탯 합연산으로 통일한다. 현재 방어력만 증감 분리 곱연산을 쓰므로, 방어력을 합연산으로 바꿔 모든 스탯을 동일 규칙으로 맞춘다. 합산식 선택은 유닛 스탯 시트가 능력치 인스턴스를 만들 때 지정하는 한 곳에서 정해지며, 나머지 스탯은 이미 합연산이다.</p>
+                  <h4>완료 정의</h4>
+                  <ul>
+                    <li><b>DoD-S1.</b> 수정자로 누적되는 모든 능력치의 최종값이 합연산으로 산정된다: 최종값 = (기본값 + 고정값형 수정자 합) × (1 + 비율형 수정자 합).</li>
+                    <li><b>DoD-S2.</b> 방어력의 수정자 누적도 합연산을 따른다. 방어력 상한 95%(SF-1)에 의해 피해를 완전히 0으로 만들 수는 없다.</li>
+                  </ul>
+                  <h4>비고</h4>
+                  <ul><li>본 작업은 합연산 통일(구현)까지. 데이터·시너지 밸런스 재조정은 밸런싱 도메인에서 회귀 검토 필요.</li></ul>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-h"><svg class="hi"><use href="#i-list"/></svg><span class="t-heading">작업 내용</span><span class="count">2/3</span><span class="sp"></span><button class="btn ghost sm"><svg><use href="#i-plus"/></svg>항목</button></div>
+              <div class="card-b">
+                <div class="chk done"><span class="box on"><svg><use href="#i-check"/></svg></span><span class="ct">방어력 곱연산 → 합연산 변경 <span class="key">a7a5d49</span></span></div>
+                <div class="chk done"><span class="box on"><svg><use href="#i-check"/></svg></span><span class="ct">합산식 순서 정정 (base+flat)×(1+percent) <span class="key">77353f3</span></span></div>
+                <div class="chk"><span class="box"></span><span class="ct">밸런싱 도메인에 회귀 검토 요청</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-h"><svg class="hi"><use href="#i-link"/></svg><span class="t-heading">충족하는 요구사항</span><span class="count">2</span><span class="sp"></span><button class="btn ghost sm"><svg><use href="#i-plus"/></svg>연결</button></div>
+              <div class="card-b flush">
+                <div class="ur" style="border-top:0"><svg class="ic" style="color:var(--st-done)"><use href="#i-check-c"/></svg><div class="main"><span class="txt">방어력은 다른 모든 스탯과 동일한 합연산 방식으로 누적된다(여러 출처의 방어력 비율은 합산). 방어력 상한(95%)에 의해 피해를 완전히 0으로 만들 수는 없다.</span><span class="umeta"><span class="key">Requirement-20</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
+                <div class="ur"><svg class="ic" style="color:var(--st-done)"><use href="#i-check-c"/></svg><div class="main"><span class="txt">모든 스탯의 최종값은 고정값형 수정자를 부호대로 합산해 기본값에 더하고, 비율형 수정자를 부호대로 합산해 곱하여 구한다.</span><span class="umeta"><span class="key">Requirement-23</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
+              </div>
+            </div>
+          </div>
+          <aside class="rail card">
+            <div class="card-b">
+              <div class="props">
+                <div class="prop"><span class="pl">상태</span><span class="pv"><span class="chip st-done"><svg><use href="#i-check-c"/></svg>완료</span><svg class="caret"><use href="#i-updown"/></svg></span></div>
+                <div class="prop"><span class="pl">우선순위</span><span class="pv empty">비어 있음<svg class="caret"><use href="#i-updown"/></svg></span></div>
+                <div class="prop"><span class="pl">도메인</span><span class="pv"><span class="chip dom">구현</span><svg class="caret"><use href="#i-updown"/></svg></span></div>
+                <div class="prop"><span class="pl">담당</span><span class="pv"><span class="avatar">임</span>임강현<svg class="caret"><use href="#i-updown"/></svg></span></div>
+              </div>
+            </div>
+            <div class="rail-sub" style="display:flex;align-items:center;gap:8px"><svg width="16" height="16"><use href="#i-clock"/></svg>작업 시간 <b class="tnum" style="color:var(--text-1)">3시간 20분</b></div>
+            <div class="rail-sub" style="display:flex;align-items:center;gap:8px"><svg width="16" height="16"><use href="#i-lock"/></svg>선제조건 없음</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="part">
+    <h2>다음 단계</h2>
+    <p class="desc">이 시스템을 확정하면 ① 토큰·타입 유틸 교체 → ② 공통 컴포넌트 → ③ 셸·트리·상세 레이아웃 → ④ 세부기능·작업 화면 → ⑤ 보드·대시보드·다이얼로그 순으로 적용합니다. 테스트 셀렉터(<code>data-testid</code>)는 그대로 둡니다.</p>
+  </section>
+</main>
+</body>
+</html>
