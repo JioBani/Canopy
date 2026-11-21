@@ -87,6 +87,49 @@ test.describe.serial("UR 서브시스템 (세부기능 소유)", () => {
       .toContain("오구현|물리/마법")
   })
 
+  test("UR 설명·히스토리: 추가 → 마크다운 렌더 → 저장 확인", async ({ page }) => {
+    const projectName = await signupProj(page, "UD")
+    await buildTree(page)
+
+    await rowByTitle(page, "합성세부").click()
+    await detail(page).getByTestId("add-ur").click()
+    await detail(page).getByTestId("ur-text-input").fill("설명대상 UR")
+    await detail(page).getByTestId("ur-text-input").press("Enter")
+
+    // 펼침 → 설명 없음 상태
+    await urRow(page, "설명대상 UR").getByTestId("ur-row-header").click()
+    await expect(page.getByTestId("ur-description-empty")).toBeVisible()
+
+    // 추가 토글 → 마크다운 입력 → 완료
+    await page.getByTestId("ur-description-edit-toggle").click()
+    await page
+      .getByTestId("ur-description-input")
+      .fill("## 배경\n- 1차 기획에선 3마리였음\n- 밸런스 이슈로 2마리로 축소")
+    await page.getByTestId("ur-description-edit-toggle").click()
+
+    // 읽기 = 마크다운 렌더
+    const desc = page.getByTestId("ur-description")
+    await expect(desc).toBeVisible()
+    await expect(desc.getByRole("heading", { name: "배경" })).toBeVisible()
+    await expect(desc).toContainText("밸런스 이슈로 2마리로 축소")
+
+    // REST 검증: description 저장
+    const projs = await restGet<{ id: string }>(
+      `project?name=eq.${encodeURIComponent(projectName)}&select=id`
+    )
+    const subs = await restGet<{ id: string }>(
+      `node?project_id=eq.${projs[0].id}&type=eq.${encodeURIComponent("세부기능")}&select=id`
+    )
+    await expect
+      .poll(async () => {
+        const urs = await restGet<{ description: string | null }>(
+          `ur?feature_id=eq.${subs[0].id}&select=description`
+        )
+        return urs[0]?.description ?? ""
+      })
+      .toContain("밸런스 이슈")
+  })
+
   test("작업↔UR 링크 → 커버리지 + 체크리스트 + blocks", async ({ page }) => {
     await signupProj(page, "UV")
     await buildTree(page)

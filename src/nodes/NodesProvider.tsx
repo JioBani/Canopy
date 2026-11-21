@@ -75,6 +75,33 @@ interface NodesContextValue {
 
 const NodesContext = createContext<NodesContextValue | undefined>(undefined)
 
+type View = "tree" | "board" | "dashboard"
+
+const NAV_KEY = "canopy.nav"
+
+/**
+ * 새로고침(하드 리로드) 후 화면을 복원하기 위한 마지막 뷰/선택 노드.
+ * 우선순위: history.state(현재 항목, 리로드에도 보존) → localStorage 폴백 → 기본(트리·선택없음).
+ */
+function readInitialNav(): { view: View; selectedId: string | null } {
+  const fromHistory = (
+    history.state as { canopy?: { view: View; selectedId: string | null } } | null
+  )?.canopy
+  if (fromHistory?.view) {
+    return { view: fromHistory.view, selectedId: fromHistory.selectedId ?? null }
+  }
+  try {
+    const raw = localStorage.getItem(NAV_KEY)
+    if (raw) {
+      const p = JSON.parse(raw) as { view?: View; selectedId?: string | null }
+      if (p?.view) return { view: p.view, selectedId: p.selectedId ?? null }
+    }
+  } catch {
+    /* 파싱/스토리지 실패는 무시하고 기본값 사용 */
+  }
+  return { view: "tree", selectedId: null }
+}
+
 export function NodesProvider({
   projectId,
   children,
@@ -84,8 +111,11 @@ export function NodesProvider({
 }) {
   const [nodes, setNodes] = useState<AppNode[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [view, setView] = useState<"tree" | "board" | "dashboard">("tree")
+  // 새로고침 후 복원: 마지막 뷰/선택 노드를 초기값으로 seed (아래 popstate/localStorage 연동).
+  const [selectedId, setSelectedId] = useState<string | null>(
+    () => readInitialNav().selectedId
+  )
+  const [view, setView] = useState<View>(() => readInitialNav().view)
   // 기본은 접힘(컴팩트). expanded 에 든 id 만 펼침.
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
@@ -144,6 +174,15 @@ export function NodesProvider({
     history.pushState({ canopy: { view, selectedId } }, "")
   }, [view, selectedId])
 
+  // history.state 가 없는 환경(직접 URL 진입 등) 대비 localStorage 에도 보존 → readInitialNav 폴백.
+  useEffect(() => {
+    try {
+      localStorage.setItem(NAV_KEY, JSON.stringify({ view, selectedId }))
+    } catch {
+      /* 프라이빗 모드 등 저장 실패는 무시 */
+    }
+  }, [view, selectedId])
+
   /** 주어진(생략 시 현재 전체) 노드들의 진행률을 뷰에서 다시 가져온다. loading 토글 없음. */
   const refreshProgress = useCallback(async (ids?: string[]) => {
     const target = ids ?? nodesRef.current.map((n) => n.id)
@@ -156,8 +195,8 @@ export function NodesProvider({
     setMembers(await listMembers())
   }, [])
 
-  const reload = useCallback(async () => {
-    setLoading(true)
+  /** 노드/상태/멤버/진행도를 서버에서 다시 가져온다. loading 토글 없음(백그라운드 최신화용). */
+  const refresh = useCallback(async () => {
     const [list, statusList, memberList] = await Promise.all([
       listNodes(projectId),
       listStatuses(projectId),
@@ -166,11 +205,20 @@ export function NodesProvider({
     setNodes(list)
     setStatuses(statusList)
     setMembers(memberList)
-    setLoading(false) // 트리 즉시 렌더 — 진행도(재귀 뷰)는 비차단으로 뒤따라 채운다
+    // 진행도(재귀 뷰)는 비차단으로 뒤따라 채운다.
     void refreshProgress(list.map((n) => n.id)).catch((e) =>
       console.error("[nodes] 진행도 로드 실패:", e)
     )
   }, [projectId, refreshProgress])
+
+  const reload = useCallback(async () => {
+    setLoading(true)
+    try {
+      await refresh()
+    } finally {
+      setLoading(false) // 트리 즉시 렌더 — 진행도는 refresh 내부에서 비차단으로 뒤따른다
+    }
+  }, [refresh])
 
   useEffect(() => {
     reload().catch((e) => {
@@ -178,6 +226,24 @@ export function NodesProvider({
       setLoading(false)
     })
   }, [reload])
+
+  // ── 뷰 전환·창 포커스 시 백그라운드 최신화 ─────────────────────────────
+  // 외부(다른 멤버/CLI/다른 탭)의 변경이 뷰 이동·복귀 시 보이도록 조용히 재조회한다.
+  // (nodes 참조가 갱신되면 보드/대시보드의 UR 조회 이펙트도 파생 배열을 통해 연쇄 재조회됨.)
+  const prevViewRef = useRef<View>(view)
+  useEffect(() => {
+    // 최초 마운트(위 reload 가 처리) 및 projectId 변경으로 인한 refresh 재생성 시엔 스킵 — 실제 뷰 전환만.
+    if (prevViewRef.current === view) return
+    prevViewRef.current = view
+    void refresh().catch((e) => console.error("[nodes] 뷰 전환 최신화 실패:", e))
+  }, [view, refresh])
+
+  useEffect(() => {
+    const onFocus = () =>
+      void refresh().catch((e) => console.error("[nodes] 포커스 최신화 실패:", e))
+    window.addEventListener("focus", onFocus)
+    return () => window.removeEventListener("focus", onFocus)
+  }, [refresh])
 
   // parent_id → 자식 목록 맵(한 번 계산) — childrenOf/descendantCount 가 매 호출 전체
   // 필터링하던 O(n²) 트리 렌더 비용을 제거.

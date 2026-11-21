@@ -17,6 +17,8 @@ export interface Ur {
   /** 트리거 발급 번호 (키 = Requirement-{ticket_number}, 프로젝트 단위). */
   ticket_number: number
   text: string
+  /** 상세 설명·히스토리 (마크다운). node.body 와 같은 성격의 장문 필드. */
+  description: string | null
   status: UrStatus
   misimpl_reason: string | null
   sort_order: number
@@ -75,7 +77,7 @@ export async function deleteUrGroup(id: string): Promise<void> {
 
 // ── ur ──────────────────────────────────────────────────────
 const UR_COLS =
-  "id, feature_id, ur_group_id, ticket_number, text, status, misimpl_reason, sort_order"
+  "id, feature_id, ur_group_id, ticket_number, text, description, status, misimpl_reason, sort_order"
 
 /** 주어진 세부기능들의 UR (피커용으로 배열 허용). */
 export async function listUrs(featureIds: string[]): Promise<Ur[]> {
@@ -93,6 +95,7 @@ export async function insertUr(input: {
   feature_id: string
   ur_group_id: string | null
   text: string
+  description?: string | null
   sort_order: number
 }): Promise<Ur> {
   const { data, error } = await supabase
@@ -107,7 +110,15 @@ export async function insertUr(input: {
 export async function updateUr(
   id: string,
   patch: Partial<
-    Pick<Ur, "text" | "ur_group_id" | "sort_order" | "status" | "misimpl_reason">
+    Pick<
+      Ur,
+      | "text"
+      | "description"
+      | "ur_group_id"
+      | "sort_order"
+      | "status"
+      | "misimpl_reason"
+    >
   >
 ): Promise<void> {
   const { error } = await supabase.from("ur").update(patch).eq("id", id)
