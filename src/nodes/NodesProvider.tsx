@@ -41,7 +41,9 @@ interface NodesContextValue {
   createChild: (
     parentId: string | null,
     type: NodeType,
-    title: string
+    title: string,
+    /** select=false 면 생성 후 현재 화면에 머문다(예: UR 아래 "+ 작업"). 기본 true. */
+    opts?: { select?: boolean }
   ) => Promise<AppNode>
   renameNode: (id: string, title: string) => Promise<void>
   removeNode: (id: string) => Promise<void>
@@ -298,7 +300,12 @@ export function NodesProvider({
   }, [])
 
   const createChild = useCallback(
-    async (parentId: string | null, type: NodeType, title: string) => {
+    async (
+      parentId: string | null,
+      type: NodeType,
+      title: string,
+      opts: { select?: boolean } = {}
+    ) => {
       const siblings = nodes.filter((n) => n.parent_id === parentId)
       const sortOrder =
         siblings.reduce((m, s) => Math.max(m, s.sort_order), -1) + 1
@@ -325,7 +332,7 @@ export function NodesProvider({
         })
       }
       nodesForNavRef.current = nextNodes
-      navigate(buildPath(projectId, "tree", nodeRefOf(created)))
+      if (opts.select !== false) navigate(buildPath(projectId, "tree", nodeRefOf(created)))
       // 새 노드로 인해 조상 진행률이 바뀌므로 갱신.
       await refreshProgress(nextNodes.map((n) => n.id))
       return created

@@ -3,6 +3,8 @@ import { supabase } from "@/lib/supabase"
 export interface UrGroup {
   id: string
   feature_id: string
+  /** 트리거 발급 번호 (키 = RequirementGroup-{ticket_number}, 0010). */
+  ticket_number: number
   name: string
   sort_order: number
 }
@@ -40,7 +42,7 @@ export interface UrCoverage {
 export async function listUrGroups(featureId: string): Promise<UrGroup[]> {
   const { data, error } = await supabase
     .from("ur_group")
-    .select("id, feature_id, name, sort_order")
+    .select("id, feature_id, ticket_number, name, sort_order")
     .eq("feature_id", featureId)
     .order("sort_order", { ascending: true })
   if (error) throw new Error(error.message)
@@ -55,7 +57,7 @@ export async function insertUrGroup(
   const { data, error } = await supabase
     .from("ur_group")
     .insert({ feature_id: featureId, name: name.trim(), sort_order: sortOrder })
-    .select("id, feature_id, name, sort_order")
+    .select("id, feature_id, ticket_number, name, sort_order")
     .single()
   if (error) throw new Error(error.message)
   return data as UrGroup

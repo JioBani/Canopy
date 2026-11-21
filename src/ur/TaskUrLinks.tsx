@@ -105,6 +105,8 @@ export function TaskUrLinks({
         >
           <div className="mt-px flex">
             <UrStateMenu
+              // 상태가 바뀌면 메뉴를 새로 마운트 — 직전 메뉴의 바깥클릭 감지가 남아 재오픈을 즉시 닫는 문제 방지
+              key={u.status}
               status={u.status}
               size={18}
               testid="linked-ur-state"

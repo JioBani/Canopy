@@ -4,6 +4,7 @@ import { listUrs } from "@/lib/ur"
 import { UrSection } from "@/ur/UrSection"
 import { WorkSection } from "@/ur/WorkSection"
 import { cn } from "@/lib/utils"
+import { SubFeatureDetailTabs } from "@/ur/SubFeatureDetailTabs"
 
 type Tab = "ur" | "work"
 
@@ -21,6 +22,19 @@ export function SubFeatureSections({
   /** 상세 편집 모드에서만 true → UR/작업 편집 컨트롤 노출. */
   editable?: boolean
 }) {
+  // 상세(full): 탭 [요구사항 → 작업 | 작업 → 요구사항] (SubFeatureDetailTabs).
+  if (!compact) return <SubFeatureDetailTabs subFeatureId={subFeatureId} editable={editable} />
+  return <CompactSections subFeatureId={subFeatureId} editable={editable} />
+}
+
+/** 사이드바 임베드(보기/네비) — 공간이 좁아 [요구사항 | 작업] 탭 유지. */
+function CompactSections({
+  subFeatureId,
+  editable,
+}: {
+  subFeatureId: string
+  editable: boolean
+}) {
   const { childrenOf } = useNodes()
   const [tab, setTab] = useState<Tab>("ur")
   const [urCount, setUrCount] = useState<number | null>(null)
@@ -37,16 +51,6 @@ export function SubFeatureSections({
       alive = false
     }
   }, [subFeatureId, tab])
-
-  // 상세(full): 요구사항·작업 카드를 세로로 둘 다 노출(탭 전환 없음 — design-system-v2).
-  if (!compact) {
-    return (
-      <div className="flex flex-col gap-4" data-testid="subfeature-sections">
-        <UrSection subFeatureId={subFeatureId} editable={editable} />
-        <WorkSection parentId={subFeatureId} />
-      </div>
-    )
-  }
 
   // 사이드바(compact): 공간이 좁아 탭 유지.
   const seg = (
