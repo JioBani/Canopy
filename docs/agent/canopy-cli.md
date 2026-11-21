@@ -104,6 +104,8 @@ npm.cmd run canopy -- node get --project <PID> --id <NODE_ID>
 - `work-log list`: `--work --member --since --until --active`
 - `node-link list`: `--node`(양방향) / `--from` / `--to`
 
+> **Windows PowerShell 5.1 주의**: 네이티브 명령 인자의 큰따옴표가 제거돼 인라인 JSON(`--items`, `--json`)이 깨진다. JSON 은 파일로 써서 `--items @items.json` 으로 넘기거나 `Get-Content items.json | canopy ... --items -` 로 파이프한다. 몇 개 필드만 바꿀 땐 `--title --status --text` 같은 이름 옵션을 쓴다.
+
 **일괄 작업** (한 번의 요청)
 - 생성: `node create --items`, `ur create --items`, `checklist create --items`, `ur-link create --ur A,B --work T` (중복 무시)
 - 수정/삭제: `node update --ids`, `ur update --ids`, `ur delete --ids`

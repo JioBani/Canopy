@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs"
 
 const DEFAULT_URL = "https://canopy-api.lnk.sarl/rest/v1"
 const DEFAULT_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzk1MjY0MDc1LCJleHAiOjE5NTI5NDQwNzV9.3Rj3Z3OhIScmh70Dk1gF-S01O8axKT8nZ8HmyQBrR70"
@@ -66,10 +67,22 @@ function integer(v, name) {
 function isNull(v) { return v === null || v === "null" || v === "none" }
 function nullable(v) { return isNull(v) ? null : v }
 function csv(v) { return v === undefined || v === true ? [] : String(v).split(",").map((x) => x.trim()).filter(Boolean) }
+// JSON 옵션: 인라인 문자열, '@파일경로', '-'(stdin) 를 받는다.
+// Windows PowerShell 5.1 은 네이티브 프로그램 인자의 큰따옴표를 지워 인라인 JSON 이 깨지므로 @파일/stdin 을 쓰게 한다.
+let stdinCache
 function jsonOption(name = "json", required = false) {
   const raw = value(name, required)
   if (raw === undefined) return undefined
-  try { return JSON.parse(String(raw)) } catch { fail(`--${name} must be valid JSON`) }
+  let text = String(raw)
+  try {
+    if (text === "-") text = stdinCache ??= readFileSync(0, "utf8")
+    else if (text.startsWith("@")) text = readFileSync(text.slice(1), "utf8")
+  } catch (e) { fail(`--${name}: cannot read ${text === "-" ? "stdin" : text.slice(1)} (${e.message})`) }
+  text = text.replace(/^﻿/, "")
+  try { return JSON.parse(text) } catch {
+    const stripped = /^[[{]/.test(text.trim()) && !text.includes('"')
+    fail(`--${name} must be valid JSON${stripped ? " (double quotes were removed by the shell — Windows PowerShell 5.1 does this; pass --" + name + " @file.json or pipe it with --" + name + " -)" : ""}. Received: ${text.slice(0, 120)}`)
+  }
 }
 function isUuid(v) { return UUID_RE.test(String(v)) }
 function parseKey(ref) {
@@ -1042,7 +1055,7 @@ const HELP = {
     "--project <UUID|exact-name>": "Required for project-scoped resources; UUID is recommended.",
     "--url <PostgREST-base>": "Override CANOPY_URL (default: live Canopy).",
     "--key <publishable-key>": "Override CANOPY_KEY.",
-    "--json <object>": "Patch/create payload where supported.",
+    "--json <object|@file|->": "Patch/create payload where supported. Any JSON option also accepts @path (file) or - (stdin).",
     "--items <JSON array>": "Bulk create (node, ur, checklist, ur-link) in one request.",
     "--limit N --offset N": "Paginate list/search; response then includes page {limit, offset, total}.",
     "--select <cols>": "PostgREST column list for list/get (default omits long markdown).",
@@ -1057,6 +1070,10 @@ const HELP = {
     "List commands omit node.body and ur.description; use 'node get/show' or --full when the text is needed.",
     "Use filters (--type --status --under --uncovered --query) and --limit instead of listing everything.",
     "Use --items / --ids for bulk work instead of one command per row.",
+  ],
+  shellNotes: [
+    "Windows PowerShell 5.1 strips double quotes from native-command arguments, so inline JSON breaks. Write the JSON to a file and pass --items @items.json (or --json @patch.json), or pipe it: Get-Content items.json | canopy ... --items -",
+    "Prefer named options (--title --status --text ...) over --json when you only set a few fields.",
   ],
   safety: [
     "Use project UUIDs when possible.",

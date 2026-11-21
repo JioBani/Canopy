@@ -1,4 +1,6 @@
-import { readFileSync } from "node:fs"
+import { readFileSync, writeFileSync, unlinkSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { spawnSync } from "node:child_process"
 
 function loadEnv(path) {
@@ -167,7 +169,15 @@ try {
   cli("ur", "update", "--project", pid, "--ids", urKeys.join(","), "--status", "오구현", "--misimpl-reason", "범위 누락")
   check(cli("ur", "update", "--project", pid, "--id", urKeys[0], "--status", "완료")[0].misimpl_reason === null, "status change should clear misimpl_reason")
 
-  cli("checklist", "create", "--project", pid, "--work", bulkKeys[0], "--items", JSON.stringify(["a", { text: "b", done: true }]))
+  // JSON 옵션 @파일 / stdin (Windows PowerShell 5.1 따옴표 제거 우회)
+  const tmpJson = join(tmpdir(), `canopy-items-${Date.now()}.json`)
+  writeFileSync(tmpJson, "﻿" + JSON.stringify(["a"]))
+  cli("checklist", "create", "--project", pid, "--work", bulkKeys[0], "--items", `@${tmpJson}`)
+  unlinkSync(tmpJson)
+  const piped = spawnSync(process.execPath, ["cli/canopy.mjs", "checklist", "create", "--project", pid, "--work", bulkKeys[0], "--items", "-", "--url", `${url}/rest/v1`, "--key", key], { encoding: "utf8", input: JSON.stringify([{ text: "b", done: true }]) })
+  check(piped.status === 0 && JSON.parse(piped.stdout).data[0].done === true, `stdin --items failed: ${piped.stderr}`)
+  const stripped = spawnSync(process.execPath, ["cli/canopy.mjs", "node", "update", "--project", pid, "--id", bulkKeys[0], "--json", "{title:x}", "--url", `${url}/rest/v1`, "--key", key], { encoding: "utf8" })
+  check(stripped.status !== 0 && stripped.stderr.includes("@file.json"), "stripped-quote JSON should explain the PowerShell workaround")
   const shown = cli("node", "show", "--project", pid, "--id", bulkKeys[0])
   check(shown.path.length === 3 && shown.checklist.length === 2 && shown.urs.length === 2, `node show (작업) wrong: ${JSON.stringify(shown)}`)
   const shownSub = cli("node", "show", "--project", pid, "--id", subKey)
