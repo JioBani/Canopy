@@ -88,7 +88,7 @@ npm.cmd run canopy -- node get --project <PID> --id <NODE_ID>
 
 **참조**: UUID 대신 키/이름을 어디서나 쓸 수 있다.
 - 노드: `Content-N`, `Feature-N`, `SubFeature-N`, `MasterData-N`, `Task-N`
-- UR: `Requirement-N` · 상태: 이름(`진행중`) · 멤버: display_name · UR 그룹: 이름(+`--feature`)
+- UR: `Requirement-N` · UR 그룹: `RequirementGroup-N`(0010, 프로젝트 단위 자동 발급) · 상태: 이름(`진행중`) · 멤버: display_name · UR 그룹: 이름(+`--feature`)
 
 **토큰 절약 (기본 동작)**
 - `node list` / `ur list` 는 긴 마크다운(`body`, `description`)을 **빼고** 반환한다. 본문이 필요하면 `node get`/`node show`/`ur get` 또는 `--full`, 컬럼 지정은 `--select`.

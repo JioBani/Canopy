@@ -14,6 +14,7 @@ const IN_CHUNK = 60        // in.(...) 필터 URL 길이 한도 보호
 const TYPE_KEY = { 컨텐츠: "Content", 기능: "Feature", 세부기능: "SubFeature", 마스터데이터: "MasterData", 작업: "Task" }
 const KEY_TYPE = Object.fromEntries(Object.entries(TYPE_KEY).map(([t, k]) => [k.toLowerCase(), t]))
 const UR_PREFIXES = new Set(["requirement", "ur", "req"])
+const UR_GROUP_PREFIXES = new Set(["requirementgroup", "urgroup", "group"])
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // 목록 기본 컬럼: 긴 마크다운(body/description)은 빼서 토큰을 아낀다. --full 또는 --select 로 변경.
@@ -183,6 +184,12 @@ function urOut(u) {
   delete out.ur_work_link
   return out
 }
+function groupOut(g) {
+  if (!g || typeof g !== "object") return g
+  const out = { ...(g.ticket_number != null ? { key: `RequirementGroup-${g.ticket_number}` } : {}), ...g }
+  delete out.node
+  return out
+}
 function briefNode(n) { return n ? { key: nodeKey(n), id: n.id, title: n.title } : null }
 
 // ── 참조 해석 (UUID | 티켓키 | 이름) ────────────────────────
@@ -287,9 +294,11 @@ async function resolveMember(ref) {
 async function resolveUrGroup(ref, p, featureId) {
   if (ref === undefined) return undefined
   if (isNull(ref)) return null
-  const q = isUuid(ref) ? { id: `eq.${ref}` } : { name: `eq.${ref}` }
-  if (featureId) q.feature_id = `eq.${featureId}`
-  else if (!isUuid(ref)) fail("UR group name requires --feature; otherwise use a UUID")
+  const k = parseKey(ref)
+  const byKey = k && UR_GROUP_PREFIXES.has(k.prefix)
+  const q = isUuid(ref) ? { id: `eq.${ref}` } : byKey ? { ticket_number: `eq.${k.n}` } : { name: `eq.${ref}` }
+  if (featureId && !byKey) q.feature_id = `eq.${featureId}`
+  else if (!isUuid(ref) && !byKey) fail("UR group name requires --feature; otherwise use a UUID or RequirementGroup-N")
   return one("ur_group", { ...q, select: "*,node:feature_id!inner(project_id)", "node.project_id": `eq.${p.id}` }, `UR group ${ref}`)
 }
 
@@ -509,12 +518,12 @@ async function nodeShow(p, ref) {
   }
   if (n.type === "세부기능") {
     const [groups, urs, cov] = await Promise.all([
-      fetchAll("ur_group", { feature_id: `eq.${n.id}`, select: "id,name,sort_order", order: "sort_order.asc" }),
+      fetchAll("ur_group", { feature_id: `eq.${n.id}`, select: "id,ticket_number,name,sort_order", order: "sort_order.asc" }),
       fetchAll("ur", { feature_id: `eq.${n.id}`, select: options.full ? "*" : UR_BRIEF, order: "sort_order.asc" }),
       fetchAll("ur_coverage", { feature_id: `eq.${n.id}`, select: "ur_id,linked_work_count" }),
     ])
     const linked = new Map(cov.map((c) => [c.ur_id, c.linked_work_count]))
-    out.ur_groups = groups
+    out.ur_groups = groups.map(groupOut)
     out.urs = urs.map((u) => ({ ...urOut(u), linked_work_count: linked.get(u.id) ?? 0 }))
   }
   if (n.type === "작업") {
@@ -618,15 +627,15 @@ async function nodes() {
 async function urGroups() {
   const p = await project()
   const feature = has("feature") ? await resolveNode(options.feature, p, "세부기능") : null
-  if (action === "list") { if (!feature) value("feature", true); return output(await request("ur_group", { query: { feature_id: `eq.${feature.id}`, order: "sort_order.asc" } })) }
+  if (action === "list") { if (!feature) value("feature", true); return output((await request("ur_group", { query: { feature_id: `eq.${feature.id}`, order: "sort_order.asc" } })).map(groupOut)) }
   if (action === "create") {
     if (!feature) value("feature", true)
     const sort = has("sort-order") ? integer(options["sort-order"], "sort-order") : await nextSortOrder("ur_group", { feature_id: `eq.${feature.id}` })
-    return output(await request("ur_group", { method: "POST", body: { feature_id: feature.id, name: value("name", true), sort_order: sort }, prefer: "return=representation" }))
+    return output((await request("ur_group", { method: "POST", body: { feature_id: feature.id, name: value("name", true), sort_order: sort }, prefer: "return=representation" })).map(groupOut))
   }
   const g = await resolveUrGroup(value("id", true), p, feature?.id)
-  if (action === "get") { const out = { ...g }; delete out.node; return output(out) }
-  if (action === "update") return output(await request("ur_group", { method: "PATCH", query: { id: `eq.${g.id}` }, body: patchFrom(["name", "sort_order"]), prefer: "return=representation" }))
+  if (action === "get") return output(groupOut(g))
+  if (action === "update") return output((await request("ur_group", { method: "PATCH", query: { id: `eq.${g.id}` }, body: patchFrom(["name", "sort_order"]), prefer: "return=representation" })).map(groupOut))
   if (action === "delete") { requireYes("UR group delete"); await request("ur_group", { method: "DELETE", query: { id: `eq.${g.id}` } }); return output({ deleted: g.id }) }
   fail("ur-group action: list|get|create|update|delete")
 }
@@ -1048,7 +1057,7 @@ const HELP = {
     ur: "UUID or Requirement-N.",
     status: "UUID or exact status name (e.g. 진행중).",
     member: "UUID or exact display_name.",
-    "ur-group": "UUID, or exact name together with --feature.",
+    "ur-group": "UUID, RequirementGroup-N, or exact name together with --feature.",
     "null": "Pass null (or none) to clear a reference or to filter for empty values.",
   },
   globalOptions: {
@@ -1109,8 +1118,8 @@ const HELP = {
       delete: "Delete --project --id and descendants; requires --yes.",
     } },
     "ur-group": { description: "Requirement groups owned by a 세부기능.", actions: {
-      list: `List --project --feature ${REF}.`, get: "Get --project --id.",
-      create: "Create --project --feature --name [--sort-order].", update: "Update --project --id with --name/--sort-order/--json.",
+      list: `List --project --feature ${REF}.`, get: "Get --project --id <UUID|RequirementGroup-N>.",
+      create: "Create --project --feature --name [--sort-order]; ticket number is auto-issued (key RequirementGroup-N).", update: "Update --project --id with --name/--sort-order/--json.",
       delete: "Delete --project --id; URs become ungrouped; requires --yes.",
     } },
     ur: { description: "User requirements owned by a 세부기능.", actions: {

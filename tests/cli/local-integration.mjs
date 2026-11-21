@@ -155,6 +155,11 @@ try {
   ]))
   check(urs2.length === 2 && urs2[1].ur_group_id === group.id && urs2[0].key.startsWith("Requirement-"), "bulk UR create failed")
   const urKeys = urs2.map((u) => u.key)
+  const groupKey = `RequirementGroup-${group.ticket_number}`
+  check(typeof group.ticket_number === "number", "ur-group create must return ticket_number")
+  check(cli("ur-group", "get", "--project", pid, "--id", groupKey).id === group.id, "ur-group get by key failed")
+  check(cli("ur-group", "list", "--project", pid, "--feature", subKey)[0].key === groupKey, "ur-group list key missing")
+  check(cli("ur", "list", "--project", pid, "--group", groupKey).length === 2, "ur list --group by key failed")
   const uncovered = cli("ur", "list", "--project", pid, "--uncovered")
   check(uncovered.length === 2 && uncovered[0].description === undefined, `uncovered filter wrong: ${JSON.stringify(uncovered)}`)
   check(cli("ur", "list", "--project", pid, "--under", featKey, "--status", "완료").length === 1, "UR status+under filter failed")

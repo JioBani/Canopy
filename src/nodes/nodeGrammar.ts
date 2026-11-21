@@ -69,3 +69,8 @@ export function ticketKey(type: NodeType, ticketNumber: number): string {
 export function urKey(ticketNumber: number): string {
   return `Requirement-${ticketNumber}`
 }
+
+/** UR 그룹 티켓키: `RequirementGroup-{번호}` (프로젝트 단위, urKey 와 같은 방식). */
+export function urGroupKey(ticketNumber: number): string {
+  return `RequirementGroup-${ticketNumber}`
+}
