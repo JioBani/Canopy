@@ -1,0 +1,10 @@
+[Unit]
+Description=Canopy pull-based deploy (origin/main → miniserver)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=dev
+ExecStart=/bin/sh /home/dev/apps/canopy-deploy/deploy.sh
+TimeoutStartSec=900

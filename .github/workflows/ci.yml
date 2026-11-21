@@ -1,0 +1,51 @@
+# CI — main push / PR 마다 타입체크·빌드·백엔드 테스트.
+# CD 는 미니PC(miniserver)가 pull 방식으로 수행한다: 이 워크플로의 두 job 이
+# 모두 성공한 main 커밋만 배포된다 (deploy/miniserver/README.md 참고).
+# 공개 저장소라 GitHub 쪽에는 배포 비밀값·self-hosted runner 를 두지 않는다.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+        env:
+          # 빌드 검증용 더미 값 (실제 배포 빌드는 미니PC 에서 실값으로 수행)
+          VITE_SUPABASE_URL: https://example.invalid
+          VITE_SUPABASE_ANON_KEY: ci-dummy
+
+  backend-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # 로컬 Supabase 기동 = 모든 migrations 를 빈 DB 에 적용하는 검증도 겸함
+      - name: supabase start
+        run: npx supabase start -x realtime,storage,imgproxy,edge-runtime,functions,analytics,vector,studio,meta,inbucket
+      - run: npm run test:backend
