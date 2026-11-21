@@ -545,18 +545,22 @@ export function UrSection({
                               />
                             </span>
                           ) : (
-                            <span
+                            /* 티켓키를 문장 앞에 인라인으로 — 고정폭 칸 없이 문장이 전폭을 쓴다 */
+                            <p
                               className={cn(
                                 "text-body text-fg",
                                 expanded ? "font-medium" : "line-clamp-2"
                               )}
-                              data-testid="ur-text"
                             >
-                              {u.text}
-                            </span>
+                              <TicketKey
+                                value={urKey(u.ticket_number)}
+                                className="mr-2 font-medium"
+                                data-testid="ur-key"
+                              />
+                              <span data-testid="ur-text">{u.text}</span>
+                            </p>
                           )}
                           <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <TicketKey value={urKey(u.ticket_number)} data-testid="ur-key" />
                             <CoverageText cov={cov.get(u.id)} />
                           </span>
                         </div>

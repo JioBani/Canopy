@@ -112,13 +112,17 @@ export function TaskUrLinks({
             />
           </div>
           <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-body text-fg">{u.text}</p>
-            <p className="text-meta text-fg-3 flex flex-wrap items-center gap-x-2">
-              <TicketKey value={urKey(u.ticket_number)} data-testid="ur-key" />
-              {featureTitle.get(u.feature_id) && (
-                <span>· {featureTitle.get(u.feature_id)}</span>
-              )}
+            <p className="text-body text-fg">
+              <TicketKey
+                value={urKey(u.ticket_number)}
+                className="mr-2 font-medium"
+                data-testid="ur-key"
+              />
+              {u.text}
             </p>
+            {featureTitle.get(u.feature_id) && (
+              <p className="text-meta text-fg-3">{featureTitle.get(u.feature_id)}</p>
+            )}
           </div>
           {editable ? (
             <Button

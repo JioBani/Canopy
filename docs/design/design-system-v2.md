@@ -127,7 +127,7 @@ Canopy 는 "Jira 가 안 읽혀서" 만든 도구다. 그런데 v1 도 안 읽�
 - **타입 칩** `LayerChip`: 레이어 soft 배경 + ink 글자 + 픽셀 아이콘.
 - **티켓키** `TicketKey`: 모노 13, text-3, 배경 없음. 클릭 시 복사(툴팁 "복사됨").
 - **개수 pill** `Count`: 20 높이, `micro`, bg `--surface-sunken`, fg text-2.
-- **요구사항 행** `UrRow`: [상태아이콘16] [문장 `body` text-1, 전폭 2줄 clamp ／ 아래 메타 줄: 키(모노13 text-3) · 커버리지(meta, 미연결이면 danger "연결된 작업 없음")] [›]. 펼치면 문장 clamp 해제 + 아래에 우물(본문·설명) + "연결된 작업" 하위 리스트. 접힘/펼침 모두 문장은 한 번만 보인다.
+- **요구사항 행** `UrRow`: [상태아이콘16] [키(모노13 text-3, 문장 앞 인라인 — 고정폭 칸 금지) + 문장 `body` text-1, 전폭 2줄 clamp ／ 아래 메타 줄: 커버리지(meta, 미연결이면 danger "연결된 작업 없음")] [›]. 펼치면 문장 clamp 해제 + 아래에 우물(본문·설명) + "연결된 작업" 하위 리스트. 접힘/펼침 모두 문장은 한 번만 보인다.
 - **작업 행** `TaskRow`: [상태칩] [키] [제목 `body` 500] … [도메인 칩] [담당 아바타].
 - **트리 행** `TreeRow`: 34px, 들여쓰기 16/단계, [▸][타입아이콘16][제목 14 flex-1 truncate][진행률 meta tabular, 100%면 완료색]. hover 시에만 + / ⋯. 4칸 진행바 폐지.
 - **버튼**: primary(brand 배경 흰 글자) / secondary(흰 배경 border-strong) / ghost / danger. 높이 36 기본, 라벨 14/600.

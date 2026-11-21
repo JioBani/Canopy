@@ -144,6 +144,7 @@ kbd{font:600 12px/16px var(--mono);padding:1px 6px;border:1px solid var(--border
 .ur .ic{width:18px;height:18px;margin-top:2px}
 .ur .main{min-width:0;display:grid;gap:2px}
 .ur .txt{font-size:14px;line-height:22px;color:var(--text-1);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ur .txt .key{margin-right:8px;font-weight:500}
 .ur .umeta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .ur .cov{font-size:13px;line-height:18px;color:var(--text-3);white-space:nowrap}
 .ur .cov b{color:var(--text-1);font-weight:600}
@@ -294,7 +295,7 @@ kbd{font:600 12px/16px var(--mono);padding:1px 6px;border:1px solid var(--border
           <tr><td>라벨·메타 10.5~12px, 연회색·핑크</td><td><code>#A89FA4</code> 대비 2.6:1, 소수점 px 난립(123곳)</td><td>콘텐츠 14px↑, 메타 13px↑, 회색 대비 4.5:1↑</td></tr>
           <tr><td>설명·요구사항·작업·로그가 한 덩어리</td><td>모두 흰 배경 + 1px 구분선</td><td>회색 캔버스 위 흰 섹션 카드</td></tr>
           <tr><td>본문 한 줄이 950px 이상</td><td>상세가 전폭, 속성이 본문 위에 가로로</td><td>읽기 컬럼 ≤ 760px + 우측 속성 레일</td></tr>
-          <tr><td>요구사항 문장이 한 줄에서 잘림</td><td>단일행 말줄임 + 앞에 긴 회색 pill 키</td><td>문장 2줄까지, 키·커버리지는 문장 아래 메타 줄</td></tr>
+          <tr><td>요구사항 문장이 한 줄에서 잘림</td><td>단일행 말줄임 + 앞에 긴 회색 pill 키</td><td>문장 2줄까지, 키는 문장 앞 인라인, 커버리지는 아래 메타 줄</td></tr>
           <tr><td>완료가 핑크, 진행중이 복숭아색</td><td>브랜드색을 상태색으로 재사용</td><td>상태 = 의미색(초록·파랑·회색·빨강)</td></tr>
         </tbody>
       </table>
@@ -493,21 +494,21 @@ kbd{font:600 12px/16px var(--mono);padding:1px 6px;border:1px solid var(--border
                 <div class="card-b flush">
                   <div class="ugroup">
                     <div class="ugroup-h"><svg><use href="#i-chev-d"/></svg><span class="t-sub">스탯계산</span><span class="count">1</span></div>
-                    <div class="ur"><svg class="ic" style="color:var(--st-done)"><use href="#i-check-c"/></svg><div class="main"><span class="txt">모든 스탯의 최종값은 고정값형 수정자를 부호대로 합산해 기본값에 더하고, 비율형 수정자를 부호대로 합산해 곱하여 구한다 — 최종값 = (기본값 + 고정값 합) × (1 + 비율 합). 이 합연산 방식이 모든 스탯에 동일하게 적용된다.</span><span class="umeta"><span class="key">Requirement-23</span><span class="cov">작업 <b>1</b> · 완료 <b>1</b></span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
+                    <div class="ur"><svg class="ic" style="color:var(--st-done)"><use href="#i-check-c"/></svg><div class="main"><span class="txt"><span class="key">Requirement-23</span>모든 스탯의 최종값은 고정값형 수정자를 부호대로 합산해 기본값에 더하고, 비율형 수정자를 부호대로 합산해 곱하여 구한다 — 최종값 = (기본값 + 고정값 합) × (1 + 비율 합). 이 합연산 방식이 모든 스탯에 동일하게 적용된다.</span><span class="umeta"><span class="cov">작업 <b>1</b> · 완료 <b>1</b></span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
                   </div>
                   <div class="ugroup">
                     <div class="ugroup-h"><svg><use href="#i-chev-d"/></svg><span class="t-sub">미분류</span><span class="count">9</span></div>
-                    <div class="ur"><svg class="ic" style="color:var(--st-todo)"><use href="#i-circle"/></svg><div class="main"><span class="txt">모든 유닛의 데미지는 동일한 데미지 계산 공식으로 산출된다.</span><span class="umeta"><span class="key">Requirement-14</span><span class="cov warn">연결된 작업 없음</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
-                    <div class="ur"><svg class="ic" style="color:var(--st-todo)"><use href="#i-circle"/></svg><div class="main"><span class="txt">데미지는 기본 데미지 결정 → 치명타 적용 → 방어력 적용 → 피해 증가 적용 → 최종 확정의 순서로 계산된다.</span><span class="umeta"><span class="key">Requirement-15</span><span class="cov warn">연결된 작업 없음</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
-                    <div class="ur"><svg class="ic" style="color:var(--st-todo)"><use href="#i-circle"/></svg><div class="main"><span class="txt">치명타 확률에 따라 치명타가 발생하며 발생 시 기본 데미지에 치명타 배율을 곱하고, 치명타 확률은 100%를 초과하지 않는다.</span><span class="umeta"><span class="key">Requirement-18</span><span class="cov warn">연결된 작업 없음</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
-                    <div class="ur open"><svg class="ic" style="color:var(--st-done)"><use href="#i-check-c"/></svg><div class="main"><span class="txt">방어력은 다른 모든 스탯과 동일한 합연산 방식으로 누적된다(여러 출처의 방어력 비율은 합산). 방어력 상한(95%)에 의해 피해를 완전히 0으로 만들 수는 없다.</span><span class="umeta"><span class="key">Requirement-20</span><span class="cov">작업 <b>1</b> · 완료 <b>1</b></span></span></div><svg class="chev"><use href="#i-chev-u"/></svg></div>
+                    <div class="ur"><svg class="ic" style="color:var(--st-todo)"><use href="#i-circle"/></svg><div class="main"><span class="txt"><span class="key">Requirement-14</span>모든 유닛의 데미지는 동일한 데미지 계산 공식으로 산출된다.</span><span class="umeta"><span class="cov warn">연결된 작업 없음</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
+                    <div class="ur"><svg class="ic" style="color:var(--st-todo)"><use href="#i-circle"/></svg><div class="main"><span class="txt"><span class="key">Requirement-15</span>데미지는 기본 데미지 결정 → 치명타 적용 → 방어력 적용 → 피해 증가 적용 → 최종 확정의 순서로 계산된다.</span><span class="umeta"><span class="cov warn">연결된 작업 없음</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
+                    <div class="ur"><svg class="ic" style="color:var(--st-todo)"><use href="#i-circle"/></svg><div class="main"><span class="txt"><span class="key">Requirement-18</span>치명타 확률에 따라 치명타가 발생하며 발생 시 기본 데미지에 치명타 배율을 곱하고, 치명타 확률은 100%를 초과하지 않는다.</span><span class="umeta"><span class="cov warn">연결된 작업 없음</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
+                    <div class="ur open"><svg class="ic" style="color:var(--st-done)"><use href="#i-check-c"/></svg><div class="main"><span class="txt"><span class="key">Requirement-20</span>방어력은 다른 모든 스탯과 동일한 합연산 방식으로 누적된다(여러 출처의 방어력 비율은 합산). 방어력 상한(95%)에 의해 피해를 완전히 0으로 만들 수는 없다.</span><span class="umeta"><span class="cov">작업 <b>1</b> · 완료 <b>1</b></span></span></div><svg class="chev"><use href="#i-chev-u"/></svg></div>
                     <div class="ur-detail">
                       <div class="sublabel">상세 설명</div>
                       <div class="well t-read">방어력 상한은 95%로 고정한다. 상한은 합산 이후에 적용하며, 상한에 걸린 초과분은 버린다.</div>
                       <div class="sublabel">연결된 작업 <span class="count">1</span></div>
                       <div class="linked"><div class="task-row"><span class="chip st-done"><svg><use href="#i-check-c"/></svg>완료</span><span class="key">Task-4</span><span class="tt">스탯 누적 합연산 통일 (방어력 곱연산 → 합연산)</span><span class="chip dom">구현</span></div></div>
                     </div>
-                    <div class="ur"><svg class="ic" style="color:var(--st-todo)"><use href="#i-circle"/></svg><div class="main"><span class="txt">공격자의 피해 증가 수치만큼 데미지가 늘어나며, 여러 출처의 피해 증가는 합연산으로 먼저 더한 뒤 곱한다.</span><span class="umeta"><span class="key">Requirement-21</span><span class="cov warn">연결된 작업 없음</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
+                    <div class="ur"><svg class="ic" style="color:var(--st-todo)"><use href="#i-circle"/></svg><div class="main"><span class="txt"><span class="key">Requirement-21</span>공격자의 피해 증가 수치만큼 데미지가 늘어나며, 여러 출처의 피해 증가는 합연산으로 먼저 더한 뒤 곱한다.</span><span class="umeta"><span class="cov warn">연결된 작업 없음</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
                   </div>
                 </div>
               </div>
@@ -585,8 +586,8 @@ kbd{font:600 12px/16px var(--mono);padding:1px 6px;border:1px solid var(--border
             <div class="card">
               <div class="card-h"><svg class="hi"><use href="#i-link"/></svg><span class="t-heading">충족하는 요구사항</span><span class="count">2</span><span class="sp"></span><button class="btn ghost sm"><svg><use href="#i-plus"/></svg>연결</button></div>
               <div class="card-b flush">
-                <div class="ur" style="border-top:0"><svg class="ic" style="color:var(--st-done)"><use href="#i-check-c"/></svg><div class="main"><span class="txt">방어력은 다른 모든 스탯과 동일한 합연산 방식으로 누적된다(여러 출처의 방어력 비율은 합산). 방어력 상한(95%)에 의해 피해를 완전히 0으로 만들 수는 없다.</span><span class="umeta"><span class="key">Requirement-20</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
-                <div class="ur"><svg class="ic" style="color:var(--st-done)"><use href="#i-check-c"/></svg><div class="main"><span class="txt">모든 스탯의 최종값은 고정값형 수정자를 부호대로 합산해 기본값에 더하고, 비율형 수정자를 부호대로 합산해 곱하여 구한다.</span><span class="umeta"><span class="key">Requirement-23</span></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
+                <div class="ur" style="border-top:0"><svg class="ic" style="color:var(--st-done)"><use href="#i-check-c"/></svg><div class="main"><span class="txt"><span class="key">Requirement-20</span>방어력은 다른 모든 스탯과 동일한 합연산 방식으로 누적된다(여러 출처의 방어력 비율은 합산). 방어력 상한(95%)에 의해 피해를 완전히 0으로 만들 수는 없다.</span><span class="umeta"></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
+                <div class="ur"><svg class="ic" style="color:var(--st-done)"><use href="#i-check-c"/></svg><div class="main"><span class="txt"><span class="key">Requirement-23</span>모든 스탯의 최종값은 고정값형 수정자를 부호대로 합산해 기본값에 더하고, 비율형 수정자를 부호대로 합산해 곱하여 구한다.</span><span class="umeta"></span></div><svg class="chev"><use href="#i-chev-r"/></svg></div>
               </div>
             </div>
           </div>
