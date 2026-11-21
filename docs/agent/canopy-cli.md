@@ -69,19 +69,56 @@ npm.cmd run canopy -- node get --project <PID> --id <NODE_ID>
 |---|---|
 | `project` | `list`, `get`, `create`, `update`, `delete` |
 | `member` | `list`, `get`, `create`, `update`, `delete` |
-| `status` | `list`, `create`, `update`, `reassign`, `delete` |
-| `node` | `list`, `search`, `get`, `create`, `update`, `delete` |
+| `status` | `list`, `get`, `create`, `update`, `reassign`, `delete` |
+| `node` | `list`, `search`, `tree`, `get`, `show`, `create`, `update`, `move`, `delete` |
 | `ur-group` | `list`, `get`, `create`, `update`, `delete` |
-| `ur` | `list`, `get`, `create`, `update`, `delete` |
+| `ur` | `list`, `search`, `get`, `create`, `update`, `delete` |
 | `ur-link` | `list`, `create`, `delete` |
 | `checklist` | `list`, `get`, `create`, `update`, `delete` |
 | `node-link` | `list`, `create`, `delete` |
-| `work-log` | `list`, `get`, `start`, `stop`, `update`, `delete` |
+| `work-log` | `list`, `get`, `start`, `create`, `stop`, `update`, `delete` |
 | `field` | `list`, `get`, `create`, `update`, `delete` |
 | `field-value` | `list`, `get`, `set`, `clear` |
 | `priority` | `list`, `get`, `set`, `clear` |
-| `report` | `progress`, `coverage` |
+| `report` | `summary`, `progress`, `coverage`, `time` |
+| `search` | 노드+UR 통합 검색 (`canopy search --project P --query X`) |
 | `raw` | 허용 리소스의 `get`, `post`, `patch`, `delete` |
+
+## v1.1 — 참조·필터·토큰 절약·일괄 작업
+
+**참조**: UUID 대신 키/이름을 어디서나 쓸 수 있다.
+- 노드: `Content-N`, `Feature-N`, `SubFeature-N`, `MasterData-N`, `Task-N`
+- UR: `Requirement-N` · 상태: 이름(`진행중`) · 멤버: display_name · UR 그룹: 이름(+`--feature`)
+
+**토큰 절약 (기본 동작)**
+- `node list` / `ur list` 는 긴 마크다운(`body`, `description`)을 **빼고** 반환한다. 본문이 필요하면 `node get`/`node show`/`ur get` 또는 `--full`, 컬럼 지정은 `--select`.
+- 목록 결과에 `key`, `status`(이름), `status_category`, `assignee`(이름)가 붙어 별도 조회가 필요 없다.
+- `--limit N --offset N` → 응답에 `page: {limit, offset, total}`. `search` 기본 50건, 프로젝트 전체 `work-log list` 기본 100건.
+- `node tree` 는 한 줄당 노드 하나(`Feature-2 소환수 [진행중] 40% (4/10)`), UUID 생략(`--ids` 로 포함).
+- `node show` 한 번으로 노드 상세 + 경로 + 진행률 + 자식 + (세부기능: UR·그룹·연결 수 / 작업: 체크리스트·UR·링크·로그 요약).
+- `report summary` / `report progress` / `report time` 은 서버 집계(RPC)라 원본 행을 내려받지 않는다.
+
+**필터**
+- `node list`: `--type CSV --parent --under(서브트리) --status CSV --category CSV --assignee --domain CSV --priority --field-filter key=value --updated-since --query`
+- `ur list`: 프로젝트 전체 가능. `--feature | --under`, `--status CSV --group --query --uncovered`(연결 작업 없음 & 미완료)
+- `work-log list`: `--work --member --since --until --active`
+- `node-link list`: `--node`(양방향) / `--from` / `--to`
+
+**일괄 작업** (한 번의 요청)
+- 생성: `node create --items`, `ur create --items`, `checklist create --items`, `ur-link create --ur A,B --work T` (중복 무시)
+- 수정/삭제: `node update --ids`, `ur update --ids`, `ur delete --ids`
+- 생성 시 `sort_order` 미지정이면 형제 끝으로 자동 배치(UI 와 동일).
+
+**기타 추가**
+- `node move --id --parent [--sort-order]` (계층 규칙은 DB 가 검증), `ur update --feature-id`(UR 이동, 그룹 해제)
+- `work-log stop --work Task-N` (진행 중 로그 자동 탐색)
+- UR 상태를 오구현 이외로 바꾸면 `misimpl_reason` 자동 해제
+- 검색어의 쉼표·괄호·따옴표 안전 처리, 키(`Task-12`)로 검색 가능
+
+**서버 API (migration 0009)**
+- `rpc/subtree_progress(p_project_id, p_root?)` — 프로젝트(또는 서브트리) 노드별 진행률. `node_progress` 뷰는 재귀 CTE 라 `node_id` 필터가 내려가지 않아 매 호출 전 프로젝트를 계산하므로, 새 코드는 이 RPC 를 쓴다.
+- `rpc/project_summary(p_project_id)` — 대시보드 요약 JSON.
+- 인덱스: `ur(ticket_number)`, `work_log(member_id)`, `work_log(started_at)`, `node(project_id, updated_at)`.
 
 `node_progress`와 `ur_coverage`는 읽기 전용이다. `raw` 쓰기는 프로젝트 소유권 검증을
 우회하므로 `--unsafe`가 추가로 필요하다.
@@ -129,7 +166,10 @@ npm.cmd run canopy -- priority get --project <PID> --node <NODE_ID>
 npm.cmd run canopy -- priority clear --project <PID> --node <NODE_ID>
 
 # 리포트
+npm.cmd run canopy -- report summary --project <PID>
+npm.cmd run canopy -- report progress --project <PID> --type 기능
 npm.cmd run canopy -- report progress --project <PID> --node <NODE_ID>
+npm.cmd run canopy -- report time --project <PID> --since 2026-11-01
 npm.cmd run canopy -- report coverage --project <PID> --feature <SUBFEATURE_ID>
 ```
 
