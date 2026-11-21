@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const DEFAULT_URL = "https://ztirywdmyttoqmrejjoy.supabase.co/rest/v1"
-const DEFAULT_KEY = "sb_publishable_CBdM6CqfFnG_H_ynwkHenA_EEu9x8_9"
+const DEFAULT_URL = "https://canopy-api.lnk.sarl/rest/v1"
+const DEFAULT_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzk1MjY0MDc1LCJleHAiOjE5NTI5NDQwNzV9.3Rj3Z3OhIScmh70Dk1gF-S01O8axKT8nZ8HmyQBrR70"
 const WRITABLE = new Set([
   "project", "member", "status", "node", "ur_group", "ur", "ur_work_link",
   "task_checklist", "node_link", "work_log", "field_def",

@@ -67,8 +67,8 @@ Vite + React + TypeScript / Tailwind + shadcn/ui (디자인: Pixel Blossom + 메
 - 전형적 작업: "세부기능의 요구사항을 읽고 → 그걸 만족시킬 작업들로 분해해 등록".
 
 ### 연결 방법 — Supabase 직접 (별도 서버·인증 불필요)
-- **REST base**: `https://ztirywdmyttoqmrejjoy.supabase.co/rest/v1`
-- **anon key**: `sb_publishable_CBdM6CqfFnG_H_ynwkHenA_EEu9x8_9`
+- **REST base**: `https://canopy-api.lnk.sarl/rest/v1`
+- **anon key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzk1MjY0MDc1LCJleHAiOjE5NTI5NDQwNzV9.3Rj3Z3OhIScmh70Dk1gF-S01O8axKT8nZ8HmyQBrR70`
 - **헤더**: `apikey: <key>`, `Authorization: Bearer <key>`, `Content-Type: application/json`, (쓰기 응답 원하면 `Prefer: return=representation`)
 - anon 에 **읽기·쓰기 전체 허용**(내부용). 즉 이 키 하나로 데이터 조작이 다 된다.
 

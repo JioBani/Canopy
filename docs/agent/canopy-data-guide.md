@@ -10,8 +10,8 @@ Canopy 의 Supabase(PostgREST) 를 **직접 읽고 쓰는** 데 필요한 모든
 
 | 항목 | 값 |
 |---|---|
-| REST base URL | `https://ztirywdmyttoqmrejjoy.supabase.co/rest/v1` |
-| anon key | `sb_publishable_CBdM6CqfFnG_H_ynwkHenA_EEu9x8_9` |
+| REST base URL | `https://canopy-api.lnk.sarl/rest/v1` |
+| anon key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzk1MjY0MDc1LCJleHAiOjE5NTI5NDQwNzV9.3Rj3Z3OhIScmh70Dk1gF-S01O8axKT8nZ8HmyQBrR70` |
 
 **필수 헤더**
 ```
@@ -168,7 +168,7 @@ curl -X DELETE "$BASE/node?id=eq.<NODE_ID>" -H "apikey: $KEY" -H "Authorization:
 
 ## 4. 자주 쓰는 작업 (REST 그대로)
 
-환경: `BASE=https://ztirywdmyttoqmrejjoy.supabase.co/rest/v1`, `KEY=<anon key>`, 헤더는 §1.
+환경: `BASE=https://canopy-api.lnk.sarl/rest/v1`, `KEY=<anon key>`, 헤더는 §1.
 
 **(a) 프로젝트 + 트리 조회**
 ```bash
