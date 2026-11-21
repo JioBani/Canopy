@@ -15,6 +15,7 @@ import { listUrs, updateUr, type Ur, type UrStatus } from "@/lib/ur"
 import { UrBoard } from "@/ur/UrBoard"
 import { getPriority, PRIORITIES, PRIORITY_COLOR } from "@/lib/fields"
 import { cn } from "@/lib/utils"
+import { useQueryParam } from "@/lib/router"
 
 const CATEGORIES: StatusCategory[] = ["할일", "진행중", "완료", "취소됨"]
 /** 보드 레이어: 노드 타입 + 요구사항(UR, 노드 아님). */
@@ -120,12 +121,17 @@ function BoardCard({ node }: { node: AppNode }) {
 
 export function BoardView() {
   const { nodes, statuses, members, updateFields, openNode } = useNodes()
-  const [layer, setLayer] = useState<BoardLayer>("작업")
-  const [fDomain, setFDomain] = useState("")
-  const [fAssignee, setFAssignee] = useState("")
-  const [fContent, setFContent] = useState("")
-  const [fFeature, setFFeature] = useState("")
-  const [fPriority, setFPriority] = useState("")
+  // 레이어·필터 = URL query (공유 가능, 변경은 replace) — ?layer=&domain=&assignee=&content=&feature=&priority=
+  const [layerQ, setLayerQ] = useQueryParam("layer")
+  const layer: BoardLayer = (LAYER_TABS as string[]).includes(layerQ)
+    ? (layerQ as BoardLayer)
+    : "작업"
+  const setLayer = (l: BoardLayer) => setLayerQ(l === "작업" ? null : l)
+  const [fDomain, setFDomain] = useQueryParam("domain")
+  const [fAssignee, setFAssignee] = useQueryParam("assignee")
+  const [fContent, setFContent] = useQueryParam("content")
+  const [fFeature, setFFeature] = useQueryParam("feature")
+  const [fPriority, setFPriority] = useQueryParam("priority")
 
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
   const statusById = useMemo(

@@ -19,7 +19,9 @@ import {
 } from "@/lib/nodes"
 import { listStatuses, type Status } from "@/lib/statuses"
 import { listMembers, type Member } from "@/lib/members"
-import type { NodeType } from "@/nodes/nodeGrammar"
+import { ticketKey, TICKET_PREFIX, type NodeType } from "@/nodes/nodeGrammar"
+import { toast } from "sonner"
+import { buildPath, navigate, parseRoute, useUrl, type AppView } from "@/lib/router"
 
 interface NodesContextValue {
   nodes: AppNode[]
@@ -75,31 +77,26 @@ interface NodesContextValue {
 
 const NodesContext = createContext<NodesContextValue | undefined>(undefined)
 
-type View = "tree" | "board" | "dashboard"
+type View = AppView
 
-const NAV_KEY = "canopy.nav"
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const PREFIX_TO_TYPE = Object.fromEntries(
+  Object.entries(TICKET_PREFIX).map(([t, p]) => [p.toLowerCase(), t as NodeType])
+)
 
-/**
- * 새로고침(하드 리로드) 후 화면을 복원하기 위한 마지막 뷰/선택 노드.
- * 우선순위: history.state(현재 항목, 리로드에도 보존) → localStorage 폴백 → 기본(트리·선택없음).
- */
-function readInitialNav(): { view: View; selectedId: string | null } {
-  const fromHistory = (
-    history.state as { canopy?: { view: View; selectedId: string | null } } | null
-  )?.canopy
-  if (fromHistory?.view) {
-    return { view: fromHistory.view, selectedId: fromHistory.selectedId ?? null }
-  }
-  try {
-    const raw = localStorage.getItem(NAV_KEY)
-    if (raw) {
-      const p = JSON.parse(raw) as { view?: View; selectedId?: string | null }
-      if (p?.view) return { view: p.view, selectedId: p.selectedId ?? null }
-    }
-  } catch {
-    /* 파싱/스토리지 실패는 무시하고 기본값 사용 */
-  }
-  return { view: "tree", selectedId: null }
+/** URL 의 nodeRef(티켓키 "Task-4" 또는 uuid) → 노드. */
+function resolveNodeRef(ref: string, nodes: AppNode[]): AppNode | undefined {
+  if (UUID_RE.test(ref)) return nodes.find((n) => n.id === ref)
+  const m = /^([A-Za-z]+)-(\d+)$/.exec(ref)
+  if (!m) return undefined
+  const type = PREFIX_TO_TYPE[m[1].toLowerCase()]
+  const num = Number(m[2])
+  return nodes.find((n) => n.type === type && n.ticket_number === num)
+}
+
+/** 노드 → URL 용 참조(티켓키). */
+export function nodeRefOf(n: AppNode): string {
+  return ticketKey(n.type, n.ticket_number)
 }
 
 export function NodesProvider({
@@ -111,18 +108,45 @@ export function NodesProvider({
 }) {
   const [nodes, setNodes] = useState<AppNode[]>([])
   const [loading, setLoading] = useState(true)
-  // 새로고침 후 복원: 마지막 뷰/선택 노드를 초기값으로 seed (아래 popstate/localStorage 연동).
-  const [selectedId, setSelectedId] = useState<string | null>(
-    () => readInitialNav().selectedId
+  // ── 화면/선택 = URL 이 정본 (src/lib/router.ts) ─────────────────────────
+  const { pathname } = useUrl()
+  const route = parseRoute(pathname)
+  const view: View = route.view
+  const nodeRef = route.nodeRef
+  const selectedNode = useMemo(
+    () => (nodeRef ? resolveNodeRef(nodeRef, nodes) : undefined),
+    [nodeRef, nodes]
   )
-  const [view, setView] = useState<View>(() => readInitialNav().view)
+  const selectedId = selectedNode?.id ?? null
+  // 보드/대시보드에 갔다가 트리로 돌아올 때 마지막 선택을 복원하기 위한 기억.
+  const lastTreeRefRef = useRef<string | null>(nodeRef)
+  useEffect(() => {
+    if (view === "tree") lastTreeRefRef.current = nodeRef
+  }, [view, nodeRef])
+
   // 기본은 접힘(컴팩트). expanded 에 든 id 만 펼침.
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
-  const openNode = useCallback((id: string) => {
-    setSelectedId(id)
-    setView("tree")
-  }, [])
+  const nodesForNavRef = useRef<AppNode[]>([])
+  useEffect(() => {
+    nodesForNavRef.current = nodes
+  }, [nodes])
+
+  /** 트리에서 노드 선택(null = 선택 해제) — history push. */
+  const select = useCallback(
+    (id: string | null) => {
+      const n = id ? nodesForNavRef.current.find((x) => x.id === id) : undefined
+      navigate(buildPath(projectId, "tree", n ? nodeRefOf(n) : null))
+    },
+    [projectId]
+  )
+  const setView = useCallback(
+    (v: View) => {
+      navigate(buildPath(projectId, v, v === "tree" ? lastTreeRefRef.current : null))
+    },
+    [projectId]
+  )
+  const openNode = select
   const [statuses, setStatuses] = useState<Status[]>([])
   const [members, setMembers] = useState<Member[]>([])
   const [progress, setProgress] = useState<Map<string, NodeProgress>>(new Map())
@@ -134,54 +158,36 @@ export function NodesProvider({
     nodesRef.current = nodes
   }, [nodes])
 
-  // ── 브라우저 히스토리 연동 ───────────────────────────────────────────
-  // 뷰/선택 노드를 history 에 쌓아 "뒤로가기"가 앱을 벗어나지 않고 이전 화면으로
-  // 돌아가게 한다. popstate 로 인한 상태 복원 중엔 새 항목을 push 하지 않는다.
-  const poppingRef = useRef(false)
-  const firstNavRef = useRef(true)
-
+  // ── 딥링크 정합 ────────────────────────────────────────────────────
+  // 1) 링크의 노드를 찾으면 조상을 펼쳐 트리에서 보이게(최초 1회/노드 변경 시).
+  // 2) 못 찾으면(삭제·오타) 안내 후 트리 루트로 replace.
+  const revealedRef = useRef<string | null>(null)
   useEffect(() => {
-    history.replaceState({ canopy: { view, selectedId } }, "")
-    const onPop = (e: PopStateEvent) => {
-      const s = (
-        e.state as {
-          canopy?: {
-            view: "tree" | "board" | "dashboard"
-            selectedId: string | null
-          }
-        } | null
-      )?.canopy
-      poppingRef.current = true
-      setView(s?.view ?? "tree")
-      setSelectedId(s?.selectedId ?? null)
-      // 상태 반영(및 push 스킵) 후 플래그 해제(매크로태스크).
-      setTimeout(() => {
-        poppingRef.current = false
-      }, 0)
-    }
-    window.addEventListener("popstate", onPop)
-    return () => window.removeEventListener("popstate", onPop)
-    // 마운트 1회만 (초기 항목 태깅 + 리스너 등록).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    if (firstNavRef.current) {
-      firstNavRef.current = false
+    if (loading || !nodeRef || view !== "tree") return
+    if (!selectedNode) {
+      toast.warning(`링크의 항목(${nodeRef})을 찾을 수 없습니다`, {
+        description: "삭제되었거나 다른 프로젝트의 항목입니다. 트리로 이동했습니다.",
+      })
+      navigate(buildPath(projectId, "tree"), { replace: true })
       return
     }
-    if (poppingRef.current) return // 뒤로/앞으로 복원 중엔 push 안 함
-    history.pushState({ canopy: { view, selectedId } }, "")
-  }, [view, selectedId])
-
-  // history.state 가 없는 환경(직접 URL 진입 등) 대비 localStorage 에도 보존 → readInitialNav 폴백.
-  useEffect(() => {
-    try {
-      localStorage.setItem(NAV_KEY, JSON.stringify({ view, selectedId }))
-    } catch {
-      /* 프라이빗 모드 등 저장 실패는 무시 */
+    if (revealedRef.current === selectedNode.id) return
+    revealedRef.current = selectedNode.id
+    const ancestors: string[] = []
+    let cur = selectedNode.parent_id
+    while (cur) {
+      ancestors.push(cur)
+      cur = nodes.find((n) => n.id === cur)?.parent_id ?? null
     }
-  }, [view, selectedId])
+    if (ancestors.length) {
+      setExpanded((prev) => {
+        if (ancestors.every((a) => prev.has(a))) return prev
+        const next = new Set(prev)
+        ancestors.forEach((a) => next.add(a))
+        return next
+      })
+    }
+  }, [loading, nodeRef, selectedNode, view, nodes, projectId])
 
   /** 주어진(생략 시 현재 전체) 노드들의 진행률을 뷰에서 다시 가져온다. loading 토글 없음. */
   const refreshProgress = useCallback(async (ids?: string[]) => {
@@ -318,7 +324,8 @@ export function NodesProvider({
           return next
         })
       }
-      setSelectedId(created.id)
+      nodesForNavRef.current = nextNodes
+      navigate(buildPath(projectId, "tree", nodeRefOf(created)))
       // 새 노드로 인해 조상 진행률이 바뀌므로 갱신.
       await refreshProgress(nextNodes.map((n) => n.id))
       return created
@@ -387,10 +394,13 @@ export function NodesProvider({
       }
       const remaining = nodes.filter((n) => !toRemove.has(n.id))
       setNodes(remaining)
-      setSelectedId((cur) => (cur && toRemove.has(cur) ? null : cur))
+      if (selectedId && toRemove.has(selectedId)) {
+        const parent = remaining.find((n) => n.id === nodes.find((x) => x.id === id)?.parent_id)
+        navigate(buildPath(projectId, "tree", parent ? nodeRefOf(parent) : null), { replace: true })
+      }
       await refreshProgress(remaining.map((n) => n.id))
     },
-    [nodes, refreshProgress]
+    [nodes, refreshProgress, selectedId, projectId]
   )
 
   const value: NodesContextValue = useMemo(
@@ -401,7 +411,7 @@ export function NodesProvider({
       childrenOf,
       descendantCount,
       selectedId,
-      select: setSelectedId,
+      select,
       view,
       setView,
       openNode,
@@ -426,7 +436,9 @@ export function NodesProvider({
       childrenOf,
       descendantCount,
       selectedId,
+      select,
       view,
+      setView,
       openNode,
       isExpanded,
       toggleCollapse,

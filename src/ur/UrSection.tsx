@@ -40,6 +40,7 @@ import { Input } from "@/components/ui/input"
 import { Markdown } from "@/components/Markdown"
 import { Count, EmptyNote, Section, StatusChip, SubLabel, TicketKey } from "@/components/ds"
 import { cn } from "@/lib/utils"
+import { useQueryParam } from "@/lib/router"
 
 function nextOrder<T extends { sort_order: number }>(items: T[]): number {
   return items.reduce((m, i) => Math.max(m, i.sort_order), -1) + 1
@@ -268,7 +269,25 @@ export function UrSection({
   const [loading, setLoading] = useState(true)
   // compact: 그룹 접힘 기본. full: 펼침 기본.
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set())
-  const [expandedUr, setExpandedUr] = useState<string | null>(null)
+  // 펼친 요구사항 = URL ?ur=Requirement-N (공유·새로고침 복원, 변경은 replace). 상세(full)에서만.
+  const [urParam, setUrParam] = useQueryParam("ur")
+  const expandedUr = compact
+    ? null
+    : (urs.find((u) => urKey(u.ticket_number) === urParam)?.id ?? null)
+  const setExpandedUr = (id: string | null) => {
+    const u = id ? urs.find((x) => x.id === id) : undefined
+    setUrParam(u ? urKey(u.ticket_number) : null)
+  }
+  // 딥링크로 들어온 요구사항은 한 번 화면 안으로 스크롤.
+  const scrolledRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (compact || loading || !urParam || scrolledRef.current === urParam) return
+    const el = document.querySelector(`[data-ur-key="${CSS.escape(urParam)}"]`)
+    if (el) {
+      scrolledRef.current = urParam
+      el.scrollIntoView({ block: "start", behavior: "smooth" })
+    }
+  }, [compact, loading, urParam, urs])
   const [addingIn, setAddingIn] = useState<string | "none" | null>(null)
   const [addingGroup, setAddingGroup] = useState(false)
   const [editingUr, setEditingUr] = useState<string | null>(null)
@@ -502,6 +521,7 @@ export function UrSection({
                         u.status === "오구현" && "shadow-[inset_3px_0_0_var(--ds-danger)]"
                       )}
                       data-testid="ur-row"
+                      data-ur-key={urKey(u.ticket_number)}
                     >
                       {/* 헤더 행 — 전체 클릭으로 펼침/접힘(편집 컨트롤은 전파 차단) */}
                       <div

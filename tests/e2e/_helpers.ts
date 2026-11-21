@@ -175,7 +175,11 @@ export async function addChildTyped(
 }
 
 /** 트리 노드를 펼친다(자식 보이게). 기본이 접힘이라 깊은 노드 접근 시 사용. */
+/** 행 펼치기(멱등) — 이미 펼쳐져 있으면 그대로 둔다(URL 딥링크 복원 시 조상 자동 펼침). */
 export async function expand(page: Page, title: string) {
-  await rowByTitle(page, title).getByTestId("tree-toggle").click()
+  const toggle = rowByTitle(page, title).getByTestId("tree-toggle")
+  await expect(toggle).toHaveAttribute("aria-label", /펼치기|접기/)
+  if ((await toggle.getAttribute("aria-label")) === "펼치기") await toggle.click()
+  await expect(toggle).toHaveAttribute("aria-label", "접기")
 }
 

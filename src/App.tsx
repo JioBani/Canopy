@@ -15,6 +15,7 @@ import { StatusSettingsButton } from "@/projects/StatusSettingsDialog"
 import { MembersButton } from "@/projects/MembersDialog"
 import { BloomFull } from "@/nodes/bloomGlyph"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { Toaster } from "@/components/ui/sonner"
 import { ChevronLeft, LogOut } from "lucide-react"
 import {
   DropdownMenu,
@@ -340,6 +341,7 @@ export default function App() {
           <WorkspaceBody />
         </ProjectProvider>
       </RequireAuth>
+      <Toaster position="bottom-right" />
     </TooltipProvider>
   )
 }

@@ -68,7 +68,7 @@ test.describe.serial("상세 드릴다운 + 작업 독립 생성", () => {
     await expect(detail(page).getByTestId("detail-type")).toHaveText("작업")
     await expect(detail(page).getByTestId("detail-title")).toHaveValue("독립작업")
     await expect(detail(page).getByTestId("task-ur-links")).toContainText(
-      "연결된 UR"
+      "연결된 요구사항이 없습니다"
     )
 
     // REST: 작업의 부모 = 세부기능, ur_work_link 0개

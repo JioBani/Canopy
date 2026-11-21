@@ -1,3 +1,5 @@
+import { Link2 } from "lucide-react"
+import { toast } from "sonner"
 import { useNodes } from "@/nodes/NodesProvider"
 import { ticketKey } from "@/nodes/nodeGrammar"
 import type { AppNode } from "@/lib/nodes"
@@ -89,6 +91,20 @@ export function CoverHeader({ node }: { node: AppNode }) {
       <div className="ml-auto flex items-center gap-2" data-testid="cover-layer">
         <LayerChip type={node.type} data-testid="detail-type" />
         <TicketKey value={ticket} copy data-testid="detail-ticket" />
+        <button
+          type="button"
+          title="이 화면 링크 복사"
+          aria-label="이 화면 링크 복사"
+          data-testid="copy-link"
+          className="text-label text-fg-2 hover:bg-hover hover:text-fg flex h-7 items-center gap-1.5 rounded-md px-2"
+          onClick={() => {
+            void navigator.clipboard?.writeText(window.location.href)
+            toast.success("링크를 복사했습니다", { description: window.location.href })
+          }}
+        >
+          <Link2 className="size-4" />
+          링크 복사
+        </button>
       </div>
     </div>
   )

@@ -7,11 +7,13 @@ import {
   useState,
   type ReactNode,
 } from "react"
+import { toast } from "sonner"
 import {
   insertProject,
   listProjects,
   type Project,
 } from "@/lib/projects"
+import { buildPath, navigate, parseRoute, useUrl } from "@/lib/router"
 
 const STORAGE_KEY = "canopy.currentProjectId"
 
@@ -27,31 +29,36 @@ interface ProjectContextValue {
 
 const ProjectContext = createContext<ProjectContextValue | undefined>(undefined)
 
+function readStored(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+function writeStored(id: string | null) {
+  try {
+    if (id) localStorage.setItem(STORAGE_KEY, id)
+    else localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    /* 저장 불가 환경 무시 */
+  }
+}
+
+/**
+ * 현재 프로젝트 = URL(/p/:projectId) 이 정본. URL 에 없으면 마지막 프로젝트(localStorage) → 첫 프로젝트로
+ * replace. URL 의 프로젝트가 목록에 없으면(삭제·권한 없음) 안내 후 폴백 프로젝트로 replace.
+ */
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
-  const [currentProjectId, setCurrentProjectId] = useState<string | null>(() =>
-    localStorage.getItem(STORAGE_KEY)
-  )
-
-  const persistCurrent = useCallback((id: string | null) => {
-    setCurrentProjectId(id)
-    if (id) localStorage.setItem(STORAGE_KEY, id)
-    else localStorage.removeItem(STORAGE_KEY)
-  }, [])
+  const { pathname } = useUrl()
+  const routeProjectId = parseRoute(pathname).projectId
+  const currentProjectId = routeProjectId ?? readStored()
 
   const reload = useCallback(async () => {
     setLoading(true)
-    const list = await listProjects()
-    setProjects(list)
-    // 저장된 현재 프로젝트가 목록에 없으면 첫 프로젝트로 폴백.
-    setCurrentProjectId((prev) => {
-      const stillExists = prev && list.some((p) => p.id === prev)
-      const next = stillExists ? prev : (list[0]?.id ?? null)
-      if (next) localStorage.setItem(STORAGE_KEY, next)
-      else localStorage.removeItem(STORAGE_KEY)
-      return next
-    })
+    setProjects(await listProjects())
     setLoading(false)
   }, [])
 
@@ -62,22 +69,39 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     })
   }, [reload])
 
+  // URL ↔ 프로젝트 목록 정합: 없는/빈 프로젝트 id 를 가까운 유효 위치로 안내.
+  useEffect(() => {
+    if (loading) return
+    const exists = (id: string | null) => !!id && projects.some((p) => p.id === id)
+    if (routeProjectId && exists(routeProjectId)) {
+      writeStored(routeProjectId)
+      return
+    }
+    const stored = readStored()
+    const fallback = exists(stored) ? stored : (projects[0]?.id ?? null)
+    if (routeProjectId) {
+      toast.warning("링크의 프로젝트를 찾을 수 없습니다", {
+        description: fallback ? "접근 가능한 프로젝트로 이동했습니다." : "프로젝트 목록으로 이동했습니다.",
+      })
+    }
+    writeStored(fallback)
+    navigate(fallback ? buildPath(fallback, "tree") : "/", { replace: true })
+  }, [loading, projects, routeProjectId])
+
   const selectProject = useCallback(
     (id: string) => {
-      if (projects.some((p) => p.id === id)) persistCurrent(id)
+      if (projects.some((p) => p.id === id)) navigate(buildPath(id, "tree"))
     },
-    [projects, persistCurrent]
+    [projects]
   )
 
-  const createProject = useCallback(
-    async (name: string) => {
-      const created = await insertProject(name)
-      setProjects((prev) => [...prev, created])
-      persistCurrent(created.id)
-      return created
-    },
-    [persistCurrent]
-  )
+  const createProject = useCallback(async (name: string) => {
+    const created = await insertProject(name)
+    setProjects((prev) => [...prev, created])
+    writeStored(created.id)
+    navigate(buildPath(created.id, "tree"))
+    return created
+  }, [])
 
   const currentProject = useMemo(
     () => projects.find((p) => p.id === currentProjectId) ?? null,

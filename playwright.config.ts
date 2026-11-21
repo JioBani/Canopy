@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test"
 
-const PORT = 5174
+const PORT = Number(process.env.E2E_PORT ?? 5174) // 5174 가 점유돼 있으면 E2E_PORT 로 변경
 // Vite dev 서버는 localhost(IPv6 ::1)에 바인딩되므로 127.0.0.1 대신 localhost 사용.
 const BASE_URL = `http://localhost:${PORT}`
 
