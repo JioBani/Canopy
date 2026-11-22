@@ -7,6 +7,8 @@ import {
   PointerSensor,
   TouchSensor,
   closestCorners,
+  pointerWithin,
+  type CollisionDetection,
   useDroppable,
   useSensor,
   useSensors,
@@ -88,6 +90,19 @@ function ancestorsOf(
     cur = cur.parent_id ? (byId.get(cur.parent_id) ?? null) : null
   }
   return { contentId, featureId }
+}
+
+/**
+ * 놓을 대상 판정 — 포인터가 실제로 올라간 곳 우선(카드 > 열). 포인터가 어디에도 없을 때만 최근접.
+ * closestCorners 단독은 큰 빈 열보다 옆 열의 작은 카드를 더 가깝게 봐서 엉뚱한 열에 떨어졌다.
+ */
+const collision: CollisionDetection = (args) => {
+  const hits = pointerWithin(args)
+  if (hits.length) {
+    const cards = hits.filter((h) => !String(h.id).startsWith("col:"))
+    return cards.length ? cards : hits
+  }
+  return closestCorners(args)
 }
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e))
@@ -657,7 +672,7 @@ export function BoardView() {
       ) : (
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCorners}
+          collisionDetection={collision}
           onDragStart={onDragStart}
           onDragOver={onDragOver}
           onDragEnd={onDragEnd}

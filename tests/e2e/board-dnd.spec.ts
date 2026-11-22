@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test"
-import { restGet, restPatch } from "../helpers/rest"
+import { restGet, restPost } from "../helpers/rest"
+import { restPatch } from "../helpers/rest"
 import {
   addChildSingle,
   addChildTyped,
@@ -155,5 +156,35 @@ test.describe.serial("보드 드래그·순서·우선순위", () => {
       "높음"
     )
     await expect(rowByTitle(page, "소환기능").getByTestId("tree-priority")).toHaveCount(0)
+  })
+
+  test("빈 열에 놓기 — 옆 열에 카드가 있어도 포인터가 놓인 열로 (운영 회귀)", async ({ page }) => {
+    const statuses = await restGet<{ id: string; category: string; sort_order: number }>(
+      `status?project_id=eq.${projectId}&select=id,category,sort_order`
+    )
+    const done = statuses
+      .filter((s) => s.category === "완료")
+      .sort((a, b) => a.sort_order - b.sort_order)[0]
+    // 운영처럼 옆 열(완료)이 카드로 가득 차 있어야 재현됨
+    const parent = (await restGet<{ parent_id: string }>(
+      `node?id=eq.${(await nodeByTitle("작업2")).id}&select=parent_id`
+    ))[0].parent_id
+    await restPost(
+      "node",
+      Array.from({ length: 10 }, (_, i) => ({
+        project_id: projectId,
+        parent_id: parent,
+        type: "작업",
+        title: `완료작업${i}`,
+        status_id: done.id,
+        sort_order: 100 + i,
+      }))
+    )
+    await page.setViewportSize({ width: 1600, height: 900 })
+    await page.goto(boardPath())
+    await expect(column(page, "완료").getByTestId("board-card")).toHaveCount(10)
+    await dragCard(page, cardIn(page, "할일", "작업1"), column(page, "진행중"))
+    await expect(cardIn(page, "진행중", "작업1")).toBeVisible()
+    await expect(column(page, "완료").getByTestId("board-card")).toHaveCount(10)
   })
 })
