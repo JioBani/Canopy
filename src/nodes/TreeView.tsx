@@ -9,6 +9,8 @@ import {
 import { useNodes } from "@/nodes/NodesProvider"
 import { DeleteNodeDialog } from "@/nodes/DeleteNodeDialog"
 import { ProgressBadge, StatusBadge } from "@/nodes/NodeBadges"
+import { PriorityIcon } from "@/components/priority"
+import { getPriority } from "@/lib/fields"
 import { PIXEL_ICONS } from "@/nodes/pixelIcons"
 import { LAYER_COLOR } from "@/nodes/layerColors"
 import { SubFeatureSections } from "@/ur/SubFeatureSections"
@@ -207,6 +209,16 @@ function TreeNodeRow({ node, depth }: { node: AppNode; depth: number }) {
         >
           {node.title}
         </span>
+
+        {/* 우선순위 — 보통 외 값만 아이콘으로(제목 폭 우선) */}
+        {(() => {
+          const p = getPriority(node.fields)
+          return p && p !== "보통" ? (
+            <span title={`우선순위: ${p}`} data-testid="tree-priority" data-priority={p}>
+              <PriorityIcon priority={p} />
+            </span>
+          ) : null
+        })()}
 
         {/* 진행률/상태 — 액션 버튼은 hover 시 이 위에 겹쳐 뜸(제목 폭을 미리 잡아먹지 않음). */}
         <span className="flex shrink-0 items-center">

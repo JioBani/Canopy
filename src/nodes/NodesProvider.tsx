@@ -347,15 +347,23 @@ export function NodesProvider({
 
   const updateFields = useCallback<NodesContextValue["updateFields"]>(
     async (id, patch) => {
-      const updated = await updateNode(id, patch)
-      const next = nodes.map((n) => (n.id === id ? updated : n))
-      setNodes(next)
+      // 낙관적 반영 → 서버 응답으로 확정, 실패 시 원복 후 throw(호출부가 안내).
+      const prev = nodesRef.current.find((n) => n.id === id)
+      setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, ...patch } : n)))
+      let updated: AppNode
+      try {
+        updated = await updateNode(id, patch)
+      } catch (e) {
+        if (prev) setNodes((ns) => ns.map((n) => (n.id === id ? prev : n)))
+        throw e
+      }
+      setNodes((ns) => ns.map((n) => (n.id === id ? updated : n)))
       // 상태 변경은 조상 진행률에 영향 → 즉시 갱신(가시성 핵심).
       if ("status_id" in patch) {
-        await refreshProgress(next.map((n) => n.id))
+        await refreshProgress()
       }
     },
-    [nodes, refreshProgress]
+    [refreshProgress]
   )
 
   const statusById = useMemo(

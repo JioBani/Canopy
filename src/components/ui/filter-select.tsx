@@ -1,3 +1,4 @@
+import type React from "react"
 import {
   Select,
   SelectContent,
@@ -9,7 +10,7 @@ import { cn } from "@/lib/utils"
 
 const ALL = "__all__"
 
-export type FilterOption = { value: string; label: string }
+export type FilterOption = { value: string; label: string; icon?: React.ReactNode }
 
 /**
  * 필터용 Select(흰 메뉴) — 빈 문자열("전체")은 sentinel 로 처리.
@@ -48,7 +49,8 @@ export function FilterSelect({
       <SelectContent>
         <SelectItem value={ALL}>{allLabel}</SelectItem>
         {items.map((it) => (
-          <SelectItem key={it.value} value={it.value}>
+          <SelectItem key={it.value} value={it.value} textValue={it.label}>
+            {it.icon}
             {it.label}
           </SelectItem>
         ))}

@@ -65,14 +65,27 @@ export const PRIORITIES: Priority[] = [
   "최우선",
 ]
 
-/** 우선순위 뱃지 색 — 차분(낮음)→긴급(높음) 램프. */
+/**
+ * 우선순위 색(design-system-v2) — 높을수록 따뜻·진하게, 낮을수록 차갑게, 보통 = 중립.
+ * 아이콘(src/components/priority.tsx)과 함께 쓴다: 색만으로 구분하지 않음.
+ */
 export const PRIORITY_COLOR: Record<Priority, string> = {
-  매우낮음: "#ABA2A8", // mist
-  낮음: "#8AA6C2", // blue-gray
-  보통: "#62B08A", // green
-  높음: "#E8B45C", // amber
-  매우높음: "#EC8A5A", // peach/orange
-  최우선: "#D6495A", // ember(red)
+  매우낮음: "#7D93B0", // slate-blue
+  낮음: "#3B78C4", // blue
+  보통: "#8A919E", // neutral
+  높음: "#C9780A", // amber
+  매우높음: "#D9541E", // orange-red
+  최우선: "#C42B3B", // danger red
+}
+
+/** 배지 배경(연한 틴트). */
+export const PRIORITY_SOFT: Record<Priority, string> = {
+  매우낮음: "#EEF2F7",
+  낮음: "#E8F0FA",
+  보통: "#F0F1F3",
+  높음: "#FBF1E1",
+  매우높음: "#FCEBE3",
+  최우선: "#FBE6E8",
 }
 
 /** 정렬용 랭크(0=매우낮음 … 5=최우선). 미지정은 -1. */

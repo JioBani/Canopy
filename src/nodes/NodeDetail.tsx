@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { ChevronsUpDown, FileText, ListTree, Pencil } from "lucide-react"
+import { toast } from "sonner"
+import { PriorityIcon } from "@/components/priority"
 import { useNodes } from "@/nodes/NodesProvider"
 import { Markdown } from "@/components/Markdown"
 import { memberLabel } from "@/lib/members"
@@ -17,7 +19,6 @@ import type { NodeDomain } from "@/lib/nodes"
 import type { StatusCategory } from "@/lib/statuses"
 import {
   PRIORITIES,
-  PRIORITY_COLOR,
   getPriority,
   withPriority,
   type Priority,
@@ -156,7 +157,11 @@ export function NodeDetail() {
 
   const isTask = node.type === "작업"
   const set = (patch: Parameters<typeof updateFields>[1]) =>
-    void updateFields(node.id, patch)
+    void updateFields(node.id, patch).catch((e: unknown) =>
+      toast.error("저장하지 못했습니다", {
+        description: e instanceof Error ? e.message : String(e),
+      })
+    )
 
   function saveTitle() {
     const t = title.trim()
@@ -221,11 +226,7 @@ export function NodeDetail() {
           <SelectItem value={NONE}>미지정</SelectItem>
           {PRIORITIES.map((p) => (
             <SelectItem key={p} value={p} textValue={p}>
-              <span
-                aria-hidden
-                className="inline-block size-2.5 shrink-0 rounded-full"
-                style={{ background: PRIORITY_COLOR[p] }}
-              />
+              <PriorityIcon priority={p} />
               {p}
             </SelectItem>
           ))}

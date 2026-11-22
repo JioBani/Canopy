@@ -32,7 +32,11 @@ export async function selectByLabel(page: Page, testid: string, label: string) {
   const arrow = page.getByTestId(`${testid}-arrow`)
   if (await arrow.count()) await arrow.click()
   else await page.getByTestId(testid).click()
-  await page.getByRole("option", { name: label }).first().click()
+  // 정확히 일치하는 옵션 우선(예: "높음" vs "매우높음"), 없으면 부분 일치.
+  await expect(page.getByRole("option").first()).toBeVisible()
+  const exact = page.getByRole("option", { name: label, exact: true })
+  if (await exact.count()) await exact.first().click()
+  else await page.getByRole("option", { name: label }).first().click()
 }
 
 /** shadcn Select: 트리거 클릭 → n번째 옵션 선택(0=빈값 라벨). */
@@ -183,3 +187,27 @@ export async function expand(page: Page, title: string) {
   await expect(toggle).toHaveAttribute("aria-label", "접기")
 }
 
+
+/**
+ * 보드 카드 드래그(dnd-kit 포인터 센서) — 실제 마우스처럼 눌러서 여러 단계로 이동 후 놓는다.
+ * target 의 세로 위치: "top"(위쪽 1/4) | "center" | "bottom"(아래쪽).
+ */
+export async function dragCard(
+  page: Page,
+  source: Locator,
+  target: Locator,
+  where: "top" | "center" | "bottom" = "center"
+) {
+  const s = await source.boundingBox()
+  const t = await target.boundingBox()
+  if (!s || !t) throw new Error("dragCard: 요소 위치 없음")
+  const sx = s.x + s.width / 2
+  const sy = s.y + Math.min(20, s.height / 2)
+  const ty = where === "top" ? t.y + 6 : where === "bottom" ? t.y + t.height - 6 : t.y + t.height / 2
+  await page.mouse.move(sx, sy)
+  await page.mouse.down()
+  await page.mouse.move(sx + 8, sy + 8, { steps: 4 })
+  await page.mouse.move(t.x + t.width / 2, ty, { steps: 15 })
+  await page.mouse.move(t.x + t.width / 2, ty + 1, { steps: 2 })
+  await page.mouse.up()
+}

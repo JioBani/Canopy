@@ -6,6 +6,7 @@ import {
   addWork,
   cleanupCreatedProjects,
   createProject,
+  dragCard,
   selectByLabel,
   selectWorkInEmbed,
   signupAndEnter,
@@ -71,7 +72,7 @@ test.describe.serial("보드 뷰", () => {
 
     const card = cardIn(page, "할일", "작업B")
     await expect(card).toBeVisible()
-    await card.dragTo(column(page, "진행중"))
+    await dragCard(page, card, column(page, "진행중"))
 
     await expect(cardIn(page, "진행중", "작업B")).toBeVisible()
   })
@@ -96,7 +97,7 @@ test.describe.serial("보드 뷰", () => {
     await expect(page.getByTestId("board-filter-domain")).toHaveCount(0)
 
     // 드래그 → 상태 변경(전 타입)
-    await cardIn(page, "할일", "합성세부").dragTo(column(page, "진행중"))
+    await dragCard(page, cardIn(page, "할일", "합성세부"), column(page, "진행중"))
     await expect(cardIn(page, "진행중", "합성세부")).toBeVisible()
   })
 })
