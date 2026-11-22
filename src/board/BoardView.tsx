@@ -207,16 +207,15 @@ function CardBody({ node, overlay = false }: { node: AppNode; overlay?: boolean 
       </div>
       <div className="text-body text-fg line-clamp-3 font-medium">{node.title}</div>
       <div className="flex min-h-6 flex-wrap items-center gap-2">
-        {overlay ? (
-          priority && <PriorityBadge priority={priority} />
-        ) : (
-          <CardPriority node={node} />
-        )}
+        {/* 지정된 우선순위는 맨 앞, 미지정 "+ 우선순위"(hover 시 노출)는 도메인 뒤 — 빈 자리로 칩이 밀리지 않게 */}
+        {priority &&
+          (overlay ? <PriorityBadge priority={priority} /> : <CardPriority node={node} />)}
         {node.domain && (
           <span className="text-label bg-sunken text-fg-2 rounded-md px-2 py-0.5">
             {node.domain}
           </span>
         )}
+        {!priority && !overlay && <CardPriority node={node} />}
         {assignee && (
           <span
             className="text-micro ml-auto inline-flex size-[22px] items-center justify-center rounded-full"
