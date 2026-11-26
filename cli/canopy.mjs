@@ -391,12 +391,12 @@ async function statuses() {
   const p = await project()
   if (action === "list") return output(await request("status", { query: { project_id: `eq.${p.id}`, order: "sort_order.asc" } }))
   if (action === "create") {
-    const body = { project_id: p.id, name: value("name", true), category: value("category", true), color: nullable(value("color")), sort_order: integer(value("sort-order") || 0, "sort-order") }
+    const body = { project_id: p.id, name: value("name", true), category: value("category", true), color: nullable(value("color")), icon: nullable(value("icon")) ?? null, sort_order: integer(value("sort-order") || 0, "sort-order") }
     return output(await request("status", { method: "POST", body, prefer: "return=representation" }))
   }
   const s = await resolveStatus(value("id", true), p)
   if (action === "get") return output(s)
-  if (action === "update") return output(await request("status", { method: "PATCH", query: { id: `eq.${s.id}`, project_id: `eq.${p.id}` }, body: patchFrom(["name", "category", "color", "sort_order"]), prefer: "return=representation" }))
+  if (action === "update") return output(await request("status", { method: "PATCH", query: { id: `eq.${s.id}`, project_id: `eq.${p.id}` }, body: patchFrom(["name", "category", "color", "icon", "sort_order"]), prefer: "return=representation" }))
   if (action === "reassign") {
     const to = await resolveStatus(value("to", true), p)
     await request("node", { method: "PATCH", query: { project_id: `eq.${p.id}`, status_id: `eq.${s.id}` }, body: { status_id: to?.id ?? null } })
@@ -1102,8 +1102,8 @@ const HELP = {
     } },
     status: { description: "Project-specific workflow statuses.", actions: {
       list: "List for --project.", get: "Get --id <UUID|name>.",
-      create: "Create with --project --name --category <할일|진행중|완료|취소됨> [--color] [--sort-order].",
-      update: "Update --project --id using named options or --json.", reassign: "Move nodes from --id to --to <status|null> within --project.",
+      create: "Create with --project --name --category <할일|진행중|완료|취소됨> [--color] [--icon <lucide-key, e.g. circle-dot>] [--sort-order]. Category defaults: 할일=circle 진행중=circle-dot 완료=circle-check 취소됨=circle-x.",
+      update: "Update --project --id with --name --category --color --icon (null clears) --sort-order or --json.", reassign: "Move nodes from --id to --to <status|null> within --project.",
       delete: "Delete --project --id; requires --yes.",
     } },
     node: { description: "Tree nodes: 컨텐츠 > 기능 > (세부기능|마스터데이터) > 작업.", actions: {

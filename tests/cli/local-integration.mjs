@@ -65,6 +65,12 @@ try {
   const doing = statuses.find((s) => s.category === "진행중")
   const custom = first(cli("status", "create", "--project", projectId, "--name", "검토", "--category", "진행중", "--color", "#abcdef", "--sort-order", "10"))
   cli("status", "update", "--project", projectId, "--id", custom.id, "--json", JSON.stringify({ name: "검토중" }))
+  check(statuses.find((s) => s.category === "완료").icon === "circle-check", "default status icon missing")
+  check(first(cli("status", "update", "--project", projectId, "--id", custom.id, "--icon", "loader")).icon === "loader", "status --icon update failed")
+  const iconStatus = first(cli("status", "create", "--project", projectId, "--name", "아이콘", "--category", "할일", "--icon", "circle-dashed"))
+  check(iconStatus.icon === "circle-dashed", "status create --icon failed")
+  check(first(cli("status", "update", "--project", projectId, "--id", iconStatus.id, "--icon", "null")).icon === null, "status --icon null should clear")
+  cli("status", "delete", "--project", projectId, "--id", iconStatus.id, "--yes")
   step("status list/create/update")
 
   const content = first(cli("node", "create", "--project", projectId, "--parent", "null", "--type", "컨텐츠", "--title", "테스트 게임", "--status", todo.id))

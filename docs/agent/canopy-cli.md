@@ -120,6 +120,7 @@ npm.cmd run canopy -- node get --project <PID> --id <NODE_ID>
 **서버 API (migration 0009)**
 - `rpc/subtree_progress(p_project_id, p_root?)` — 프로젝트(또는 서브트리) 노드별 진행률. `node_progress` 뷰는 재귀 CTE 라 `node_id` 필터가 내려가지 않아 매 호출 전 프로젝트를 계산하므로, 새 코드는 이 RPC 를 쓴다.
 - `rpc/project_summary(p_project_id)` — 대시보드 요약 JSON.
+- 상태 아이콘(0011): `status.icon` (lucide 키, 기본 할일=circle 진행중=circle-dot 완료=circle-check 취소됨=circle-x), `status create/update --icon`.
 - 인덱스: `ur(ticket_number)`, `work_log(member_id)`, `work_log(started_at)`, `node(project_id, updated_at)`.
 
 `node_progress`와 `ur_coverage`는 읽기 전용이다. `raw` 쓰기는 프로젝트 소유권 검증을
