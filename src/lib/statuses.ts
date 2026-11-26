@@ -71,14 +71,28 @@ export async function countNodesUsingStatus(statusId: string): Promise<number> {
   return count ?? 0
 }
 
-/** fromId 상태를 쓰는 노드들을 toId(또는 미지정=null)로 옮긴다. */
+/** fromId 상태를 쓰는 노드들을 toId 로 옮긴다(노드 상태는 필수 — 0012). */
 export async function reassignStatusNodes(
   fromId: string,
-  toId: string | null
+  toId: string
 ): Promise<void> {
   const { error } = await supabase
     .from("node")
     .update({ status_id: toId })
     .eq("status_id", fromId)
   if (error) throw new Error(error.message)
+}
+
+/**
+ * 새 노드의 기본 상태 — DB default_todo_status_id 와 같은 규칙:
+ * '할일' 분류 중 이름이 '할일'인 상태 우선, 없으면 sort_order 최소.
+ */
+export function defaultTodoStatus<T extends Pick<Status, "category" | "name" | "sort_order">>(
+  statuses: T[]
+): T | undefined {
+  const todo = statuses.filter((s) => s.category === "할일")
+  return (
+    todo.find((s) => s.name === "할일") ??
+    [...todo].sort((a, b) => a.sort_order - b.sort_order)[0]
+  )
 }

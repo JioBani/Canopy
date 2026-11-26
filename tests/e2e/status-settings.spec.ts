@@ -62,6 +62,8 @@ test.describe.serial("커스텀 상태 설정", () => {
     await expect(devRow.getByTestId("status-usage")).toHaveText("사용 1")
     await devRow.getByTestId("status-delete").click()
     await expect(page.getByTestId("status-delete-confirm")).toContainText("1")
+    // 이전 대상 기본값 = 할일 기본 상태(상태는 비울 수 없음)
+    await expect(page.getByTestId("status-reassign")).toContainText("할일 / 할일")
     await selectByLabel(page, "status-reassign", "할일 / 할일")
     await page.getByTestId("status-delete-go").click()
     await expect(cat(page, "진행중").getByTestId("status-row")).toHaveCount(1)
@@ -94,5 +96,35 @@ test.describe.serial("커스텀 상태 설정", () => {
     const badge = await workBadge(page, "로직작업")
     await expect(badge).toHaveAttribute("data-status", "완료")
     await expect(badge).toContainText("릴리스")
+  })
+
+  test("상태 필수: 상세 상태 선택지에 '미지정' 없음, 마지막 할일 상태 삭제 불가, 이전 대상 기본=할일", async ({
+    page,
+  }) => {
+    await signupAndEnter(page)
+    await createProject(page, `상태필수 ${Date.now()}`, "SR")
+    await buildTaskTree(page)
+
+    // 새 작업 = 기본 할일
+    await expect(await workBadge(page, "로직작업")).toHaveAttribute("data-status", "할일")
+
+    // 상세 상태 선택지: '미지정' 없음
+    await selectWorkInEmbed(page, "로직작업")
+    const arrow = page.getByTestId("detail-status-arrow")
+    if (await arrow.count()) await arrow.click()
+    else await page.getByTestId("detail-status").click()
+    await expect(page.getByRole("option").first()).toBeVisible()
+    await expect(page.getByRole("option", { name: "미지정", exact: true })).toHaveCount(0)
+    await page.keyboard.press("Escape")
+
+    // 설정: 할일 분류의 유일한 상태는 삭제 버튼 비활성
+    await page.getByTestId("project-settings").click()
+    const todoRows = cat(page, "할일").getByTestId("status-row")
+    await expect(todoRows).toHaveCount(1)
+    await expect(todoRows.first().getByTestId("status-delete")).toBeDisabled()
+
+    // 다른 분류 상태는 삭제 가능
+    const prog = cat(page, "진행중").getByTestId("status-row").first()
+    await expect(prog.getByTestId("status-delete")).toBeEnabled()
   })
 })

@@ -1,3 +1,4 @@
+import { toast } from "sonner"
 import { isCustomStatusColor } from "@/lib/statusTone"
 import { useCallback, useEffect, useState, type KeyboardEvent } from "react"
 import { ChevronDown, ChevronUp, Settings, Trash2 } from "lucide-react"
@@ -13,6 +14,7 @@ import {
   updateStatus,
   type Status,
   type StatusCategory,
+  defaultTodoStatus,
 } from "@/lib/statuses"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -118,16 +120,27 @@ function StatusSettingsContent({ projectId }: { projectId: string }) {
 
   async function confirmDelete() {
     if (!deleting) return
-    if (deleting.count > 0) {
-      await reassignStatusNodes(deleting.id, reassignTo || null)
+    try {
+      if (deleting.count > 0) {
+        if (!reassignTo) return // 이전 대상 필수(노드 상태는 비울 수 없음)
+        await reassignStatusNodes(deleting.id, reassignTo)
+      }
+      await deleteStatus(deleting.id)
+    } catch (e) {
+      toast.error("상태를 삭제하지 못했습니다", {
+        description: e instanceof Error ? e.message : String(e),
+      })
+      await reload()
+      return
     }
-    await deleteStatus(deleting.id)
     setDeleting(null)
     setReassignTo("")
     await reload()
   }
 
   const canDelete = statuses.length > 1
+  // 프로젝트의 마지막 '할일' 상태는 새 노드 기본값이라 삭제 불가(DB 도 거부).
+  const isLastTodo = (s: Status) => s.category === "할일" && inCategory("할일").length <= 1
 
   return (
     <div className="flex flex-col gap-5" data-testid="status-settings">
@@ -199,14 +212,22 @@ function StatusSettingsContent({ projectId }: { projectId: string }) {
                   variant="ghost"
                   size="icon"
                   className="text-destructive size-7"
-                  disabled={!canDelete}
+                  disabled={!canDelete || isLastTodo(s)}
                   onClick={async () => {
                     const count = await countNodesUsingStatus(s.id)
-                    setReassignTo("")
+                    // 기본 이전 대상 = 할일 기본 상태(삭제 대상 제외)
+                    const others = statuses.filter((x) => x.id !== s.id)
+                    setReassignTo(defaultTodoStatus(others)?.id ?? others[0]?.id ?? "")
                     setDeleting({ id: s.id, count })
                   }}
                   data-testid="status-delete"
-                  title={canDelete ? "삭제" : "최소 1개는 남겨야 합니다"}
+                  title={
+                    isLastTodo(s)
+                      ? "마지막 할일 상태는 새 항목의 기본 상태라 삭제할 수 없습니다"
+                      : canDelete
+                        ? "삭제"
+                        : "최소 1개는 남겨야 합니다"
+                  }
                 >
                   <Trash2 className="size-4" />
                 </Button>
@@ -227,12 +248,12 @@ function StatusSettingsContent({ projectId }: { projectId: string }) {
           {deleting.count > 0 ? (
             <>
               <p className="text-body">
-                이 상태를 쓰는 작업 <b>{deleting.count}</b>개가 있습니다. 옮길 상태를 고르세요.
+                이 상태를 쓰는 항목 <b>{deleting.count}</b>개가 있습니다. 옮길 상태를 고르세요(상태는 비울 수 없습니다).
               </p>
               <FilterSelect
                 value={reassignTo}
                 onChange={setReassignTo}
-                allLabel="미지정으로"
+                allLabel="옮길 상태 선택"
                 items={statuses
                   .filter((s) => s.id !== deleting.id)
                   .map((s) => ({
@@ -253,6 +274,7 @@ function StatusSettingsContent({ projectId }: { projectId: string }) {
               variant="destructive"
               size="sm"
               onClick={() => void confirmDelete()}
+              disabled={deleting.count > 0 && !reassignTo}
               data-testid="status-delete-go"
             >
               {deleting.count > 0 ? "이동 후 삭제" : "삭제"}

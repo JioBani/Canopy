@@ -152,15 +152,6 @@ function readCollapse(projectId: string | null): CollapseState {
   }
 }
 
-const UNASSIGNED: ColDef = {
-  key: "미지정",
-  label: "미지정",
-  category: "미지정",
-  statusId: null,
-  color: null,
-  Glyph: null,
-}
-
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e))
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation()
 
@@ -581,7 +572,6 @@ export function BoardView() {
     return node.status_id && statusById.has(node.status_id) ? node.status_id : "미지정"
   }
 
-  const hasUnassigned = cards.some((t) => categoryOf(t) === "미지정")
   const columns: ColDef[] = useMemo(() => {
     const cols: ColDef[] =
       group === "category"
@@ -606,8 +596,8 @@ export function BoardView() {
                 Glyph: BLOOM_GLYPH[c],
               }))
           )
-    return hasUnassigned ? [UNASSIGNED, ...cols] : cols
-  }, [group, statuses, hasUnassigned])
+    return cols
+  }, [group, statuses])
 
   // ── 드래그(dnd-kit) ─────────────────────────────────────────────
   // 열별 카드 id(정렬 반영). 드래그 중엔 미리보기 사본(dragItems)을 그리고, 놓으면 낙관 반영.
@@ -691,8 +681,8 @@ export function BoardView() {
     let statusId: string | null = null
     if (statusChanged && group === "status") {
       // 상태별 보기: 열 = 상태 → 그 상태로 정확히
-      statusId = col === "미지정" ? null : col
-    } else if (statusChanged && col !== "미지정") {
+      statusId = col
+    } else if (statusChanged) {
       const target = statuses
         .filter((s) => s.category === col)
         .sort((a, b) => a.sort_order - b.sort_order)[0]
@@ -986,11 +976,11 @@ export function BoardView() {
             {group === "category"
               ? columns.map((col) => renderColumn(col, false))
               : // 상태별: 분류마다 묶음(작은 분류 라벨 + 열들), 묶음 사이 간격으로 경계 표시
-                (["미지정", ...CATEGORIES] as Column[]).map((cat) => {
+                CATEGORIES.map((cat) => {
                   const cols = columns.filter((c) => c.category === cat)
                   if (!cols.length) return null
-                  const G = cat === "미지정" ? null : BLOOM_GLYPH[cat]
-                  const tone = cat === "미지정" ? null : CATEGORY_TONE[cat]
+                  const G = BLOOM_GLYPH[cat]
+                  const tone = CATEGORY_TONE[cat]
                   return (
                     <section
                       key={cat}

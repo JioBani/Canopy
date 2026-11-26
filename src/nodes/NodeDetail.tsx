@@ -185,12 +185,11 @@ export function NodeDetail() {
     <div className="flex flex-col gap-0.5">
       <PropertyRow label="상태">
         <GuardedSelect
-          value={node.status_id ?? NONE}
-          onValueChange={(v) => set({ status_id: v === NONE ? null : v })}
+          value={node.status_id ?? ""}
+          onValueChange={(v) => set({ status_id: v })}
           placeholder="상태"
           testid="detail-status"
         >
-          <SelectItem value={NONE}>미지정</SelectItem>
           {statusGroups.map((g) => (
             <SelectGroup key={g.cat}>
               <SelectLabel>{g.cat}</SelectLabel>

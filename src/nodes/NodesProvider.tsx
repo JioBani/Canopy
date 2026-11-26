@@ -17,7 +17,7 @@ import {
   type AppNode,
   type NodeProgress,
 } from "@/lib/nodes"
-import { listStatuses, type Status } from "@/lib/statuses"
+import { listStatuses, type Status, defaultTodoStatus } from "@/lib/statuses"
 import { listMembers, type Member } from "@/lib/members"
 import { ticketKey, TICKET_PREFIX, type NodeType } from "@/nodes/nodeGrammar"
 import { toast } from "sonner"
@@ -309,10 +309,8 @@ export function NodesProvider({
       const siblings = nodes.filter((n) => n.parent_id === parentId)
       const sortOrder =
         siblings.reduce((m, s) => Math.max(m, s.sort_order), -1) + 1
-      // 기본 상태 = 할일 카테고리 기본(가장 앞) 상태 (Jira식 To Do 시작, 전 타입).
-      const defaultStatus = statuses
-        .filter((s) => s.category === "할일")
-        .sort((a, b) => a.sort_order - b.sort_order)[0]
+      // 기본 상태 = 프로젝트 할일 상태(DB 트리거와 같은 규칙). 상태는 필수(0012).
+      const defaultStatus = defaultTodoStatus(statuses)
       const created = await insertNode({
         project_id: projectId,
         parent_id: parentId,
