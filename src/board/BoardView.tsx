@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react"
-import { Check, ClipboardList, Plus } from "lucide-react"
+import { Check, ChevronsLeftRight, ChevronsRightLeft, ClipboardList, Plus } from "lucide-react"
 import {
   DndContext,
   DragOverlay,
@@ -57,6 +57,7 @@ import {
 } from "@/board/boardOrder"
 import { cn } from "@/lib/utils"
 import { useQueryParam } from "@/lib/router"
+import { useProjects } from "@/projects/ProjectProvider"
 
 const CATEGORIES: StatusCategory[] = ["할일", "진행중", "완료", "취소됨"]
 type Column = StatusCategory | "미지정"
@@ -122,6 +123,33 @@ const collision: CollisionDetection = (args) => {
     return cards.length ? cards : hits
   }
   return closestCorners(args)
+}
+
+/**
+ * 상태별 보기의 열 접기 — 프로젝트별 localStorage.
+ * collapsed = 사용자가 접은 열, expanded = "빈 상태 접기" 중에도 사용자가 펼친 열(개별 우선).
+ */
+interface CollapseState {
+  hideEmpty: boolean
+  collapsed: string[]
+  expanded: string[]
+}
+const EMPTY_COLLAPSE: CollapseState = { hideEmpty: false, collapsed: [], expanded: [] }
+const collapseKey = (projectId: string) => `canopy.boardCollapse.${projectId}`
+function readCollapse(projectId: string | null): CollapseState {
+  if (!projectId) return EMPTY_COLLAPSE
+  try {
+    const v = JSON.parse(localStorage.getItem(collapseKey(projectId)) ?? "null")
+    return v && typeof v === "object"
+      ? {
+          hideEmpty: !!v.hideEmpty,
+          collapsed: Array.isArray(v.collapsed) ? v.collapsed : [],
+          expanded: Array.isArray(v.expanded) ? v.expanded : [],
+        }
+      : EMPTY_COLLAPSE
+  } catch {
+    return EMPTY_COLLAPSE
+  }
 }
 
 const UNASSIGNED: ColDef = {
@@ -306,15 +334,53 @@ function BoardColumn({
   ids,
   header,
   narrow = false,
+  collapsed = false,
+  onExpand,
   children,
 }: {
   col: ColDef
   ids: string[]
   header: ReactNode
   narrow?: boolean
+  collapsed?: boolean
+  onExpand?: () => void
   children: ReactNode
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `col:${col.key}` })
+  if (collapsed) {
+    // 접힌 열 = 세로 띠(상태 색 글리프·개수·세로 이름). 클릭 = 펼치기, 카드 드롭 가능.
+    const G = col.Glyph
+    return (
+      <button
+        ref={setNodeRef as (el: HTMLButtonElement | null) => void}
+        type="button"
+        onClick={onExpand}
+        title={`${col.label} (${ids.length}) — 눌러서 펼치기`}
+        aria-label={`${col.label} 열 펼치기, 카드 ${ids.length}개`}
+        aria-expanded={false}
+        className={cn(
+          "bg-sunken border-line rounded-card hover:bg-hover focus-visible:ring-brand flex w-11 shrink-0 flex-col items-center gap-2 border py-3 transition-colors outline-none focus-visible:ring-2",
+          isOver && "border-brand bg-hover"
+        )}
+        data-testid="board-column"
+        data-collapsed="true"
+        data-category={col.category}
+        data-status-id={col.statusId ?? undefined}
+        data-status-name={col.statusId ? col.label : undefined}
+      >
+        {G && col.color ? (
+          <G className="size-4 shrink-0" style={{ color: col.color }} />
+        ) : (
+          <span className="border-fg-3 size-3.5 shrink-0 rounded-full border border-dashed" />
+        )}
+        <Count data-testid="board-column-count">{ids.length}</Count>
+        <span className="text-subheading text-fg max-h-[60vh] truncate [writing-mode:vertical-rl]">
+          {col.label}
+        </span>
+        <ChevronsLeftRight className="text-fg-3 mt-auto size-4 shrink-0" aria-hidden />
+      </button>
+    )
+  }
   return (
     <div
       ref={setNodeRef}
@@ -361,6 +427,38 @@ export function BoardView() {
   const [groupQ, setGroupQ] = useQueryParam("group")
   const group: BoardGroup =
     groupQ === "status" || groupQ === "category" ? groupQ : readStoredGroup()
+  // 상태별 보기 열 접기(프로젝트별 기억)
+  const { currentProjectId } = useProjects()
+  const [collapse, setCollapse] = useState<CollapseState>(() => readCollapse(currentProjectId))
+  useEffect(() => setCollapse(readCollapse(currentProjectId)), [currentProjectId])
+  function saveCollapse(next: CollapseState) {
+    setCollapse(next)
+    if (!currentProjectId) return
+    try {
+      localStorage.setItem(collapseKey(currentProjectId), JSON.stringify(next))
+    } catch {
+      /* 저장 불가 환경 무시 */
+    }
+  }
+  function collapseCol(key: string) {
+    saveCollapse({
+      ...collapse,
+      collapsed: [...collapse.collapsed.filter((k) => k !== key), key],
+      expanded: collapse.expanded.filter((k) => k !== key),
+    })
+  }
+  function expandCol(key: string) {
+    saveCollapse({
+      ...collapse,
+      collapsed: collapse.collapsed.filter((k) => k !== key),
+      expanded: [...collapse.expanded.filter((k) => k !== key), key],
+    })
+  }
+  function toggleHideEmpty() {
+    // 켜고 끌 때 개별 펼침 예외는 초기화(켜면 빈 열이 모두 접히도록)
+    saveCollapse({ ...collapse, hideEmpty: !collapse.hideEmpty, expanded: [] })
+  }
+
   function changeGroup(g: BoardGroup) {
     try {
       localStorage.setItem(GROUP_KEY, g)
@@ -643,17 +741,31 @@ export function BoardView() {
 
   const activeNode = activeId ? byId.get(activeId) : undefined
 
+  /** 접힘 여부 — 상태별 보기만. 빈 열 판정은 저장된 배치 기준(드래그 미리보기로 펼쳐지지 않게). */
+  function isCollapsed(col: ColDef): boolean {
+    if (group !== "status") return false
+    if (collapse.collapsed.includes(col.key)) return true
+    return (
+      collapse.hideEmpty &&
+      (columnsMap[col.key]?.length ?? 0) === 0 &&
+      !collapse.expanded.includes(col.key)
+    )
+  }
+
   function renderColumn(col: ColDef, narrow: boolean) {
     const ids = view[col.key] ?? []
     const G = col.Glyph
+    const collapsed = isCollapsed(col)
     return (
       <BoardColumn
         key={col.key}
         col={col}
         ids={ids}
         narrow={narrow}
+        collapsed={collapsed}
+        onExpand={() => expandCol(col.key)}
         header={
-          <div className="flex items-center gap-2 px-3 py-3">
+          <div className="flex items-center gap-2 py-3 pr-1.5 pl-3">
             {G && col.color ? (
               <G className="size-4 shrink-0" style={{ color: col.color }} />
             ) : (
@@ -663,6 +775,18 @@ export function BoardView() {
               {col.label}
             </span>
             <Count data-testid="board-column-count">{ids.length}</Count>
+            {group === "status" && (
+              <button
+                type="button"
+                onClick={() => collapseCol(col.key)}
+                title="열 접기"
+                aria-label={`${col.label} 열 접기`}
+                className="text-fg-3 hover:text-fg hover:bg-hover ml-auto flex size-7 shrink-0 items-center justify-center rounded-md"
+                data-testid="board-column-collapse"
+              >
+                <ChevronsRightLeft className="size-4" />
+              </button>
+            )}
           </div>
         }
       >
@@ -793,6 +917,24 @@ export function BoardView() {
                 </button>
               ))}
             </div>
+            {group === "status" && (
+              <button
+                type="button"
+                onClick={toggleHideEmpty}
+                aria-pressed={collapse.hideEmpty}
+                data-testid="board-hide-empty"
+                title="카드가 없는 상태 열을 좁은 띠로 접습니다(띠를 누르면 개별로 펼침)"
+                className={cn(
+                  "text-body flex h-8 items-center gap-1.5 rounded-md border px-2.5 font-semibold transition-colors",
+                  collapse.hideEmpty
+                    ? "border-brand bg-surface text-fg"
+                    : "border-line bg-surface text-fg-2 hover:text-fg"
+                )}
+              >
+                <ChevronsRightLeft className="size-4" />
+                빈 상태 접기
+              </button>
+            )}
             <span className="text-label text-fg-2 ml-2">정렬</span>
             <FilterSelect
               value={sort === "manual" ? "" : sort}
@@ -834,8 +976,11 @@ export function BoardView() {
           <div className="min-h-0 flex-1 overflow-x-auto" data-testid="board-scroll">
             <div
               className={cn(
-                "mx-auto flex h-full min-w-max justify-center px-6 py-5",
-                group === "category" ? "max-w-[1760px] gap-4" : "gap-7"
+                "mx-auto flex h-full min-w-max justify-center py-5",
+                group === "category"
+                  ? "max-w-[1760px] gap-4 px-6"
+                  : // 상태가 많아 가로 스크롤돼도 첫 열이 끝에 붙지 않게 넉넉한 시작/끝 여백
+                    "gap-7 px-10"
               )}
             >
             {group === "category"

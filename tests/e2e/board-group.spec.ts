@@ -111,4 +111,53 @@ test.describe.serial("보드 열 묶음 — 상태별", () => {
       page.locator('[data-testid="board-column"][data-category="할일"]').getByTestId("board-card")
     ).toContainText("작업1")
   })
+
+  test("열 접기: 헤더로 접고 띠로 펼침, 프로젝트별 기억", async ({ page }) => {
+    await page.goto(boardPath("?group=status"))
+    const col = statusCol(page, "기획 대기")
+    await col.getByTestId("board-column-collapse").click()
+    await expect(col).toHaveAttribute("data-collapsed", "true")
+    await page.reload()
+    await expect(col).toHaveAttribute("data-collapsed", "true")
+    await col.click()
+    await expect(col).not.toHaveAttribute("data-collapsed", "true")
+    await expect(col.getByTestId("board-column-collapse")).toBeVisible()
+  })
+
+  test("빈 상태 접기: 0개 열만 띠로, 개별 펼침 가능, 접힌 띠에 드롭 → 그 상태", async ({ page }) => {
+    await page.goto(boardPath("?group=status"))
+    // 작업1 은 '배정 대기'(앞 테스트)
+    await expect(statusCol(page, "배정 대기").getByTestId("board-card")).toHaveCount(1)
+    await page.getByTestId("board-hide-empty").click()
+    await expect(page.getByTestId("board-hide-empty")).toHaveAttribute("aria-pressed", "true")
+    await expect(statusCol(page, "병합 대기")).toHaveAttribute("data-collapsed", "true")
+    await expect(statusCol(page, "기획 대기")).toHaveAttribute("data-collapsed", "true")
+    await expect(statusCol(page, "배정 대기")).not.toHaveAttribute("data-collapsed", "true")
+
+    // 개별 펼침(빈 상태 접기 켠 채로)
+    await statusCol(page, "병합 대기").click()
+    await expect(statusCol(page, "병합 대기")).not.toHaveAttribute("data-collapsed", "true")
+    await expect(statusCol(page, "기획 대기")).toHaveAttribute("data-collapsed", "true")
+
+    // 접힌 띠(기획 대기)에 드롭 → 정확히 그 상태
+    await dragCard(
+      page,
+      statusCol(page, "배정 대기").getByTestId("board-card").first(),
+      statusCol(page, "기획 대기")
+    )
+    const plan = (
+      await restGet<{ id: string }>(
+        `status?project_id=eq.${projectId}&name=eq.${encodeURIComponent("기획 대기")}&select=id`
+      )
+    )[0].id
+    await expect.poll(() => nodeStatus("작업1")).toBe(plan)
+    // 카드가 생긴 열은 펼쳐지고, 비게 된 '배정 대기'는 접힘
+    await expect(statusCol(page, "기획 대기")).not.toHaveAttribute("data-collapsed", "true")
+    await expect(statusCol(page, "배정 대기")).toHaveAttribute("data-collapsed", "true")
+
+    // 기억(새로고침)
+    await page.reload()
+    await expect(page.getByTestId("board-hide-empty")).toHaveAttribute("aria-pressed", "true")
+    await expect(statusCol(page, "배정 대기")).toHaveAttribute("data-collapsed", "true")
+  })
 })
