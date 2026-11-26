@@ -60,6 +60,25 @@ import { useQueryParam } from "@/lib/router"
 
 const CATEGORIES: StatusCategory[] = ["할일", "진행중", "완료", "취소됨"]
 type Column = StatusCategory | "미지정"
+/** 열 묶음 기준 — 분류별(할일/진행중/완료/취소됨) | 상태별(커스텀 상태마다 열). */
+type BoardGroup = "category" | "status"
+const GROUP_KEY = "canopy.boardGroup"
+function readStoredGroup(): BoardGroup {
+  try {
+    return localStorage.getItem(GROUP_KEY) === "status" ? "status" : "category"
+  } catch {
+    return "category"
+  }
+}
+/** 보드 열 정의. key = 분류명(분류별) | status.id(상태별) | "미지정". */
+interface ColDef {
+  key: string
+  label: string
+  category: Column
+  statusId: string | null
+  color: string | null
+  Glyph: ((p: { className?: string; style?: CSSProperties }) => ReactNode) | null
+}
 /** 보드 레이어: 노드 타입 + 요구사항(UR, 노드 아님). */
 type BoardLayer = NodeType | "요구사항"
 /** 보드 레이어 선택지 (작업 기본, 마지막에 요구사항). */
@@ -103,6 +122,15 @@ const collision: CollisionDetection = (args) => {
     return cards.length ? cards : hits
   }
   return closestCorners(args)
+}
+
+const UNASSIGNED: ColDef = {
+  key: "미지정",
+  label: "미지정",
+  category: "미지정",
+  statusId: null,
+  color: null,
+  Glyph: null,
 }
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e))
@@ -196,18 +224,22 @@ function CardBody({ node, overlay = false }: { node: AppNode; overlay?: boolean 
     >
       <div className="flex items-center gap-2">
         <TicketKey value={ticket} />
-        {status && (
-          <span className="ml-auto inline-flex" title={status.name}>
-            {(() => {
-              const G = BLOOM_GLYPH[status.category]
-              return <G className="size-4" style={{ color: statusTone(status).fg }} />
-            })()}
-          </span>
-        )}
+        {/* 미지정 "+ 우선순위"는 상태 글리프 옆(hover 시 노출) — 빈 메타 줄을 만들지 않고, 카드 가운데(드래그 손잡이)를 비움 */}
+        <span className="ml-auto flex items-center gap-1.5">
+          {!priority && !overlay && <CardPriority node={node} />}
+          {status && (
+            <span className="inline-flex" title={status.name}>
+              {(() => {
+                const G = BLOOM_GLYPH[status.category]
+                return <G className="size-4" style={{ color: statusTone(status).fg }} />
+              })()}
+            </span>
+          )}
+        </span>
       </div>
       <div className="text-body text-fg line-clamp-3 font-medium">{node.title}</div>
-      <div className="flex min-h-6 flex-wrap items-center gap-2">
-        {/* 지정된 우선순위는 맨 앞, 미지정 "+ 우선순위"(hover 시 노출)는 도메인 뒤 — 빈 자리로 칩이 밀리지 않게 */}
+      {(priority || node.domain || assignee) && (
+      <div className="flex flex-wrap items-center gap-2">
         {priority &&
           (overlay ? <PriorityBadge priority={priority} /> : <CardPriority node={node} />)}
         {node.domain && (
@@ -215,7 +247,6 @@ function CardBody({ node, overlay = false }: { node: AppNode; overlay?: boolean 
             {node.domain}
           </span>
         )}
-        {!priority && !overlay && <CardPriority node={node} />}
         {assignee && (
           <span
             className="text-micro ml-auto inline-flex size-[22px] items-center justify-center rounded-full"
@@ -226,6 +257,7 @@ function CardBody({ node, overlay = false }: { node: AppNode; overlay?: boolean 
           </span>
         )}
       </div>
+      )}
     </div>
   )
 }
@@ -273,26 +305,33 @@ function BoardColumn({
   col,
   ids,
   header,
+  narrow = false,
   children,
 }: {
-  col: Column
+  col: ColDef
   ids: string[]
   header: ReactNode
+  narrow?: boolean
   children: ReactNode
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `col:${col}` })
+  const { setNodeRef, isOver } = useDroppable({ id: `col:${col.key}` })
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "bg-sunken border-line rounded-card flex w-[300px] shrink-0 flex-col border transition-colors",
+        "bg-sunken border-line rounded-card flex shrink-0 grow flex-col border transition-colors",
+        narrow
+          ? "max-w-[340px] min-w-[260px] basis-[272px]"
+          : "max-w-[400px] min-w-[280px] basis-[300px]",
         isOver && "border-brand"
       )}
       data-testid="board-column"
-      data-category={col}
+      data-category={col.category}
+      data-status-id={col.statusId ?? undefined}
+      data-status-name={col.statusId ? col.label : undefined}
     >
       {header}
-      <SortableContext id={`col:${col}`} items={ids} strategy={verticalListSortingStrategy}>
+      <SortableContext id={`col:${col.key}`} items={ids} strategy={verticalListSortingStrategy}>
         <div className="flex min-h-16 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
           {children}
         </div>
@@ -318,6 +357,18 @@ export function BoardView() {
   // 열 안 정렬 기준 — manual(기본, URL 생략) | priority | updated
   const [sortQ, setSortQ] = useQueryParam("sort")
   const sort = parseBoardSort(sortQ)
+  // 열 묶음 — ?group=status 로 공유, URL 에 없으면 마지막 선택(localStorage) → 분류별
+  const [groupQ, setGroupQ] = useQueryParam("group")
+  const group: BoardGroup =
+    groupQ === "status" || groupQ === "category" ? groupQ : readStoredGroup()
+  function changeGroup(g: BoardGroup) {
+    try {
+      localStorage.setItem(GROUP_KEY, g)
+    } catch {
+      /* 저장 불가 환경 무시 */
+    }
+    setGroupQ(g)
+  }
 
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
   const statusById = useMemo(
@@ -426,18 +477,49 @@ export function BoardView() {
     return s?.category ?? "미지정"
   }
 
+  /** 카드가 속한 열 key. */
+  function keyOf(node: AppNode): string {
+    if (group === "category") return categoryOf(node)
+    return node.status_id && statusById.has(node.status_id) ? node.status_id : "미지정"
+  }
+
   const hasUnassigned = cards.some((t) => categoryOf(t) === "미지정")
-  const columns: Column[] = hasUnassigned ? ["미지정", ...CATEGORIES] : CATEGORIES
+  const columns: ColDef[] = useMemo(() => {
+    const cols: ColDef[] =
+      group === "category"
+        ? CATEGORIES.map((c) => ({
+            key: c,
+            label: c,
+            category: c,
+            statusId: null,
+            color: CATEGORY_TONE[c]?.fg ?? null,
+            Glyph: BLOOM_GLYPH[c],
+          }))
+        : CATEGORIES.flatMap((c) =>
+            statuses
+              .filter((st) => st.category === c)
+              .sort((a, b) => a.sort_order - b.sort_order)
+              .map((st) => ({
+                key: st.id,
+                label: st.name,
+                category: c,
+                statusId: st.id,
+                color: statusTone(st).fg,
+                Glyph: BLOOM_GLYPH[c],
+              }))
+          )
+    return hasUnassigned ? [UNASSIGNED, ...cols] : cols
+  }, [group, statuses, hasUnassigned])
 
   // ── 드래그(dnd-kit) ─────────────────────────────────────────────
   // 열별 카드 id(정렬 반영). 드래그 중엔 미리보기 사본(dragItems)을 그리고, 놓으면 낙관 반영.
   const columnsMap = useMemo(() => {
     const m: Record<string, string[]> = {}
-    for (const c of columns) m[c] = []
-    for (const n of sortCards(cards, sort)) m[categoryOf(n)]?.push(n.id)
+    for (const c of columns) m[c.key] = []
+    for (const n of sortCards(cards, sort)) m[keyOf(n)]?.push(n.id)
     return m
-    // columns·categoryOf 는 cards·statusById 에서 파생
-  }, [cards, sort, statusById])
+    // keyOf 는 group·statusById 에서 파생
+  }, [cards, sort, statusById, columns, group])
   const [dragItems, setDragItems] = useState<Record<string, string[]> | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const lastDragEnd = useRef(0)
@@ -452,9 +534,9 @@ export function BoardView() {
     })
   )
 
-  function colOf(items: Record<string, string[]>, id: string): Column | null {
-    if (id.startsWith("col:")) return id.slice(4) as Column
-    return (Object.keys(items).find((c) => items[c].includes(id)) as Column) ?? null
+  function colOf(items: Record<string, string[]>, id: string): string | null {
+    if (id.startsWith("col:")) return id.slice(4)
+    return Object.keys(items).find((c) => items[c].includes(id)) ?? null
   }
 
   function onDragStart(e: DragStartEvent) {
@@ -501,15 +583,18 @@ export function BoardView() {
   }
 
   /** 놓은 결과 저장 — 열이 바뀌면 상태, 수동 정렬이면 board_rank. 낙관 반영 + 실패 시 원복·안내. */
-  async function persistMove(id: string, col: Column, ordered: string[]) {
+  async function persistMove(id: string, col: string, ordered: string[]) {
     const node = byId.get(id)
     if (!node) return
-    const statusChanged = col !== categoryOf(node)
+    const statusChanged = col !== keyOf(node)
     const orderChanged = ordered.join() !== (columnsMap[col] ?? []).join()
     if (!statusChanged && !orderChanged) return
 
     let statusId: string | null = null
-    if (statusChanged && col !== "미지정") {
+    if (statusChanged && group === "status") {
+      // 상태별 보기: 열 = 상태 → 그 상태로 정확히
+      statusId = col === "미지정" ? null : col
+    } else if (statusChanged && col !== "미지정") {
       const target = statuses
         .filter((s) => s.category === col)
         .sort((a, b) => a.sort_order - b.sort_order)[0]
@@ -558,10 +643,41 @@ export function BoardView() {
 
   const activeNode = activeId ? byId.get(activeId) : undefined
 
+  function renderColumn(col: ColDef, narrow: boolean) {
+    const ids = view[col.key] ?? []
+    const G = col.Glyph
+    return (
+      <BoardColumn
+        key={col.key}
+        col={col}
+        ids={ids}
+        narrow={narrow}
+        header={
+          <div className="flex items-center gap-2 px-3 py-3">
+            {G && col.color ? (
+              <G className="size-4 shrink-0" style={{ color: col.color }} />
+            ) : (
+              <span className="border-fg-3 size-3.5 shrink-0 rounded-full border border-dashed" />
+            )}
+            <span className="text-subheading text-fg truncate" title={col.label}>
+              {col.label}
+            </span>
+            <Count data-testid="board-column-count">{ids.length}</Count>
+          </div>
+        }
+      >
+        {ids.map((id) => {
+          const n = byId.get(id)
+          return n ? <SortableCard key={id} node={n} onOpen={openCard} /> : null
+        })}
+      </BoardColumn>
+    )
+  }
+
   return (
     <div className="flex h-full flex-col" data-testid="board-view">
       {/* 레이어 선택 + 필터 + 정렬 */}
-      <div className="border-line bg-surface flex flex-wrap items-center gap-2 border-b px-4 py-2.5">
+      <div className="border-line bg-surface flex flex-wrap items-center gap-2 border-b px-6 py-2.5">
         <span className="text-label text-fg-2 mr-1">레이어</span>
         <div
           className="bg-sunken flex flex-wrap items-center gap-0.5 rounded-lg p-[3px]"
@@ -646,8 +762,38 @@ export function BoardView() {
           </>
         )}
         {!isUrLayer && (
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-label text-fg-2">정렬</span>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <span className="text-label text-fg-2">열</span>
+            <div
+              className="bg-sunken flex items-center gap-0.5 rounded-lg p-[3px]"
+              role="radiogroup"
+              aria-label="열 묶음 기준"
+            >
+              {(
+                [
+                  ["category", "분류별"],
+                  ["status", "상태별"],
+                ] as const
+              ).map(([g, label]) => (
+                <button
+                  key={g}
+                  type="button"
+                  role="radio"
+                  aria-checked={group === g}
+                  onClick={() => changeGroup(g)}
+                  data-testid={`board-group-${g}`}
+                  className={cn(
+                    "text-body rounded-md px-2.5 py-1 font-semibold transition-colors",
+                    group === g
+                      ? "bg-surface text-fg ring-line ring-1"
+                      : "text-fg-2 hover:text-fg"
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <span className="text-label text-fg-2 ml-2">정렬</span>
             <FilterSelect
               value={sort === "manual" ? "" : sort}
               onChange={(v) => setSortQ(v || null)}
@@ -683,40 +829,47 @@ export function BoardView() {
             },
           }}
         >
-          <div className="flex flex-1 gap-3 overflow-x-auto p-4">
-            {columns.map((col) => {
-              const ids = view[col] ?? []
-              const tone =
-                col === "미지정" ? null : (CATEGORY_TONE[col] ?? null)
-              const G = col === "미지정" ? null : BLOOM_GLYPH[col]
-              return (
-                <BoardColumn
-                  key={col}
-                  col={col}
-                  ids={ids}
-                  header={
-                    <div className="flex items-center gap-2 px-3 py-3">
-                      {G && tone ? (
-                        <G className="size-4" style={{ color: tone.fg }} />
-                      ) : (
-                        <span className="border-fg-3 size-3.5 rounded-full border border-dashed" />
-                      )}
-                      <span className="text-subheading text-fg">{col}</span>
-                      <Count data-testid="board-column-count">{ids.length}</Count>
-                    </div>
-                  }
-                >
-                  {ids.map((id) => {
-                    const n = byId.get(id)
-                    return n ? <SortableCard key={id} node={n} onOpen={openCard} /> : null
-                  })}
-                </BoardColumn>
-              )
-            })}
+          {/* 가로 스크롤 영역 — 안쪽 트랙이 내용 폭(min-w-max)이라 스크롤해도 좌우 여백 유지,
+              넓은 화면에선 열이 400px 까지 늘고 남는 폭은 가운데 정렬. */}
+          <div className="min-h-0 flex-1 overflow-x-auto" data-testid="board-scroll">
+            <div
+              className={cn(
+                "mx-auto flex h-full min-w-max justify-center px-6 py-5",
+                group === "category" ? "max-w-[1760px] gap-4" : "gap-7"
+              )}
+            >
+            {group === "category"
+              ? columns.map((col) => renderColumn(col, false))
+              : // 상태별: 분류마다 묶음(작은 분류 라벨 + 열들), 묶음 사이 간격으로 경계 표시
+                (["미지정", ...CATEGORIES] as Column[]).map((cat) => {
+                  const cols = columns.filter((c) => c.category === cat)
+                  if (!cols.length) return null
+                  const G = cat === "미지정" ? null : BLOOM_GLYPH[cat]
+                  const tone = cat === "미지정" ? null : CATEGORY_TONE[cat]
+                  return (
+                    <section
+                      key={cat}
+                      className="flex shrink-0 grow flex-col gap-2"
+                      data-testid="board-group"
+                      data-category={cat}
+                      aria-label={`${cat} 분류`}
+                    >
+                      <div className="text-label text-fg-3 flex items-center gap-1.5 px-1">
+                        {G && tone && <G className="size-3.5" style={{ color: tone.fg }} />}
+                        {cat}
+                        <span className="bg-line ml-1 h-px flex-1" />
+                      </div>
+                      <div className="flex min-h-0 flex-1 gap-3">
+                        {cols.map((col) => renderColumn(col, true))}
+                      </div>
+                    </section>
+                  )
+                })}
+            </div>
           </div>
           <DragOverlay dropAnimation={null}>
             {activeNode ? (
-              <div className="w-[284px] cursor-grabbing">
+              <div className="w-[300px] cursor-grabbing">
                 <CardBody node={activeNode} overlay />
               </div>
             ) : null}

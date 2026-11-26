@@ -1,0 +1,114 @@
+import { test, expect, type Page } from "@playwright/test"
+import { restGet, restPost } from "../helpers/rest"
+import {
+  addChildSingle,
+  addChildTyped,
+  addContentRoot,
+  addWork,
+  cleanupCreatedProjects,
+  createProject,
+  dragCard,
+  signupAndEnter,
+} from "./_helpers"
+
+/**
+ * 보드 열 묶음 [분류별 | 상태별] — 상태별은 커스텀 상태마다 열(분류 순 → sort_order),
+ * 드래그 = 그 상태로 정확히, ?group= 공유 + 마지막 선택 기억.
+ */
+
+let projectId = ""
+const boardPath = (q = "") => `/p/${projectId}/board${q}`
+const statusCol = (page: Page, name: string) =>
+  page.locator(`[data-testid="board-column"][data-status-name="${name}"]`)
+
+async function nodeStatus(title: string) {
+  return (
+    await restGet<{ status_id: string }>(
+      `node?project_id=eq.${projectId}&title=eq.${encodeURIComponent(title)}&select=status_id`
+    )
+  )[0].status_id
+}
+
+test.describe.serial("보드 열 묶음 — 상태별", () => {
+  test.afterAll(cleanupCreatedProjects)
+
+  test("상태별 보기: 커스텀 상태가 각각 열로, 분류 순 + 분류 묶음 라벨", async ({ page }) => {
+    await signupAndEnter(page)
+    const name = await createProject(page, `보드상태별 ${Date.now()}`)
+    projectId = (
+      await restGet<{ id: string }>(`project?name=eq.${encodeURIComponent(name)}&select=id`)
+    )[0].id
+    await restPost("status", [
+      { project_id: projectId, name: "기획 대기", category: "할일", sort_order: 50 },
+      { project_id: projectId, name: "배정 대기", category: "할일", sort_order: 51 },
+      { project_id: projectId, name: "병합 대기", category: "진행중", sort_order: 52 },
+    ])
+    await addContentRoot(page, "전장")
+    await addChildSingle(page, "전장", "소환기능")
+    await addChildTyped(page, "소환기능", "세부기능", "구매세부")
+    await addWork(page, "구매세부", "작업1")
+
+    await page.goto(boardPath())
+    // 기본 = 분류별: 커스텀 상태 열 없음
+    await expect(page.getByTestId("board-group-category")).toHaveAttribute("aria-checked", "true")
+    await expect(statusCol(page, "병합 대기")).toHaveCount(0)
+
+    await page.getByTestId("board-group-status").click()
+    await expect.poll(() => new URL(page.url()).searchParams.get("group")).toBe("status")
+    for (const n of ["기획 대기", "배정 대기", "병합 대기"]) {
+      await expect(statusCol(page, n)).toBeVisible()
+    }
+    await expect(statusCol(page, "병합 대기")).toHaveAttribute("data-category", "진행중")
+
+    // 열 순서: 분류 순(할일 → 진행중 → 완료 → 취소됨)
+    const cats = await page
+      .getByTestId("board-column")
+      .evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.category))
+    const rank = { 미지정: -1, 할일: 0, 진행중: 1, 완료: 2, 취소됨: 3 } as Record<string, number>
+    const ranks = cats.map((c) => rank[c ?? ""])
+    expect([...ranks].sort((a, b) => a - b)).toEqual(ranks)
+    // 분류 묶음 라벨
+    await expect(page.getByTestId("board-group")).toHaveCount(4)
+  })
+
+  test("상태별 보기에서 드래그 → 그 상태로 정확히 변경", async ({ page }) => {
+    await page.goto(boardPath("?group=status"))
+    const card = page.getByTestId("board-card").filter({ hasText: "작업1" })
+    await expect(card).toBeVisible()
+    await dragCard(page, card, statusCol(page, "병합 대기"))
+    await expect(statusCol(page, "병합 대기").getByTestId("board-card")).toContainText("작업1")
+
+    const merge = (
+      await restGet<{ id: string }>(
+        `status?project_id=eq.${projectId}&name=eq.${encodeURIComponent("병합 대기")}&select=id`
+      )
+    )[0].id
+    await expect.poll(() => nodeStatus("작업1")).toBe(merge)
+
+    // 같은 분류(할일) 안의 다른 상태로도 정확히
+    await dragCard(page, statusCol(page, "병합 대기").getByTestId("board-card").first(), statusCol(page, "배정 대기"))
+    const assign = (
+      await restGet<{ id: string }>(
+        `status?project_id=eq.${projectId}&name=eq.${encodeURIComponent("배정 대기")}&select=id`
+      )
+    )[0].id
+    await expect.poll(() => nodeStatus("작업1")).toBe(assign)
+  })
+
+  test("URL 에 group 이 없으면 마지막 선택 기억, 분류별로 되돌리기", async ({ page }) => {
+    await page.goto(boardPath("?group=status"))
+    await page.getByTestId("board-group-category").click()
+    await page.getByTestId("board-group-status").click()
+    await page.goto(boardPath())
+    await expect(page.getByTestId("board-group-status")).toHaveAttribute("aria-checked", "true")
+    await expect(statusCol(page, "병합 대기")).toBeVisible()
+
+    await page.getByTestId("board-group-category").click()
+    await expect.poll(() => new URL(page.url()).searchParams.get("group")).toBe("category")
+    await expect(statusCol(page, "병합 대기")).toHaveCount(0)
+    // 분류별: 배정 대기(할일) 카드는 할일 열
+    await expect(
+      page.locator('[data-testid="board-column"][data-category="할일"]').getByTestId("board-card")
+    ).toContainText("작업1")
+  })
+})

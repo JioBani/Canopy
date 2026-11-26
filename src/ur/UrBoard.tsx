@@ -79,7 +79,11 @@ export function UrBoard({
   }
 
   return (
-    <div className="flex flex-1 gap-3 overflow-x-auto p-4" data-testid="ur-board">
+    <div className="min-h-0 flex-1 overflow-x-auto">
+    <div
+      className="mx-auto flex h-full max-w-[1760px] min-w-max justify-center gap-4 px-6 py-5"
+      data-testid="ur-board"
+    >
       {UR_COLUMNS.map((status) => {
         const col = urs.filter((u) => u.status === status)
         const meta = UR_STATE_META[status]
@@ -90,7 +94,7 @@ export function UrBoard({
             key={status}
             className={cn(
               "bg-sunken border-line rounded-card flex flex-col border",
-              collapsed ? "w-16 shrink-0" : "min-w-80 flex-1"
+              collapsed ? "w-16 shrink-0" : "max-w-[400px] min-w-[280px] grow basis-[300px]"
             )}
             data-testid="ur-board-column"
             data-status={status}
@@ -148,6 +152,7 @@ export function UrBoard({
           </div>
         )
       })}
+    </div>
     </div>
   )
 }

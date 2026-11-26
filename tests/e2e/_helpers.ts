@@ -202,7 +202,7 @@ export async function dragCard(
   const t = await target.boundingBox()
   if (!s || !t) throw new Error("dragCard: 요소 위치 없음")
   const sx = s.x + s.width / 2
-  const sy = s.y + Math.min(20, s.height / 2)
+  const sy = s.y + s.height / 2 // 카드 가운데(제목) — 위쪽 줄의 버튼을 피함
   const ty = where === "top" ? t.y + 6 : where === "bottom" ? t.y + t.height - 6 : t.y + t.height / 2
   await page.mouse.move(sx, sy)
   await page.mouse.down()

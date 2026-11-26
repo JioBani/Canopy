@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils"
 /** 브랜드 마크 + 워드마크 (메이플체). */
 function Brand() {
   return (
-    <span className="flex select-none items-center gap-1.5">
+    <span className="flex shrink-0 select-none items-center gap-1.5 whitespace-nowrap">
       <BloomFull className="text-brand-mark size-[19px]" />
       <span className="font-display relative top-px hidden text-[17px] font-bold tracking-tight sm:inline">
         Canopy
