@@ -226,6 +226,21 @@ try {
   cli("ur", "delete", "--project", pid, "--ids", urKeys[0], "--yes")
   step("v1.1 keys/filters/pagination/bulk/tree/show/move/search/reports")
 
+  // 0012: 노드 상태 필수
+  const runFail = (...args) => spawnSync(process.execPath, ["cli/canopy.mjs", ...args, "--url", `${url}/rest/v1`, "--key", key], { encoding: "utf8" })
+  check(runFail("node", "update", "--project", projectId, "--id", task.id, "--status", "null").status !== 0, "node status null must be rejected")
+  check(runFail("status", "reassign", "--project", projectId, "--id", custom.id, "--to", "null").status !== 0, "reassign to null must be rejected")
+  check(first(cli("node", "create", "--project", projectId, "--parent", "null", "--type", "컨텐츠", "--title", "기본상태")).status_id === todo.id, "node create should default to 할일")
+  const inUse = first(cli("status", "create", "--project", projectId, "--name", "임시", "--category", "진행중"))
+  cli("node", "update", "--project", projectId, "--id", task.id, "--status", "임시")
+  const blockedDel = runFail("status", "delete", "--project", projectId, "--id", inUse.id, "--yes")
+  check(blockedDel.status !== 0 && blockedDel.stderr.includes("--to"), "deleting an in-use status must require --to")
+  check(cli("status", "delete", "--project", projectId, "--id", inUse.id, "--to", custom.id, "--yes").moved === 1, "status delete --to should move nodes")
+  const todoUsers = cli("node", "list", "--project", projectId, "--status", todo.id).length
+  check(runFail("status", "delete", "--project", projectId, "--id", todo.id, "--to", custom.id, "--yes").status !== 0, "last 할일 status must not be deletable")
+  check(cli("node", "list", "--project", projectId, "--status", todo.id).length === todoUsers, "refused delete must not move nodes")
+  step("node status required (default/null reject/delete --to/last 할일)")
+
   cli("status", "reassign", "--project", projectId, "--id", custom.id, "--to", todo.id)
   cli("status", "delete", "--project", projectId, "--id", custom.id, "--yes")
   cli("ur-link", "delete", "--project", projectId, "--ur", ur.id, "--work", task.id)

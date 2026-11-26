@@ -397,12 +397,31 @@ async function statuses() {
   const s = await resolveStatus(value("id", true), p)
   if (action === "get") return output(s)
   if (action === "update") return output(await request("status", { method: "PATCH", query: { id: `eq.${s.id}`, project_id: `eq.${p.id}` }, body: patchFrom(["name", "category", "color", "icon", "sort_order"]), prefer: "return=representation" }))
-  if (action === "reassign") {
-    const to = await resolveStatus(value("to", true), p)
-    await request("node", { method: "PATCH", query: { project_id: `eq.${p.id}`, status_id: `eq.${s.id}` }, body: { status_id: to?.id ?? null } })
-    return output({ from: s.id, to: to?.id ?? null })
+  const reassignTo = async () => {
+    const ref = value("to", true)
+    if (isNull(ref)) fail("node status is required; --to must be another status (name or UUID), not null")
+    const to = await resolveStatus(ref, p)
+    if (to.id === s.id) fail("--to must be a different status")
+    const moved = await request("node", { method: "PATCH", query: { project_id: `eq.${p.id}`, status_id: `eq.${s.id}`, select: "id" }, body: { status_id: to.id }, prefer: "return=representation" })
+    return { to, moved: moved.length }
   }
-  if (action === "delete") { requireYes("status delete"); await request("status", { method: "DELETE", query: { id: `eq.${s.id}`, project_id: `eq.${p.id}` } }); return output({ deleted: s.id }) }
+  if (action === "reassign") { const { to, moved } = await reassignTo(); return output({ from: s.id, to: to.id, moved }) }
+  if (action === "delete") {
+    requireYes("status delete")
+    if (s.category === "할일") {
+      const others = await request("status", { query: { project_id: `eq.${p.id}`, category: "eq.할일", id: `neq.${s.id}`, select: "id", limit: 1 } })
+      if (!others.length) fail(`'${s.name}' is the project's last 할일-category status (default for new nodes) and cannot be deleted`)
+    }
+    let moved = 0
+    if (has("to")) moved = (await reassignTo()).moved
+    else {
+      const { headers } = await http("node", { query: { project_id: `eq.${p.id}`, status_id: `eq.${s.id}`, select: "id", limit: 1 }, prefer: "count=exact" })
+      const inUse = Number(String(headers.get("content-range") || "").split("/")[1]) || 0
+      if (inUse) fail(`status '${s.name}' is used by ${inUse} node(s); pass --to <status> to move them before deleting (or run 'status reassign')`)
+    }
+    await request("status", { method: "DELETE", query: { id: `eq.${s.id}`, project_id: `eq.${p.id}` } })
+    return output({ deleted: s.id, moved })
+  }
   fail("status action: list|get|create|update|reassign|delete")
 }
 
@@ -584,7 +603,10 @@ async function nodeUpdateBody(p) {
   const body = patchFrom(["title", "body", "sort_order", "status_id", "domain", "assignee_id", "time_spent_minutes"])
   if (has("status")) body.status_id = options.status
   if (has("assignee")) body.assignee_id = options.assignee
-  if (body.status_id !== undefined) body.status_id = (await resolveStatus(body.status_id ?? "null", p))?.id ?? null
+  if (body.status_id !== undefined) {
+    if (body.status_id === null || isNull(body.status_id)) fail("node status is required and cannot be cleared; pass a status name or UUID (e.g. --status 할일)")
+    body.status_id = (await resolveStatus(body.status_id, p)).id
+  }
   if (body.assignee_id !== undefined) body.assignee_id = (await resolveMember(body.assignee_id ?? "null"))?.id ?? null
   if ("parent_id" in body || "type" in body || "project_id" in body) fail("use 'node move' to change parent; type/project cannot be changed")
   if (!Object.keys(body).length) fail("nothing to update")
@@ -1103,8 +1125,8 @@ const HELP = {
     status: { description: "Project-specific workflow statuses.", actions: {
       list: "List for --project.", get: "Get --id <UUID|name>.",
       create: "Create with --project --name --category <할일|진행중|완료|취소됨> [--color] [--icon <lucide-key, e.g. circle-dot>] [--sort-order]. Category defaults: 할일=circle 진행중=circle-dot 완료=circle-check 취소됨=circle-x.",
-      update: "Update --project --id with --name --category --color --icon (null clears) --sort-order or --json.", reassign: "Move nodes from --id to --to <status|null> within --project.",
-      delete: "Delete --project --id; requires --yes.",
+      update: "Update --project --id with --name --category --color --icon (null clears) --sort-order or --json.", reassign: "Move nodes from --id to --to <status> within --project (node status is required, null not allowed).",
+      delete: "Delete --project --id; requires --yes. If nodes use it, pass --to <status> to move them first. The project's last 할일-category status cannot be deleted or re-categorized.",
     } },
     node: { description: "Tree nodes: 컨텐츠 > 기능 > (세부기능|마스터데이터) > 작업.", actions: {
       list: `List --project (body omitted). Filters: --type CSV --parent ${REF}|null --under ${REF} (subtree) --status CSV --category CSV --assignee --domain CSV --priority --field-filter key=value --updated-since ISO --query; --limit/--offset --order.`,
@@ -1112,8 +1134,8 @@ const HELP = {
       tree: `Compact hierarchy: one line per node "Key title [status]". Options: --root ${REF} --depth N --exclude-type 작업 --progress --ids --format lines|json.`,
       get: `Get --project --id ${REF} with body, status and assignee names.`,
       show: `One-call detail for --id ${REF}: node, breadcrumb path, progress, children; plus URs/groups (세부기능) or checklist/URs/links/work-log summary (작업).`,
-      create: `Create --project --parent ${REF}|null --type --title [--body --status --domain --assignee --sort-order]. Bulk: --items '[{"parent":"SubFeature-3","type":"작업","title":"..","domain":"구현"}]' (--parent is the default). sort_order defaults to end of siblings.`,
-      update: `Update --project --id ${REF} (or --ids CSV for bulk) with --title --body --status --assignee --domain --sort-order --time-spent-minutes or --json.`,
+      create: `Create --project --parent ${REF}|null --type --title [--body --status --domain --assignee --sort-order]. --status defaults to the project's 할일 status. Bulk: --items '[{"parent":"SubFeature-3","type":"작업","title":"..","domain":"구현"}]' (--parent is the default). sort_order defaults to end of siblings.`,
+      update: `Update --project --id ${REF} (or --ids CSV for bulk) with --title --body --status --assignee --domain --sort-order --time-spent-minutes or --json. Status cannot be cleared.`,
       move: `Re-parent --project --id ${REF} --parent ${REF}|null [--sort-order]; hierarchy rules are enforced by the DB.`,
       delete: "Delete --project --id and descendants; requires --yes.",
     } },
