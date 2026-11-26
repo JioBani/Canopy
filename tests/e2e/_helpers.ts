@@ -198,6 +198,7 @@ export async function dragCard(
   target: Locator,
   where: "top" | "center" | "bottom" = "center"
 ) {
+  await target.scrollIntoViewIfNeeded()
   const s = await source.boundingBox()
   const t = await target.boundingBox()
   if (!s || !t) throw new Error("dragCard: 요소 위치 없음")
@@ -207,7 +208,11 @@ export async function dragCard(
   await page.mouse.move(sx, sy)
   await page.mouse.down()
   await page.mouse.move(sx + 8, sy + 8, { steps: 4 })
+  // 부하가 있어도 dnd-kit 가 활성화·충돌 계산할 프레임을 주도록 단계 사이에 짧게 대기
+  await page.waitForTimeout(60)
   await page.mouse.move(t.x + t.width / 2, ty, { steps: 15 })
+  await page.waitForTimeout(60)
   await page.mouse.move(t.x + t.width / 2, ty + 1, { steps: 2 })
+  await page.waitForTimeout(60)
   await page.mouse.up()
 }

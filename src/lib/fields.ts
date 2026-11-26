@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase"
+import { tint } from "@/lib/themeColor"
 
 /**
  * 커스텀 필드(schema-as-data). 필드 "정의"는 field_def 테이블에, 값은 node.fields(jsonb)에
@@ -78,15 +79,10 @@ export const PRIORITY_COLOR: Record<Priority, string> = {
   최우선: "#C42B3B", // danger red
 }
 
-/** 배지 배경(연한 틴트). */
-export const PRIORITY_SOFT: Record<Priority, string> = {
-  매우낮음: "#EEF2F7",
-  낮음: "#E8F0FA",
-  보통: "#F0F1F3",
-  높음: "#FBF1E1",
-  매우높음: "#FCEBE3",
-  최우선: "#FBE6E8",
-}
+/** 배지 배경(연한 틴트, 테마 적응 CSS 식). */
+export const PRIORITY_SOFT: Record<Priority, string> = Object.fromEntries(
+  Object.entries(PRIORITY_COLOR).map(([k, v]) => [k, tint(v, 12)])
+) as Record<Priority, string>
 
 /** 정렬용 랭크(0=매우낮음 … 5=최우선). 미지정은 -1. */
 export function priorityRank(p: Priority | null): number {

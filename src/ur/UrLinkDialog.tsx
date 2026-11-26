@@ -130,7 +130,7 @@ function SubUrList({
                     className={cn(
                       "flex size-4 shrink-0 items-center justify-center rounded border",
                       isSel
-                        ? "border-brand bg-brand text-white"
+                        ? "border-brand bg-brand text-on-brand"
                         : "border-line-strong"
                     )}
                   >

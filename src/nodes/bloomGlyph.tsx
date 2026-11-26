@@ -18,7 +18,7 @@ export const BloomFull = (p: SVGProps<SVGSVGElement>) => (
         <circle key={i} cx={cx} cy={cy} r="2.3" />
       ))}
     </g>
-    <circle cx="8" cy="8" r="1.7" fill="#fff" />
+    <circle cx="8" cy="8" r="1.7" fill="var(--ds-surface)" />
   </svg>
 )
 

@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import { PRIORITY_COLOR, PRIORITY_SOFT, type Priority } from "@/lib/fields"
 import { cn } from "@/lib/utils"
+import { icon } from "@/lib/themeColor"
 
 /**
  * 우선순위 아이콘 — 방향(위/아래) × 개수(1/2)로 단계, 최우선만 굵은 화살표.
@@ -36,7 +37,7 @@ export function PriorityIcon({
       aria-hidden
       className={cn("size-4 shrink-0", className)}
       strokeWidth={priority === "최우선" ? 2.25 : 2.5}
-      style={{ color: PRIORITY_COLOR[priority] }}
+      style={{ color: icon(PRIORITY_COLOR[priority]) }}
       data-priority-icon={priority}
     />
   )

@@ -1,4 +1,5 @@
 import { CATEGORY_COLOR, type Status, type StatusCategory } from "@/lib/statuses"
+import { ink, tint } from "@/lib/themeColor"
 
 /** 상태 카테고리 의미색 (design-system-v2). fg=텍스트·아이콘, bg=칩 배경. */
 export const CATEGORY_TONE: Record<StatusCategory, { fg: string; bg: string }> = {
@@ -35,8 +36,8 @@ export function statusTone(
 ): { fg: string; bg: string } {
   if (isCustomStatusColor(status.color, status.category)) {
     return {
-      fg: `color-mix(in oklab, ${status.color} 82%, black)`,
-      bg: `color-mix(in oklab, ${status.color} 14%, white)`,
+      fg: ink(status.color),
+      bg: tint(status.color, 14),
     }
   }
   return CATEGORY_TONE[status.category]

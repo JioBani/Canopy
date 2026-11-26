@@ -94,6 +94,20 @@
   --ds-st-cancel-bg: #f3f4f6;
 
   --ds-shadow-pop: 0 8px 24px rgba(16, 24, 40, 0.12);
+  --ds-overlay: rgba(16, 24, 40, 0.4);
+  --ds-on-brand: #ffffff;
+  --ds-selection: #f6d3e0;
+  --ds-avatar-bg: #f6d3e0;
+  --ds-avatar-fg: #8e2f55;
+
+  /* 테마 적응 색(src/lib/themeColor.ts) — 고정 hex 를 라이트/다크에서 읽히게 */
+  --tc-ink-mix: 82%;
+  --tc-ink-base: #000000;
+  --tc-icon-mix: 100%;
+  --tc-icon-base: #ffffff;
+  --tc-tint-k: 1;
+
+  color-scheme: light;
 
   /* shadcn 시맨틱 매핑 */
   --background: var(--ds-surface);
@@ -103,7 +117,7 @@
   --popover: var(--ds-surface);
   --popover-foreground: var(--ds-fg);
   --primary: var(--ds-brand);
-  --primary-foreground: #ffffff;
+  --primary-foreground: var(--ds-on-brand);
   --secondary: var(--ds-sunken);
   --secondary-foreground: var(--ds-fg);
   --muted: var(--ds-sunken);
@@ -122,7 +136,7 @@
   --sidebar: var(--ds-surface);
   --sidebar-foreground: var(--ds-fg);
   --sidebar-primary: var(--ds-brand);
-  --sidebar-primary-foreground: #ffffff;
+  --sidebar-primary-foreground: var(--ds-on-brand);
   --sidebar-accent: var(--ds-hover);
   --sidebar-accent-foreground: var(--ds-fg);
   --sidebar-border: var(--ds-line);
@@ -145,6 +159,62 @@
   --c-surface: var(--ds-surface);
   --c-line: var(--ds-line);
   --c-line-2: var(--ds-line-strong);
+}
+
+/* ── 다크 (design-system-v2 dark) ──────────────────────────────
+   같은 의미 토큰의 다크 값. 표면은 3단(canvas < sunken < surface), 글자 대비 AA 이상.
+   상태·우선순위·레이어 원색은 themeColor(--tc-*) 로 다크에서 밝혀 읽힘 보정. */
+.dark {
+  --ds-canvas: #0f1115;
+  --ds-surface: #1d2027;
+  --ds-sunken: #15171c;
+  --ds-hover: #292d36;
+  --ds-subtle: #191c21;
+  --ds-selected: #3a2130;
+  --ds-line: #2d323b;
+  --ds-line-strong: #414855;
+
+  --ds-fg: #e9ebef;
+  --ds-fg-2: #bcc1cb;
+  --ds-fg-3: #8f96a3;
+  --ds-fg-disabled: #5f6673;
+
+  --ds-brand: #ec7fa6;
+  --ds-brand-hover: #f399b9;
+  --ds-brand-soft: #3a2130;
+  --ds-brand-mark: #e88aab;
+  --ds-danger: #f2707e;
+  --ds-danger-soft: #3c1d23;
+
+  --ds-st-todo: #aeb5c1;
+  --ds-st-todo-bg: #262a32;
+  --ds-st-prog: #79a8f7;
+  --ds-st-prog-bg: #19284a;
+  --ds-st-done: #55c48d;
+  --ds-st-done-bg: #13321f;
+  --ds-st-cancel: #8f96a3;
+  --ds-st-cancel-bg: #22252b;
+
+  --ds-shadow-pop: 0 8px 28px rgba(0, 0, 0, 0.55);
+  --ds-overlay: rgba(0, 0, 0, 0.6);
+  --ds-on-brand: #1a0c12;
+  --ds-selection: #5a2a40;
+  --ds-avatar-bg: #4a2536;
+  --ds-avatar-fg: #f6c6d8;
+
+  --tc-ink-mix: 55%;
+  --tc-ink-base: #ffffff;
+  --tc-icon-mix: 80%;
+  --tc-icon-base: #ffffff;
+  --tc-tint-k: 1.7;
+
+  --chart-1: #79a8f7;
+  --chart-2: #55c48d;
+  --chart-3: #f0a35a;
+  --chart-4: #b3a0ea;
+  --chart-5: #f2707e;
+
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -174,6 +244,10 @@
   --color-brand-hover: var(--ds-brand-hover);
   --color-brand-soft: var(--ds-brand-soft);
   --color-brand-mark: var(--ds-brand-mark);
+  --color-on-brand: var(--ds-on-brand);
+  --color-overlay: var(--ds-overlay);
+  --color-avatar: var(--ds-avatar-bg);
+  --color-avatar-fg: var(--ds-avatar-fg);
   --color-danger: var(--ds-danger);
   --color-danger-soft: var(--ds-danger-soft);
   --color-st-todo: var(--ds-st-todo);
@@ -254,7 +328,7 @@
     font-variant-numeric: tabular-nums;
   }
   ::selection {
-    background: #f6d3e0;
+    background: var(--ds-selection);
     color: var(--ds-fg);
   }
   :focus-visible {

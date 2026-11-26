@@ -30,6 +30,8 @@ async function nodeStatus(title: string) {
 }
 
 test.describe.serial("보드 열 묶음 — 상태별", () => {
+  // 상태 7열이 가로 스크롤 없이 다 보이게(드래그 출발·도착이 한 화면에)
+  test.use({ viewport: { width: 2200, height: 900 } })
   test.afterAll(cleanupCreatedProjects)
 
   test("상태별 보기: 커스텀 상태가 각각 열로, 분류 순 + 분류 묶음 라벨", async ({ page }) => {

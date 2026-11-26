@@ -950,6 +950,8 @@ export function BoardView() {
         <DndContext
           sensors={sensors}
           collisionDetection={collision}
+          // 자동 스크롤은 가장자리 가까이에서만 — 기본(20%)은 끝쪽 열에 놓으려 할 때 보드가 밀려 엉뚱한 열에 떨어짐
+          autoScroll={{ threshold: { x: 0.06, y: 0.12 }, acceleration: 6 }}
           onDragStart={onDragStart}
           onDragOver={onDragOver}
           onDragEnd={onDragEnd}

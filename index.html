@@ -5,6 +5,15 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Canopy</title>
+    <!-- 테마 FOUC 방지: 첫 페인트 전에 .dark 적용(next-themes 저장 키와 동일) -->
+    <script>
+      try {
+        var t = localStorage.getItem("canopy.theme") || "system"
+        var d = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches)
+        document.documentElement.classList.toggle("dark", d)
+        document.documentElement.style.colorScheme = d ? "dark" : "light"
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

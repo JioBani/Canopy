@@ -16,6 +16,7 @@ import { MembersButton } from "@/projects/MembersDialog"
 import { BloomFull } from "@/nodes/bloomGlyph"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { ChevronLeft, LogOut } from "lucide-react"
 import {
   DropdownMenu,
@@ -51,7 +52,7 @@ function UserMenu() {
           type="button"
           data-testid="user-menu"
           title={email}
-          className="text-label flex size-8 items-center justify-center rounded-full bg-[#F6D3E0] text-[#8E2F55] ring-1 ring-black/5 hover:ring-black/15"
+          className="text-label flex size-8 items-center justify-center rounded-full bg-avatar text-avatar-fg ring-line hover:ring-line-strong ring-1"
         >
           {initial}
         </button>
@@ -91,6 +92,7 @@ function TopBar({
       {center}
       {tools && <div className="flex items-center gap-1.5">{tools}</div>}
       <span className="bg-line mx-1 h-5 w-px" />
+      <ThemeToggle />
       <UserMenu />
     </header>
   )

@@ -1,5 +1,5 @@
 import { toast } from "sonner"
-import { isCustomStatusColor } from "@/lib/statusTone"
+import { CATEGORY_TONE, isCustomStatusColor } from "@/lib/statusTone"
 import { useCallback, useEffect, useState, type KeyboardEvent } from "react"
 import { ChevronDown, ChevronUp, Settings, Trash2 } from "lucide-react"
 import { useProjects } from "@/projects/ProjectProvider"
@@ -64,6 +64,14 @@ function AddStatusRow({
       </Button>
     </div>
   )
+}
+
+/** 진행 중 저장 — 다이얼로그를 닫을 때 저장이 끝난 뒤 다시 불러오도록(이름 입력 직후 Esc 경합). */
+const pendingWrites = new Set<Promise<unknown>>()
+function track<T>(p: Promise<T>): Promise<T> {
+  pendingWrites.add(p)
+  void p.finally(() => pendingWrites.delete(p)).catch(() => {})
+  return p
 }
 
 function StatusSettingsContent({ projectId }: { projectId: string }) {
@@ -151,7 +159,7 @@ function StatusSettingsContent({ projectId }: { projectId: string }) {
             <div className="flex items-center gap-2">
               <span
                 className="size-3 rounded-full"
-                style={{ backgroundColor: CATEGORY_COLOR[cat] }}
+                style={{ backgroundColor: CATEGORY_TONE[cat].fg }}
               />
               <span className="text-body font-semibold">{cat}</span>
             </div>
@@ -162,7 +170,7 @@ function StatusSettingsContent({ projectId }: { projectId: string }) {
                   type="color"
                   value={isCustomStatusColor(s.color, cat) ? s.color : CATEGORY_COLOR[cat]}
                   onChange={async (e) => {
-                    await updateStatus(s.id, { color: e.target.value })
+                    await track(updateStatus(s.id, { color: e.target.value }))
                     await reload()
                   }}
                   className="size-7 cursor-pointer rounded border"
@@ -174,7 +182,7 @@ function StatusSettingsContent({ projectId }: { projectId: string }) {
                   onBlur={async (e) => {
                     const v = e.target.value.trim()
                     if (v && v !== s.name) {
-                      await updateStatus(s.id, { name: v })
+                      await track(updateStatus(s.id, { name: v }))
                       await reload()
                     }
                   }}
@@ -202,7 +210,7 @@ function StatusSettingsContent({ projectId }: { projectId: string }) {
                   <ChevronDown className="size-4" />
                 </Button>
                 <span
-                  className="text-fg-3 w-12 text-right text-meta tabular-nums"
+                  className="text-fg-3 w-14 shrink-0 text-right text-meta whitespace-nowrap tabular-nums"
                   data-testid="status-usage"
                   title="이 상태를 쓰는 작업 수"
                 >
@@ -293,7 +301,8 @@ export function StatusSettingsButton() {
 
   function onOpenChange(next: boolean) {
     setOpen(next)
-    if (!next) void reload() // 닫을 때 트리/뱃지/진행바 반영
+    // 닫을 때 트리/뱃지/진행바 반영 — 진행 중 저장(이름 blur 등)이 끝난 뒤
+    if (!next) void Promise.allSettled([...pendingWrites]).then(() => reload())
   }
 
   if (!currentProject) return null
